@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/01/13
+#  Altered: 2023/01/14
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -35,11 +35,11 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.65.294-20230113'
+readonly _VERSION_='0.67.315-20230114'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat dialog sfdisk lsblk parted efivar curl xz)
 declare -A AsUser
-declare -i quiet=0 grafico=0
+declare -i quiet=0 grafico=0 incremento=0
 declare -i LAUTO=0 LINSTALL=0 LCHROOT=0 LBIND=0
 declare _DEVICE='/dev/sdX'
 declare _PART_BIOS="${_DEVICE}1"
@@ -52,11 +52,13 @@ declare _USER_FULLNAME=''
 declare _PASSWD_USER='void'
 declare _PASSWD_ROOT='voidlinux'
 declare _HOSTNAME='voidlinux'
-declare _WINDOWMANAGER='tty'
+declare _WINDOWMANAGER=('tty')
 declare _TIMEZONE='America/Sao_Paulo'
 declare _KEYMAP='br-abnt2'
 declare _CLOCK='UTC'
 declare _PKGS='vim neofetch pfetch openssh zstd wget curl dialog bash-completion git unzip zip'
+declare _REDE_WIFI="REDE_WIFI"
+declare _SENHA_WIFI="SENHA_WIFI"
 declare aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11')
 declare aDisplaymanager=('lxdm' 'lxappearance' 'lxinput' 'lxrandr' 'lxtask')
 declare aMedia=('pulseaudio' 'pavucontrol' 'vlc' 'ffmpeg' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
@@ -111,6 +113,7 @@ sh_ambiente() {
 	: "${LGRUB=}"
 	: "${LTECLADO=}"
 	: "${LWM=}"
+	: "${LWIFI=}"
 	: "${LEXTRA=}"
 	: "${LTIMEZONE=}"
 
@@ -165,10 +168,12 @@ _USER_FULLNAME="$_USER_FULLNAME"
 _PASSWD_USER=$_PASSWD_USER
 _PASSWD_ROOT=$_PASSWD_ROOT
 _HOSTNAME=$_HOSTNAME
-_WINDOWMANAGER=$_WINDOWMANAGER
+_WINDOWMANAGER=(${_WINDOWMANAGER[*]})
 _TIMEZONE=$_TIMEZONE
 _KEYMAP=$_KEYMAP
 _CLOCK=$_CLOCK
+_REDE_WIFI=$_REDE_WIFI
+_SENHA_WIFI=$_SENHA_WIFI
 _PKGS="$_PKGS"
 #end
 EOF
@@ -335,7 +340,8 @@ sh_logprefix() {
    FAILURE="${red}"
    INFO="${cyan}"
    BRACKET="${blue}"
-   BMPREFIX="     "
+#  BMPREFIX="     "
+   BMPREFIX=""
    DOTPREFIX="  ${blue}::${reset} "
 
    SUCCESS_PREFIX="${SUCCESS}  ↑  ${NORMAL}"
@@ -361,6 +367,7 @@ DOT() {
 }
 
 msg() {
+	((incremento++))
 	logmessage=$(sed 's/\\\033[^a-zA-Z]*.//g' <<< "$last_msg")
 	printf "%s\n" "$(timespec) [ INFO ]${2}" >> "$BOOTLOG"
 
@@ -372,8 +379,13 @@ msg() {
       --infobox   "\n$2"      \
       8 60
    else
-      log_info_msg "$2"
+      log_info_msg "$(fmt) $2"
    fi
+}
+
+fmt() {
+	printf "${bold}${yellow}%03d/%03d${reset}" "$incremento" "$incremento"
+	return $?
 }
 
 log_info_msg() {
@@ -669,15 +681,15 @@ sh_update_wpa_suplicant() {
 	msg "INFO" "$(log_info_msg "Ajustando wpa_supplicant.conf em $_PART_ROOT:$dir_install")" "$LINENO"
    [[ ! -e $dir_install/etc/wpa_supplicant/wpa_supplicant.conf ]] && >| $dir_install/etc/wpa_supplicant/wpa_supplicant.conf
 	if [[ -f $dir_install/etc/wpa_supplicant/wpa_supplicant.conf ]]; then
-		cat > "$dir_install/etc/wpa_supplicant/wpa_supplicant.conf" <<- EOF
+		cat > "$dir_install/etc/wpa_supplicant/wpa_supplicant.conf" << EOF
 ctrl_interface=/run/wpa_supplicant
 ctrl_interface_group=wheel
 update_config=1
 fast_reauth=1
 
 network={
-   ssid="REDE_WIFI"
-   psk="SENHA_WIFI"
+   ssid="$_REDE_WIFI"
+   psk="$_SENHA_WIFI"
    mesh_fwding=1
 }
 EOF
@@ -1301,6 +1313,40 @@ sh_confadduser() {
 	done
 }
 
+sh_confwifi() {
+	while true
+	do
+		exec 3>&1
+		wifitext=$(${DIALOG}						\
+			--title		"** REDE WIFI **"		\
+			--colors					      	   \
+			--backtitle	"$ccabec"				\
+			--insecure	"$@"						\
+			--mixedform	"$LABEL"					\
+			0 0 0										\
+			"Rede Wifi : "	1 1 "$_REDE_WIFI"		1 15 40 0 0 \
+			"Senha Wifi: " 2 1 "$_SENHA_WIFI"	2 15 40 0 1 \
+			2>&1 1>&3)
+
+			exit_status=$?
+			case $exit_status in
+				"$D_ESC"|"$D_CANCEL")
+					return
+					;;
+				"$D_OK")
+					mapfile -t <<< "$wifitext" aWifi
+					_REDE_WIFI="${aWifi[0]}"
+					_SENHA_WIFI="${aWifi[1]}"
+					log_wait_msg 'Configurações efetuadas. Prosseguindo com instalação.'
+					LWIFI=$true
+					#evaluate_retval "$?"
+					;;
+			esac
+		exec 3>&-
+		return 0
+	done
+}
+
 sh_dryrun() {
 	sh_umountfs
 	sh_mountfs
@@ -1382,29 +1428,52 @@ sh_bootefi() {
 	[[ $lEFI -eq $true ]] && return 0 || return 1
 }
 
-sh_windowmanager() {
-	local con
-	wm=$(${DIALOG} --title "** GERENCIADOR DE JANELAS (wm) **"			\
-		--default-item "$_WINDOWMANAGER"											\
-		--colors 																		\
-		--checklist "$LABEL"															\
-		0 70 0																			\
-		tty     			"Somente terminal, sem interface gráfica"	on		\
-		awesome			"Awesome"											off	\
-		dwm				"Dwm"													off	\
-		fluxbox			"Fluxbox"											off	\
-		i3wm				"i3wm"												off	\
-		gnome				"Gnome"												off	\
-		mate				"Mate"												off	\
-		openbox			"Openbox" 											off	\
-		plasma			"Kde Plasma-Desktop"								off	\
-		sway				"Sway"												off	\
-		twm				"Twm"													off	\
-		xfce4				"Xfce4"												off	\
+sh_choosewm() {
+	declare -A aFlag
+	declare -A aWm
+	local x
+
+	aWm[tty]="Somente terminal, sem interface gráfica"
+	aWm[awesome]="Awesome"
+	aWm[dwm]="Dwm"
+	aWm[fluxbox]="Fluxbox"
+	aWm[i3wm]="i3wm"
+	aWm[gnome]="Gnome"
+	aWm[mate]="Mate"
+	aWm[openbox]="Openbox"
+	aWm[plasma]="Kde Plasma-Desktop"
+	aWm[sway]="Sway"
+	aWm[twm]="Twm"
+	aWm[xfce4]="Xfce4"
+
+	for x in "${!aWm[@]}"; do
+		aFlag[$x]='off'
+	done
+
+	for x in "${_WINDOWMANAGER[@]}"; do
+		aFlag[$x]='on'
+	done
+
+	wm=$(${DIALOG} --title "** GERENCIADOR DE JANELAS (wm) **"		\
+		--default-item "$_WINDOWMANAGER"										\
+		--colors 																	\
+		--checklist "$LABEL"														\
+		0 70 0																		\
+		tty     			"${aWm[tty]}"				"${aFlag[tty]}"		\
+		awesome			"${aWm[awesome]}"			"${aFlag[awesome]}"	\
+		dwm				"${aWm[dwm]}"				"${aFlag[dwm]}"   	\
+		fluxbox			"${aWm[fluxbox]}"			"${aFlag[fluxbox]}"	\
+		i3wm				"${aWm[i3wm]}"				"${aFlag[i3wm]}"   	\
+		gnome				"${aWm[gnome]}"			"${aFlag[gnome]}"  	\
+		mate				"${aWm[mate]}"				"${aFlag[mate]}"   	\
+		openbox			"${aWm[openbox]}" 		"${aFlag[openbox]}"	\
+		plasma			"${aWm[plasma]}"			"${aFlag[plasma]}"	\
+		sway				"${aWm[sway]}"				"${aFlag[sway]}"		\
+		twm				"${aWm[twm]}"				"${aFlag[twm]}"		\
+		xfce4				"${aWm[xfce4]}"			"${aFlag[xfce4]}"		\
 		2>&1 >/dev/tty )
 
 	exit_status=$?
-
 	case $exit_status in
 		"$D_ESC"|"$D_CANCEL")
 			return
@@ -1534,6 +1603,10 @@ sh_checkinstall() {
 		alerta "WINDOW MANAGER" "O Gerenciador de Janelas não foi configurado, faça isso antes de iniciar a instalação."
 		DEFITEM="Wm"
 		return 1
+	elif [ -z "$LWIFI" ]; then
+		alerta "REDE WIFI" "Rede wifi não foi configurada, faça isso antes de iniciar a instalação."
+		DEFITEM="Wifi"
+		return 1
 	elif [ -z "$LEXTRA" ]; then
 		alerta "EXTRA" "Extra não foi configurado, faça isso antes de iniciar a instalação."
 		DEFITEM="Extra"
@@ -1551,7 +1624,6 @@ sh_install() {
 	local abase=('base-system' 'dbus' 'lvm2' 'wireless_tools' 'nano' 'grub' 'grub-x86_64-efi'
 					 'efivar' 'efibootmgr' 'os-prober' 'intel-ucode' 'linux-firmware-amd' 'parted' 'ncurses')
 
-	reset
 	sh_checkinstall || return 1
 	sh_umountfs
 
@@ -1659,6 +1731,7 @@ sh_menu() {
 			"Teclado" 		"Definir teclado do sistema"		\
 			"Timezone" 		"Definir fuso horário"				\
 			"Wm" 				"Definir gerenciador de janela"	\
+			"Wifi" 			"Definir rede e senha wifi"		\
 			"Extra" 			"Definir usuário,senha,hostname"	\
 			"Instalar" 		"Iniciar instalação" 				\
 			"Sair" 			"Encerrar instalação" 2>&1 >/dev/tty )
@@ -1675,7 +1748,8 @@ sh_menu() {
 			"BootLoader")	sh_choosegrub       && [ -n "$LGRUB" ]			&& DEFITEM="Teclado";;
         	"Teclado") 		sh_choosekeymap     && [ -n "$LTECLADO" ]    && DEFITEM="Timezone";;
         	"Timezone") 	sh_choosetimezone   && [ -n "$LTIMEZONE" ]   && DEFITEM="Wm";;
-        	"Wm") 			sh_windowmanager    && [ -n "$LWM" ]    	   && DEFITEM="Extra";;
+        	"Wm") 			sh_choosewm         && [ -n "$LWM" ]    	   && DEFITEM="Wifi";;
+        	"Wifi") 			sh_confwifi         && [ -n "$LWIFI" ]   	   && DEFITEM="Extra";;
         	"Extra") 		sh_confadduser "$@" && [ -n "$LEXTRA" ]    	&& DEFITEM="Instalar";;
    		"Instalar") 	sh_install;;
         	"Sair")			die "Instalação foi abortada...";;
