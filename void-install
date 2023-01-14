@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/01/12
+#  Altered: 2023/01/13
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -35,7 +35,7 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.63.232-20230112'
+readonly _VERSION_='0.65.294-20230113'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat dialog sfdisk lsblk parted efivar curl xz)
 declare -A AsUser
@@ -75,7 +75,7 @@ sh_ambiente() {
 	readonly app_conf='/tmp/void-install.conf'
 	readonly url_google='https://google.com/'
 	readonly url_mirror='http://void.chililinux.com/voidlinux'
-	readonly cmsgadduser='Criando usuario'
+	readonly cmsgadduser='Criando usuário'
 	readonly cmsgchgpasswd='Ajustando senha'
 	readonly cmsg_part_disk='Visualizar partições do disco'
 	readonly cmsgpart='Particionamento automatico'
@@ -223,7 +223,7 @@ sh_checkroot() {
 sh_checknet() {
    xurl="$1"
    # have internet?
-	msg "INFO" "$(log_info_msg "Testando internet em ${xurl}")" "$LINENO"
+	msg "INFO" "$(log_info_msg "Checando rota de internet no servidor ${xurl}")" "$LINENO"
 	response=$(curl --compressed -s -w "%{http_code}\n" -o /dev/null -k --url "${xurl}")
 	if [ "$response" -eq 000 ] && [ "$response" -eq 404 ]
 	then
@@ -337,17 +337,17 @@ sh_logprefix() {
    BRACKET="${blue}"
    BMPREFIX="     "
    DOTPREFIX="  ${blue}::${reset} "
-   SUCCESS_PREFIX="${SUCCESS}  *  ${NORMAL}"
-   FAILURE_PREFIX="${FAILURE}*****${NORMAL}"
-   WARNING_PREFIX="${WARNING}  W  ${NORMAL}"
-   SKIP_PREFIX="${INFO}  S  ${NORMAL}"
+
+   SUCCESS_PREFIX="${SUCCESS}  ↑  ${NORMAL}"
    SUCCESS_SUFFIX="${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}"
+   FAILURE_PREFIX="${FAILURE}  ↓  ${NORMAL}"
    FAILURE_SUFFIX="${BRACKET}[${FAILURE} FAIL ${BRACKET}]${NORMAL}"
+   WARNING_PREFIX="${WARNING}  W  ${NORMAL}"
    WARNING_SUFFIX="${BRACKET}[${WARNING} WARN ${BRACKET}]${NORMAL}"
+   SKIP_PREFIX="${INFO}  S  ${NORMAL}"
    SKIP_SUFFIX="${BRACKET}[${INFO} SKIP ${BRACKET}]${NORMAL}"
    WAIT_PREFIX="${WARNING}  R  ${NORMAL}"
    WAIT_SUFFIX="${BRACKET}[${WARNING} WAIT ${BRACKET}]${NORMAL}"
-   FAILURE_PREFIX="${FAILURE}  X  ${NORMAL}"
 }
 
 replicate() {
@@ -641,7 +641,7 @@ sh_set_keymap() {
 }
 
 sh_set_Xkeymap() {
-	msg "INFO" "$(log_info_msg "Ajustando teclado ${_KEYMAP} (modo gráfico) em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "Ajustando teclado ${_KEYMAP} (X11) em $_PART_ROOT:$dir_install")" "$LINENO"
 	[[ ! -d "$dir_install/etc/X11/xorg.conf.d" ]] && mkdir -p "$dir_install/etc/X11/xorg.conf.d"
 	[[ ! -e "$dir_install/etc/X11/xorg.conf.d/10-keyboard.conf" ]] && cat > "$dir_install/etc/X11/xorg.conf.d/10-keyboard.conf" <<- EOF
 Section "InputClass"
@@ -810,11 +810,11 @@ sh_mkuser() {
 		else
 			sh_chroot_job "$cmsgadduser: ${AsUser[cuser]} - ${AsUser[cfullname]}" "useradd -m ${AsUser[cuser]} -G ${AsUser[cgroups]} -p ${AsUser[cpass]}"
 		fi
-		sh_chroot_job "Ajustando senha usuario : ${AsUser[cuser]}" "(echo ${AsUser[cuser]}:${AsUser[cpass]}) | chpasswd -m > /dev/null 2>&1"
+		sh_chroot_job "Ajustando senha usuário : ${AsUser[cuser]}" "(echo ${AsUser[cuser]}:${AsUser[cpass]}) | chpasswd -m > /dev/null 2>&1"
 	fi
 
 	if [[ -n "${AsUser[cpassroot]}" ]]; then
-		sh_chroot_job "Ajustando senha usuario : root" "(echo root:${AsUser[cpassroot]}) | chpasswd -m > /dev/null 2>&1"
+		sh_chroot_job "Ajustando senha usuário : root" "(echo root:${AsUser[cpassroot]}) | chpasswd -m > /dev/null 2>&1"
 	fi
 
 	if [ -d $dir_install/etc/sudoers.d ]; then
@@ -827,7 +827,7 @@ sh_mkuser() {
 }
 
 sh_mkfstab() {
-	msg "INFO" "$(log_info_msg "Criando fstab em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "Gerando fstab em $_PART_ROOT:$dir_install")" "$LINENO"
 cat > "$dir_install/etc/fstab" <<- EOF
 #UUID=$(blkid -o value -s UUID "${_PART_BIOS}") /boot		ext2 defaults 0 2
 UUID=$(blkid -o value -s UUID "${_PART_BOOT}") /boot/efi	vfat defaults,noatime 0 2
@@ -866,12 +866,12 @@ sh_mkdir() {
 }
 
 sh_mountfs() {
-	msg "INFO" "$(log_info_msg "Montando sistema de arquivos ROOT em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "Montando partição $_PART_ROOT (ROOT) em $dir_install")" "$LINENO"
 	mkdir -p "$dir_install"
 	mount "${_PART_ROOT}" "$dir_install"
 	evaluate_retval "$?"
 
-	msg "INFO" "$(log_info_msg "Montando sistema de arquivos EFI em $_PART_ROOT:$dir_install/boot/efi")" "$LINENO"
+	msg "INFO" "$(log_info_msg "Montando partição $_PART_ROOT (EFI) em $dir_install/boot/efi")" "$LINENO"
 	mkdir -p "$dir_install/boot/efi"
 	mount "${_PART_BOOT}" "$dir_install/boot/efi"
 	evaluate_retval "$?"
@@ -960,6 +960,11 @@ sh_twmminimal() {
 sh_awesomeminimal() {
 	local apkgs=('awesome')
 	sh_chroot_job "Instalando Awesome em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+}
+
+sh_dwmminimal() {
+	local apkgs=('dwm')
+	sh_chroot_job "Instalando Dwm em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_backup_partitions() {
@@ -1233,7 +1238,7 @@ sh_confadduser() {
 			"FileSystem: "                           8 1 "${mkfs}"                        8 28 20 0 2 \
 			"Teclado: "                              9 1 "${_KEYMAP}"                     9 28 20 0 2 \
 			"Timezone: "                            10 1 "${_TIMEZONE}"                  10 28 20 0 2 \
-			"Window Manager: "                      11 1 "${_WINDOWMANAGER}"             11 28 20 0 2 \
+			"Window Manager: "                      11 1 "${_WINDOWMANAGER[*]}"          11 28 30 0 2 \
 			2>&1 1>&3)
 
 			exit_status=$?
@@ -1251,24 +1256,24 @@ sh_confadduser() {
 					_HOSTNAME="${aUser[4]}"
 
 					if [[ "${AsUser[cuser]}" == "root" ]]; then
-						if ! conf "*** USER ***" "\nUsuario não pode ser root! Novamente?"; then
-							die "*** USER *** " "Cadastro de usuario cancelado"
+						if ! conf "*** USER ***" "\nUsuário não pode ser root! Novamente?"; then
+							die "*** USER *** " "Cadastro de usuário cancelado"
 							return 1
 						fi
 						sh_confadduser
 					fi
 
 					if [[ -z "${AsUser[cuser]}" ]]; then
-						if ! conf "*** USER ***" "\nUsuario não pode ser vazio! Novamente?"; then
-							die "*** USER *** " "Cadastro de usuario cancelado"
+						if ! conf "*** USER ***" "\nUsuário não pode ser vazio! Novamente?"; then
+							die "*** USER *** " "Cadastro de usuário cancelado"
 							return 1
 						fi
 						sh_confadduser
 					fi
 
 					if [[ -z "${AsUser[cpass]}" ]]; then
-						if ! conf "*** USER ***" "\nSenha do usuario não pode ser vazia! Novamente?"; then
-							die "*** USER *** " "Cadastro de usuario cancelado"
+						if ! conf "*** USER ***" "\nSenha do usuário não pode ser vazia! Novamente?"; then
+							die "*** USER *** " "Cadastro de usuário cancelado"
 							return 1
 						fi
 						sh_confadduser
@@ -1276,7 +1281,7 @@ sh_confadduser() {
 
 					if [[ -z "${AsUser[cpassroot]}" ]]; then
 						if ! conf "*** ROOT ***" "\nSenha de root não pode ser vazia! Novamente?"; then
-							die "*** ROOT *** " "Cadastro de usuario cancelado"
+							die "*** ROOT *** " "Cadastro de usuário cancelado"
 							return 1
 						fi
 						sh_confadduser
@@ -1382,10 +1387,11 @@ sh_windowmanager() {
 	wm=$(${DIALOG} --title "** GERENCIADOR DE JANELAS (wm) **"			\
 		--default-item "$_WINDOWMANAGER"											\
 		--colors 																		\
-		--radiolist "$LABEL"															\
+		--checklist "$LABEL"															\
 		0 70 0																			\
 		tty     			"Somente terminal, sem interface gráfica"	on		\
 		awesome			"Awesome"											off	\
+		dwm				"Dwm"													off	\
 		fluxbox			"Fluxbox"											off	\
 		i3wm				"i3wm"												off	\
 		gnome				"Gnome"												off	\
@@ -1398,13 +1404,26 @@ sh_windowmanager() {
 		2>&1 >/dev/tty )
 
 	exit_status=$?
+
 	case $exit_status in
 		"$D_ESC"|"$D_CANCEL")
 			return
 			;;
 	esac
-	_WINDOWMANAGER="$wm"
+	_WINDOWMANAGER=($(strtoarray "$wm"))
 	LWM=$true
+}
+
+strtoarray() {
+	local anew
+	IFS=' ' read -r -a anew <<< "$1"
+	echo ${anew[@]}
+}
+
+lenarraystr() {
+   local new=$1
+   read -ra ADDR <<< "$new"
+   echo "${#ADDR[@]}"
 }
 
 sh_choosekeymap() {
@@ -1486,7 +1505,7 @@ display_config() {
                             \nBootloader          : \Zb\Z1${_bootloader}${RESET}\
                             \nTeclado             : \Zb\Z1${_KEYMAP}${RESET}\
                             \nTimezone            : \Zb\Z1${_timezone}${RESET}\
-                            \nGerenciador Janelas : \Zb\Z1${_WINDOWMANAGER}${RESET}\
+                            \nGerenciador Janelas : \Zb\Z1${_WINDOWMANAGER[*]}${RESET}\
                             \n"
 }
 
@@ -1534,26 +1553,21 @@ sh_install() {
 
 	sh_checkinstall || return 1
 	sh_umountfs
-	#sh_choosedisk
-	#sh_choosefilesystem
-	#sh_choosegrub
-	#sh_choosekeymap
-	#sh_windowmanager
-	#sh_confadduser "$@"
 
 	if ! sh_mkparted; then die "Erro"; fi
 	if ! sh_mkfs 	 ; then die "Erro"; fi
+
 	sh_checknet "$url_mirror" || return 1
 	sh_checktarball
 	sh_mountfs
 	sh_mkdir
 
-	msg "INFO" "$(log_info_msg "Instalando rootfs em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "Descompactando rootfs em $_PART_ROOT:$dir_install")" "$LINENO"
 	if tar xpf "$_TARBALL_ROOTFS" --xattrs-include='*.*' --numeric-owner -C $dir_install >>"$BOOTLOG" 2>&1; then
 		evaluate_retval "$?"
 		sh_initbind
 
-		msg "INFO" "$(log_info_msg "Ajustando /etc/resolv.conf em $_PART_ROOT:$dir_install")" "$LINENO"
+		msg "INFO" "$(log_info_msg "Copiando /etc/resolv.conf para $_PART_ROOT:$dir_install")" "$LINENO"
 		cp /etc/resolv.conf "$dir_install/etc/" >>"$BOOTLOG" 2>&1
 		evaluate_retval "$?"
 
@@ -1563,15 +1577,6 @@ sh_install() {
 		sh_chroot_job "Instalando pacotes base em $_PART_ROOT:$dir_install" "xbps-install -y ${abase[*]}"
 		sh_chroot_job "Instalando pacotes adicionais em $_PART_ROOT:$dir_install" "xbps-install -y $_PKGS"
 
-		case "$mbr" in
-			"BIOS") 	sh_chroot_job "Instalando GRUB i386-pc em $_PART_BIOS" "grub-install --target=i386-pc $_DEVICE --recheck"
-						;;
-		    "EFI")	sh_chroot_job "Instalando GRUB i386-pc em $_PART_BIOS" "grub-install --target=i386-pc $_DEVICE --recheck"
-						sh_chroot_job "Instalando GRUB EFI em $_PART_BOOT" "grub-install --target=x86_64-efi --efi-directory=/boot/efi --boot-directory=/boot --bootloader-id=$cnickefi --recheck"
-						sh_mkefiroaming
-						;;
-		esac
-		sh_chroot_job "Gerando grub.cfg em $_PART_ROOT:$dir_install" "grub-mkconfig -o /boot/grub/grub.cfg"
 		sh_update_hostname
 		sh_update_rc
 		sh_update_timezone
@@ -1583,19 +1588,39 @@ sh_install() {
 		sh_update_bashrc
 		sh_update_wpa_suplicant
 
-		case "$wm" in
-			"awesome") 	sh_set_Xkeymap; sh_X11minimal; sh_awesomeminimal;;
-			"fluxbox") 	sh_X11minimal; sh_fluxboxminimal; sh_set_Xkeymap;;
-			"openbox")	sh_X11minimal; sh_openboxminimal; sh_set_Xkeymap;;
-			"gnome")		sh_X11minimal; sh_gnomeminimal; sh_set_Xkeymap;;
-			"plasma")	sh_X11minimal; sh_plasmaminimal; sh_set_Xkeymap;;
-			"xfce4")		sh_X11minimal; sh_xfce4minimal; sh_set_Xkeymap;;
-			"i3wm")		sh_X11minimal; sh_i3minimal; sh_set_Xkeymap;;
-			"sway")		sh_X11minimal; sh_swayminimal; sh_set_Xkeymap;;
-			"twm")		sh_X11minimal; sh_twmminimal; sh_set_Xkeymap;;
-			"mate")		sh_X11minimal; sh_mateminimal; sh_set_Xkeymap;;
+		case "$mbr" in
+			"BIOS") 	sh_chroot_job "Instalando GRUB i386-pc em $_DEVICE" "grub-install --target=i386-pc $_DEVICE --recheck"
+						;;
+		    "EFI")	sh_chroot_job "Instalando GRUB i386-pc em $_DEVICE" "grub-install --target=i386-pc $_DEVICE --recheck"
+						sh_chroot_job "Instalando GRUB EFI em $_PART_BOOT" "grub-install --target=x86_64-efi --efi-directory=/boot/efi --boot-directory=/boot --bootloader-id=$cnickefi --recheck"
+						sh_mkefiroaming
+						;;
 		esac
+		sh_chroot_job "Gerando grub.cfg em $_PART_ROOT:$dir_install" "grub-mkconfig -o /boot/grub/grub.cfg"
 
+		if [[ "${#_WINDOWMANAGER[@]}" -eq 1 ]]; then
+			if [[ "${_WINDOWMANAGER[@]}" = 'tty' ]]; then
+				:
+			fi
+		else
+			sh_set_Xkeymap; sh_X11minimal
+			for x in "${_WINDOWMANAGER[@]}"
+			do
+				case "$x" in
+				"awesome") 	sh_awesomeminimal;;
+				"dwm") 		sh_dwmminimal;;
+				"fluxbox") 	sh_fluxboxminimal;;
+				"openbox")	sh_openboxminimal;;
+				"gnome")		sh_gnomeminimal;;
+				"plasma")	sh_plasmaminimal;;
+				"xfce4")		sh_xfce4minimal;;
+				"i3wm")		sh_i3minimal;;
+				"sway")		sh_swayminimal;;
+				"twm")		sh_twmminimal;;
+				"mate")		sh_mateminimal;;
+				esac
+			done
+		fi
 		sh_mkservice
 #		sh_chroot_job "Certificando que todos pacotes estejam configurados corretamente em $_PART_ROOT:$dir_install" "xbps-reconfigure -fa"
 #		sh_chroot_job "Removendo pacote bootstrap em $_PART_ROOT:$dir_install" "xbps-remove -y base-voidstrap" "$err_not_fatal"
@@ -1620,6 +1645,7 @@ sh_menu() {
 		fi
 
 		menu=$(${DIALOG}	--backtitle "$ccabec"				\
+			--clear														\
 			--colors														\
 			--default-item "$DEFITEM"								\
 			--cancel-label "Sair"									\
@@ -1632,7 +1658,7 @@ sh_menu() {
 			"Teclado" 		"Definir teclado do sistema"		\
 			"Timezone" 		"Definir fuso horário"				\
 			"Wm" 				"Definir gerenciador de janela"	\
-			"Extra" 			"Definir usuario,senha,hostname"	\
+			"Extra" 			"Definir usuário,senha,hostname"	\
 			"Instalar" 		"Iniciar instalação" 				\
 			"Sair" 			"Encerrar instalação" 2>&1 >/dev/tty )
 

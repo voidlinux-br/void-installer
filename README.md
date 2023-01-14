@@ -6,12 +6,12 @@
 	- git clone https://github.com/voidlinux-br/void-installer
 
 - 2 - usando wget
-	- wget https://github.com/voidlinux-br/void-installer/raw/main/void-install
-	- wget https://github.com/voidlinux-br/void-installer/raw/main/Makefile
-	- wget https://github.com/voidlinux-br/void-installer/raw/main/MAINTAINERS
-	- wget https://github.com/voidlinux-br/void-installer/raw/main/LICENSE
-	- wget https://github.com/voidlinux-br/void-installer/raw/main/INSTALL
-	- wget https://github.com/voidlinux-br/void-installer/raw/main/ChangeLog
+	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/void-install
+	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/Makefile
+	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/MAINTAINERS
+	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/LICENSE
+	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/INSTALL
+	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/ChangeLog
 
 - 3 - usando bash e curl
 	- sh <(curl -L https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)

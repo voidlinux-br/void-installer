@@ -1,4 +1,4 @@
-dom 08 jan 2023 23:16:15 -04
+sex 13 jan 2023 13:01:12 -04
 Vilmar Catafesta <vcatafesta@gmail.com>
 + README file
 + LICENSE file
@@ -7,3 +7,5 @@ Vilmar Catafesta <vcatafesta@gmail.com>
 + Makefile file
 + README.md file
 + ChangeLog file
++ install.sh
++ .gitignore

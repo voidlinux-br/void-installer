@@ -1,11 +1,14 @@
-To compile and install this software
-just follow these simple steps:
+Para compilar e instalar este software
+Apenas siga estes simples passos:
 
-Remembering that it accepts installation directory variables:
+Lembrando que aceita variáveis ​​de diretório de instalação:
 https://www.gnu.org/prep/standards/html_node/Directory-Variables.html
 
-To install
-#make install DESTDIR = local-install
+Para instalar usando make:
+#make install
 
-To remove
-#make uninstall DESTDIR = local-install
+Para desinstalar usando make:
+#make uninstall
+
+Para instalar usando bash:
+#sh install.sh
