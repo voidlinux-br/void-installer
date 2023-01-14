@@ -1551,6 +1551,7 @@ sh_install() {
 	local abase=('base-system' 'dbus' 'lvm2' 'wireless_tools' 'nano' 'grub' 'grub-x86_64-efi'
 					 'efivar' 'efibootmgr' 'os-prober' 'intel-ucode' 'linux-firmware-amd' 'parted' 'ncurses')
 
+	reset
 	sh_checkinstall || return 1
 	sh_umountfs
 
