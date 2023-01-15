@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/01/14
+#  Altered: 2023/01/15
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -35,7 +35,7 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.68.320-20230114'
+readonly _VERSION_='0.69.355-20230115'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz)
 declare -A AsUser
@@ -56,9 +56,10 @@ declare _WINDOWMANAGER=('tty')
 declare _TIMEZONE='America/Sao_Paulo'
 declare _KEYMAP='br-abnt2'
 declare _CLOCK='UTC'
-declare _PKGS='vim neofetch pfetch openssh zstd wget curl dialog bash-completion git unzip zip'
 declare _REDE_WIFI="REDE_WIFI"
 declare _SENHA_WIFI="SENHA_WIFI"
+declare _MIRROR="PimentaBueno"
+declare _PKGS='vim neofetch pfetch openssh zstd wget curl dialog bash-completion git unzip zip'
 declare aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11')
 declare aDisplaymanager=('lxdm' 'lxappearance' 'lxinput' 'lxrandr' 'lxtask')
 declare aMedia=('pulseaudio' 'pavucontrol' 'vlc' 'ffmpeg' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
@@ -76,7 +77,8 @@ sh_ambiente() {
 	readonly dir_install='/mnt/voidlinux'
 	readonly app_conf='/tmp/void-install.conf'
 	readonly url_google='https://google.com/'
-	readonly url_mirror='http://void.chililinux.com/voidlinux'
+	readonly url_tarball='http://void.chililinux.com/voidlinux'
+	declare url_mirror='http://void.chililinux.com/voidlinux'
 	readonly cmsgadduser='Criando usuário'
 	readonly cmsgchgpasswd='Ajustando senha'
 	readonly cmsg_part_disk='Visualizar partições do disco'
@@ -114,6 +116,7 @@ sh_ambiente() {
 	: "${LTECLADO=}"
 	: "${LWM=}"
 	: "${LWIFI=}"
+	: "${LMIRROR=}"
 	: "${LEXTRA=}"
 	: "${LTIMEZONE=}"
 
@@ -174,6 +177,7 @@ _KEYMAP=$_KEYMAP
 _CLOCK=$_CLOCK
 _REDE_WIFI=$_REDE_WIFI
 _SENHA_WIFI=$_SENHA_WIFI
+_MIRROR=$_MIRROR
 _PKGS="$_PKGS"
 #end
 EOF
@@ -228,7 +232,7 @@ sh_checkroot() {
 sh_checknet() {
    xurl="$1"
    # have internet?
-	msg "INFO" "$(log_info_msg "Checando rota de internet no servidor ${xurl}")" "$LINENO"
+	msg "INFO" "$(log_info_msg "Checando rota de internet para o servidor ${xurl}")" "$LINENO"
 	response=$(curl --compressed -s -w "%{http_code}\n" -o /dev/null -k --url "${xurl}")
 	if [ "$response" -eq 000 ] && [ "$response" -eq 404 ]
 	then
@@ -243,8 +247,8 @@ sh_checktarball() {
 	msg "INFO" "$(log_info_msg "Checando existência do tarball rootfs $_TARBALL_ROOTFS")" "$LINENO"
 	if ! test -r "$_TARBALL_ROOTFS"; then
 	   evaluate_retval "1" "$err_not_fatal"
-		msg "INFO" "$(log_info_msg "Iniciando download de $url_mirror/live/current/$_TARBALL_ROOTFS")" "$LINENO"
-		curl --insecure --silent --remote-name "$url_mirror/live/current/$_TARBALL_ROOTFS" >>"$BOOTLOG" 2>&1 ||
+		msg "INFO" "$(log_info_msg "Iniciando download de $url_tarball/live/current/$_TARBALL_ROOTFS")" "$LINENO"
+		curl --insecure --silent --remote-name "$url_tarball/live/current/$_TARBALL_ROOTFS" >>"$BOOTLOG" 2>&1 ||
       {
          evaluate_retval "$?"
          die "Sem rota para o servidor ($url_mirror) - Check sua conexão com a internet!"
@@ -688,7 +692,7 @@ update_config=1
 fast_reauth=1
 
 network={
-   ssid="$_REDE_WIFI"
+   ssid=P"$_REDE_WIFI"
    psk="$_SENHA_WIFI"
    mesh_fwding=1
 }
@@ -1134,6 +1138,46 @@ sh_choosetimezone() {
 	esac
 	_TIMEZONE="America/$timezone"
 	LTIMEZONE=$true
+}
+
+sh_choosemirror() {
+	declare -A AMirror
+	declare -A AFlag
+	local x
+
+	AMirror['OuroPreto']='https://voidlinux.com.br/repo'
+	AMirror['PimentaBueno']='http://void.chililinux.com/voidlinux'
+	AMirror['PimentaBueno2']='http://void.chilios.com.br/voidlinux'
+	AMirror['Chicago']='https://mirrors.servercentral.com/voidlinux'
+	AMirror['KansasCity']='https://repo-us.voidlinux.org'
+
+	for x in "${!AMirror[@]}"; do
+		AFlag[$x]='off'
+	done
+	AFlag[$_MIRROR]='on'
+
+	mirror=$(${DIALOG} --title "** MIRROR **"			\
+		--default-item "${_MIRROR}"						\
+		--colors 												\
+		--colors													\
+		--radiolist "$LABEL"									\
+		0 0 0														\
+		'OuroPreto'			'BR:Ouro Preto/MG    - https://voidlinux.com.br/repo/'					"${AFlag['OuroPreto']}"		\
+		'PimentaBueno'		'BR:Pimenta Bueno/RO - http://void.chililinux.com/voidlinux/'			"${AFlag['PimentaBueno']}"	\
+		'PimentaBueno2'	'BR:Pimenta Bueno/RO - http://void.chilios.com.br/voidlinux/'			"${AFlag['PimentaBueno2']}"\
+		'Chicago'			'USA:Chicago/IL      - https://mirrors.servercentral.com/voidlinux/'	"${AFlag['Chicago']}"		\
+		'KansasCity'		'USA:Kansas City/KS  - https://repo-us.voidlinux.org'						"${AFlag['KansasCity']}"	\
+		2>&1 >/dev/tty )
+
+	exit_status=$?
+	case $exit_status in
+		"$D_ESC"|"$D_CANCEL")
+			return
+			;;
+	esac
+	_MIRROR="$mirror"
+	url_mirror="${AMirror[$mirror]}"
+	LMIRROR=$true
 }
 
 sh_choosedisk() {
@@ -1639,8 +1683,9 @@ sh_install() {
 	if ! sh_mkparted; then die "Erro"; fi
 	if ! sh_mkfs 	 ; then die "Erro"; fi
 
-	sh_checknet "$url_mirror" || return 1
+	sh_checknet "$url_tarball" || return 1
 	sh_checktarball
+	sh_checknet "$url_mirror" || return 1
 	sh_mountfs
 	sh_mkdir
 
@@ -1742,6 +1787,7 @@ sh_menu() {
 			"Wm" 				"Definir gerenciador de janela"	\
 			"Wifi" 			"Definir rede e senha wifi"		\
 			"Extra" 			"Definir usuário,senha,hostname"	\
+			"Mirror"			"Escolher espelho"					\
 			"Instalar" 		"Iniciar instalação" 				\
 			"Sair" 			"Encerrar instalação" 2>&1 >/dev/tty )
 
@@ -1752,14 +1798,15 @@ sh_menu() {
 		fi
 
 		case "$menu" in
-			"Disco")			sh_choosedisk       && [ -n "$LDISCO" ]  		&& DEFITEM="FileSystem";;
-			"FileSystem")	sh_choosefilesystem && [ -n "$LFS" ] 			&& DEFITEM="BootLoader";;
-			"BootLoader")	sh_choosegrub       && [ -n "$LGRUB" ]			&& DEFITEM="Teclado";;
-        	"Teclado") 		sh_choosekeymap     && [ -n "$LTECLADO" ]    && DEFITEM="Timezone";;
-        	"Timezone") 	sh_choosetimezone   && [ -n "$LTIMEZONE" ]   && DEFITEM="Wm";;
-        	"Wm") 			sh_choosewm         && [ -n "$LWM" ]    	   && DEFITEM="Wifi";;
-        	"Wifi") 			sh_confwifi         && [ -n "$LWIFI" ]   	   && DEFITEM="Extra";;
-        	"Extra") 		sh_confadduser "$@" && [ -n "$LEXTRA" ]    	&& DEFITEM="Instalar";;
+			"Disco")			sh_choosedisk        && [ -n "$LDISCO" ]		&& DEFITEM="FileSystem";;
+			"FileSystem")	sh_choosefilesystem  && [ -n "$LFS" ]			&& DEFITEM="BootLoader";;
+			"BootLoader")	sh_choosegrub        && [ -n "$LGRUB" ]		&& DEFITEM="Teclado";;
+        	"Teclado") 		sh_choosekeymap      && [ -n "$LTECLADO" ]	&& DEFITEM="Timezone";;
+        	"Timezone") 	sh_choosetimezone    && [ -n "$LTIMEZONE" ]	&& DEFITEM="Wm";;
+        	"Wm") 			sh_choosewm          && [ -n "$LWM" ]			&& DEFITEM="Wifi";;
+        	"Wifi") 			sh_confwifi          && [ -n "$LWIFI" ]		&& DEFITEM="Extra";;
+        	"Extra") 		sh_confadduser "$@"  && [ -n "$LEXTRA" ]		&& DEFITEM="Mirror";;
+        	"Mirror") 		sh_choosemirror "$@" && [ -n "$LMIRROR" ]		&& DEFITEM="Instalar";;
    		"Instalar") 	sh_install;;
         	"Sair")			die "Instalação foi abortada...";;
 	      *) 				${DIALOG} --title "$ccabec" --yesno "\nSair do instalador sem instalar?" 8 70 && die
