@@ -35,9 +35,9 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.67.315-20230114'
+readonly _VERSION_='0.68.320-20230114'
 readonly	distro=$(uname -n)
-readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat dialog sfdisk lsblk parted efivar curl xz)
+readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz)
 declare -A AsUser
 declare -i quiet=0 grafico=0 incremento=0
 declare -i LAUTO=0 LINSTALL=0 LCHROOT=0 LBIND=0
@@ -162,7 +162,7 @@ _PART_BOOT=$_PART_BOOT
 _PART_ROOT=$_PART_ROOT
 _FILESYSTEM=$_FILESYSTEM
 _BOOTLOADER=$_BOOTLOADER
-_TARBALL_ROOTFS=void-x86_64-base-system-current.tar.xz
+_TARBALL_ROOTFS=void-x86_64-base-minimal-current.tar.xz
 _USER=$_USER
 _USER_FULLNAME="$_USER_FULLNAME"
 _PASSWD_USER=$_PASSWD_USER
@@ -715,6 +715,8 @@ sh_mkfs() {
 		mkfs.ext4 -F -L "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
    elif [[ "$mkfs" == "btrfs" ]]; then
 		mkfs.btrfs -f -L "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
+   elif [[ "$mkfs" == "f2fs" ]]; then
+		mkfs.f2fs -f -l "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
    elif [[ "$mkfs" == "xfs" ]]; then
 		mkfs.xfs -f -L "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
 	fi
@@ -722,7 +724,7 @@ sh_mkfs() {
 }
 
 sh_umountfs() {
-	msg "INFO" "$(log_info_msg "Desmontando sistema de arquivo em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "Desmontando sistema de arquivo em $dir_install")" "$LINENO"
 	umount -frl "$dir_install" >>"$BOOTLOG" 2>&1
 	LBIND=$false
 	evaluate_retval "$?" "$err_not_fatal"
@@ -839,11 +841,16 @@ sh_mkuser() {
 }
 
 sh_mkfstab() {
+	local fsorder=1
+	if [ "$mkfs" = "f2fs" -o "$mkfs" = "btrfs" -o "$mkfs" = "xfs" ]; then
+	fsorder=0
+	fi
+
 	msg "INFO" "$(log_info_msg "Gerando fstab em $_PART_ROOT:$dir_install")" "$LINENO"
 cat > "$dir_install/etc/fstab" <<- EOF
-#UUID=$(blkid -o value -s UUID "${_PART_BIOS}") /boot		ext2 defaults 0 2
-UUID=$(blkid -o value -s UUID "${_PART_BOOT}") /boot/efi	vfat defaults,noatime 0 2
-UUID=$(blkid -o value -s UUID "${_PART_ROOT}") / 			${mkfs,,} defaults 0 1
+#UUID=$(blkid -o value -s UUID "${_PART_BIOS}")	/boot			ext2			defaults 0 2
+UUID=$(blkid -o value -s UUID "${_PART_BOOT}")	/boot/efi	vfat			defaults,noatime 0 2
+UUID=$(blkid -o value -s UUID "${_PART_ROOT}")	/				${mkfs,,}	defaults 0 $fsorder
 EOF
 	evaluate_retval "$?"
 }
@@ -1078,6 +1085,8 @@ sh_choosefilesystem() {
 		ext4     "Linux Ext4 - Rápido e maduro (journal)"	"on"		\
 		btrfs    "Oracle Btrfs - Novos recursos - imaturo"	"off"		\
 		ext2     "Linux Ext2 (sem journal)"						"off"		\
+		ext3     "Linux Ext3 (journal)"							"off"		\
+		f2fs   	"Flash-Friendly Filesystem"					"off"		\
 		ext3     "Linux Ext3 (journal)"							"off"		\
 		xfs      "SGI's Xfs - Alto desempenho"					"off"		\
 		2>&1 >/dev/tty )
