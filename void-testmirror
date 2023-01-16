@@ -1,0 +1,669 @@
+#!/usr/bin/env bash
+
+# void-testmirror
+# Require: xbps-install -S curl bc geoip geoip-data geoipupdate iptutils
+
+#  Created: 2022/11/05
+#  Altered: 2022/12/24
+#
+#  Copyright (c) 2022-2022, Vilmar Catafesta <vcatafesta@gmail.com>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+#debug
+export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
+#set -x
+
+#system
+_VERSION_='1.22.20221224'
+DEPENDENCIES=(curl ping printf bc geoiplookup sed awk tput)
+declare -i quiet=0 typetest=0 auto=0 nping=0 ncurl=0 update=0
+declare -a aHits=()
+declare -A mirrors=()
+
+#paths/files/urls
+APP_LOCAL="${0##*/}"
+APP_REMOTE="void-testmirror"
+URL_GOOGLE='https://google.com'
+URL_GITHUB="https://raw.githubusercontent.com/vcatafesta/chili/master/${APP_REMOTE}"
+
+#conf adicionais
+IFS=$' \t\n'
+#SAVEIFS=$IFS
+#sep='\xe2\x94\x82'
+
+# flag boolean
+true=1
+false=0
+
+if [ -z "${COLUMNS}" ]; then
+	COLUMNS=$(stty size)
+	COLUMNS=${COLUMNS##* }
+fi
+if [ "${COLUMNS}" = "0" ]; then
+	COLUMNS=80
+fi
+
+COL=$((COLUMNS - 8))
+SET_COL="\\033[${COL}G" # at the $COL char
+CURS_ZERO="\\033[0G"
+
+mirrors_tier1(){
+	mirrors+=(["repo-fi.voidlinux.org"]='https://repo-fi.voidlinux.org/')
+	mirrors+=(["mirrors.servercentral.com"]='https://mirrors.servercentral.com/voidlinux/')
+	mirrors+=(["repo-us.voidlinux.org"]='https://repo-us.voidlinux.org/')
+	mirrors+=(["repo-de.voidlinux.org"]='https://repo-de.voidlinux.org/')
+}
+
+mirrors_asia(){
+	mirrors+=(['mirror.ps.kz']='https://mirror.ps.kz/voidlinux/')
+	mirrors+=(['mirrors.bfsu.edu.cn']='https://mirrors.bfsu.edu.cn/voidlinux/')
+	mirrors+=(['mirrors.cnnic.cn']='https://mirrors.cnnic.cn/voidlinux/')
+	mirrors+=(['mirrors.tuna.tsinghua.edu.cn']='https://mirrors.tuna.tsinghua.edu.cn/voidlinux/')
+	mirrors+=(['mirror.sjtu.edu.cn']='https://mirror.sjtu.edu.cn/voidlinux/')
+	mirrors+=(['mirror.nju.edu.cn']='https://mirror.nju.edu.cn/voidlinux/')
+	mirrors+=(['void.webconverger.org']='https://void.webconverger.org/')
+}
+
+mirrors_au(){
+	mirrors+=(['mirror.aarnet.edu.au']='https://mirror.aarnet.edu.au/pub/voidlinux/')
+	mirrors+=(['ftp.swin.edu.au']='https://ftp.swin.edu.au/voidlinux/')
+}
+
+mirrors_br(){
+	mirrors+=(['voidlinux.com.br']='https://voidlinux.com.br/repo/')
+	mirrors+=(['void.chililinux.com']='http://void.chililinux.com/voidlinux/')
+	mirrors+=(['void.chilios.com.br']='http://void.chilios.com.br/voidlinux/')
+}
+
+mirrors_eu(){
+	mirrors+=(['void.cijber.net']='https://void.cijber.net/')
+	mirrors+=(['ftp.dk.xemacs.org']='http://ftp.dk.xemacs.org/voidlinux/')
+	mirrors+=(['mirrors.dotsrc.org']='https://mirrors.dotsrc.org/voidlinux/')
+	mirrors+=(['quantum-mirror.hu']='https://quantum-mirror.hu/mirrors/pub/voidlinux/')
+	mirrors+=(['voidlinux.mirror.garr.it']='https://voidlinux.mirror.garr.it/')
+	mirrors+=(['ftp.debian.ru']='http://ftp.debian.ru/mirrors/voidlinux/')
+	mirrors+=(['mirror.yandex.ru']='https://mirror.yandex.ru/mirrors/voidlinux/')
+	mirrors+=(['mirror.accum.se']='https://mirror.accum.se/mirror/voidlinux/')
+	mirrors+=(['ftp.lysator.liu.se']='https://ftp.lysator.liu.se/pub/voidlinux/')
+	mirrors+=(['void.sakamoto.pl']='https://void.sakamoto.pl/')
+	mirrors+=(['mirror.puzzle.ch']='https://mirror.puzzle.ch/voidlinux/')
+}
+
+mirrors_usa(){
+	mirrors+=(['mirror.vofr.net']='https://mirror.vofr.net/voidlinux/')
+	mirrors+=(['mirror2.sandyriver.net']='https://mirror2.sandyriver.net/pub/voidlinux/')
+	mirrors+=(['mirror.puzzle.ch']='https://mirror.puzzle.ch/voidlinux/')
+}
+
+setvarcolors() {
+	reset=$(tput sgr0);			green=$(tput setaf 2);	red=$(tput setaf 124);
+	pink=$(tput setaf 129);		bold=$(tput bold);		blue=$(tput setaf 33);
+	yellow=$(tput setaf 136);	cyan=$(tput setaf 37);	orange=$(tput setaf 166);
+   white=$(tput setaf 15);    violet=$(tput setaf 61);
+#  purple=$(tput setaf 125);
+}
+
+unsetvarcolors() {
+	reset=''	green=''	red='' pink='' bold='' blue='' yellow='' cyan='' orange='' white='' violet=''
+	#purple=''
+	NORMAL='' SUCCESS='' WARNING='' FAILURE='' BRACKET='' CURS_ZERO='' SUCCESS_PREFIX=''
+   SET_COL='' SUCCESS_SUFFIX='' WAIT_PREFIX='' WAIT_SUFFIX='' WARNING_PREFIX='' WARNING_SUFFIX=''
+}
+
+sh_val() {
+	if [[ ${1} =~ ^([0-9]+)$ ]]; then
+		echo "N"
+	elif [[ ${1} =~ ^([[:alpha:]]+)$ ]]; then
+		echo "C"
+	else
+		echo "U"
+	fi
+}
+
+maxcol() {
+	if [ -z "${COLUMNS}" ]; then
+		COLUMNS=$(stty size)
+		COLUMNS=${COLUMNS##* }
+	fi
+	echo "$COLUMNS"
+}
+
+sh_checknet() {
+	xurl="$1"
+	# have internet?
+	log_info_msg "Testing internet on ${xurl}"
+	curl --insecure "$xurl" >/dev/null 2>&1 ||
+		{
+			evaluate_retval "$?"
+			log_msg "No route to the server ($xurl) - Check your internet!"
+			return 1
+		}
+	evaluate_retval "$?"
+	return $?
+}
+
+log_prefix() {
+	NORMAL="${reset}"   # Standard console grey
+	SUCCESS="${green}"  # Success is green
+	WARNING="${yellow}" # Warnings are yellow
+	FAILURE="${red}"    # Failures are red
+	BRACKET="${blue}" # Brackets are blue
+	BMPREFIX="     "
+	DOTPREFIX="  ${blue}::${reset} "
+	SUCCESS_PREFIX="${SUCCESS}  *  ${NORMAL}"
+	FAILURE_PREFIX="${FAILURE}*****${NORMAL}"
+	WARNING_PREFIX="${WARNING}  W  ${NORMAL}"
+	SUCCESS_SUFFIX="${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}"
+	FAILURE_SUFFIX="${BRACKET}[${FAILURE} FAIL ${BRACKET}]${NORMAL}"
+	WARNING_SUFFIX="${BRACKET}[${WARNING} WARN ${BRACKET}]${NORMAL}"
+	WAIT_PREFIX="${WARNING}  R  ${NORMAL}"
+	WAIT_SUFFIX="${BRACKET}[${WARNING} WAIT ${BRACKET}]${NORMAL}"
+	FAILURE_PREFIX="${FAILURE}  X  ${NORMAL}"
+}
+
+evaluate_retval() {
+	local error_value="$?"
+
+	if [ $# -gt 0 ]; then
+		error_value="$1"
+	fi
+
+	if [ "${error_value}" = 0 ]; then
+		log_success_msg2 ""
+	else
+		log_failure_msg2 ""
+	fi
+	return "${error_value}"
+}
+
+log_failure_msg2() {
+	if ! ((quiet)); then
+		echo -n -e "${BMPREFIX}${*}"
+		echo -e "${CURS_ZERO}${FAILURE_PREFIX}${SET_COL}${FAILURE_SUFFIX}"
+	fi
+	return 0
+}
+
+log_success_msg() {
+	if ! ((quiet)); then
+		echo -n -e "${BMPREFIX}${*}"
+		echo -e "${CURS_ZERO}${SUCCESS_PREFIX}${SET_COL}${SUCCESS_SUFFIX}"
+	fi
+	return 0
+}
+
+log_success_msg2() {
+	if ! ((quiet)); then
+		echo -n -e "${BMPREFIX}${*}"
+		echo -n -e "${CURS_ZERO}${SUCCESS_PREFIX}${SET_COL}${SUCCESS_SUFFIX}\n"
+	fi
+	return 0
+}
+
+log_warning_msg() {
+	if ! ((quiet)); then
+		echo -n -e "${BMPREFIX}${*}"
+		echo -n -e "${CURS_ZERO}${WARNING_PREFIX}${SET_COL}${WARNING_SUFFIX}"
+	fi
+	return 0
+}
+
+log_wait_msg() {
+	if ! ((quiet)); then
+		echo -n -e "${BMPREFIX}${*}"
+		echo -e "${CURS_ZERO}${WAIT_PREFIX}${SET_COL}${WAIT_SUFFIX}"
+	fi
+	return 0
+}
+
+log_info_msg() {
+	if ! ((quiet)); then
+		echo -n -e "${BMPREFIX}${*}"
+	fi
+	return 0
+}
+
+log_msg() {
+	if ! ((quiet)); then
+		echo -e "${DOTPREFIX}${*}"
+	fi
+	return 0
+}
+
+toupper() {
+	declare -u TOUPPER="${*}"
+	echo -e "${TOUPPER}"
+}
+
+tolower() {
+	declare -l TOLOWER="${*}"
+	echo -e "${TOLOWER}"
+}
+
+erro() {
+   local msg=$1
+   shift
+   printf "%s\n" "$(DOT)${bold}${yellow}$msg${reset}" >&2
+   return
+}
+
+write() {
+	local msg=$1
+	shift
+	printf "%s" "$msg"
+   return
+}
+
+writeln() {
+	local msg=$1
+	shift
+	printf "%s\n" "$msg"
+   return
+}
+
+msg() {
+   if ! ((quiet)); then
+      local msg=$1
+      shift
+      printf "%-75s\n" "$(DOT)${bold}${green}$msg${reset}"
+   fi
+   return
+}
+
+msgr() {
+   if ! ((quiet)); then
+      local msg=$1
+      shift
+		COLS=$(tput cols)
+		#printf "%*s\n" $[COLS/2] "${green} -> $msg${reset}"
+      printf "%s\n" "${green} -> $msg${reset}"
+   fi
+   return
+}
+
+msgl() {
+   if ! ((quiet)); then
+      local msg=$1
+      shift
+		COLS=$(tput cols)
+      printf "%-*s" $[COLS/2] "${DOT}$msg"
+   fi
+   return
+}
+
+DOT() {
+   printf "%s" "${blue}:: ${reset}"
+}
+
+die()
+{
+   local msg=$1; shift
+   msg "${red}$msg" "$@" >&2
+   exit 1
+}
+
+replicate() {
+	local Var
+	printf -v Var %"$2s" " "  #  Coloca em $Var $1 espaços
+	echo "${Var// /$1}"       #  Troca os espaços pelo caractere escolhido
+}
+
+padr() {
+	texto=$1
+	COLS=$2
+	char=$3
+	if test $# -eq 1; then
+		COLS=$(tput cols)
+		char='='
+	fi
+	printf "%*s\n" $COLS "$texto" |sed "s/ /$char/g"
+}
+
+padl() {
+	texto=$1
+	COLS=$2
+	char=$3
+	if test $# -eq 1; then
+		COLS=$(tput cols)
+		char='='
+	fi
+	printf "%-*s\n" $COLS "$texto" |sed "s/ /$char/g"
+}
+
+padc() {
+	texto=$1
+	COLS=$2
+	char=$3
+	if test $# -eq 1; then
+		COLS=$(tput cols)
+		char='='
+	fi
+	printf "%*s\n" $(((${#texto} + $COLS) / 2)) "$texto" | sed "s/ /$char/g"
+}
+
+search_geo() {
+	local oldquiet=$quiet
+	local geo=$(geoiplookup "$frepo" | head -1 | sed 's/^.*: //')
+
+	if ! (( quiet )); then
+		replicate '=' 100
+	fi
+	quiet=0
+	msgl "Recommended repo is: ${orange}$frepo ${reset}($geo)"
+	msgr "${pink}Average time: ${green}$fping${reset}"
+	quiet=$oldquiet
+}
+
+print_script()	{
+	if ! ((quiet)); then
+		local contador=1
+		local chash=''
+
+		writeln "#script"
+		writeln "${red}"'#------------[ cut here ]------------'"${reset}"
+		writeln 'mkdir -p /etc/xbps.d/'
+		writeln 'cat >> /etc/xbps.d/00-repository-main.conf << "EOF"'
+		writeln '############################################################################'
+		writeln '# Result of VOID mirrors'
+		writeln '# Generated with void-testmirror'
+		writeln '# https://raw.githubusercontent.com/vcatafesta/chili/master/void-testmirror'
+		writeln '# https://chililinux.com'
+		writeln "# on date: $(date)"
+		writeln '############################################################################'
+
+		for list in "${Sorted[@]}"; do
+		   ctime=$( cut -d, -f1 <<< "$list")
+		   mirror=$( cut -d, -f2 <<< "$list")
+			writeln "# top $contador - result: $ctime"
+			if ((contador > 1)); then
+				chash='#'
+			fi
+			writeln "${chash}repository=${mirror}current"
+			if [[ $mirror = 'http://void.chililinux.com/voidlinux/' || $mirror = 'http://void.chilios.com.br/voidlinux/' ]] ; then
+				writeln "${chash}repository=${mirror}extras"
+			fi
+			writeln "${chash}repository=${mirror}current/nonfree"
+			writeln "${chash}repository=${mirror}current/multilib"
+			writeln "${chash}repository=${mirror}current/multilib/nonfree"
+			writeln ""
+			((++contador))
+		done
+		writeln 'EOF'
+		writeln "${red}"'#------------[ cut here ]------------'"${reset}"
+	fi
+}
+
+write_script()	{
+	if ((auto)); then
+		local cfile='/etc/xbps.d/00-repository-main.conf'
+		local contador=1
+		local chash=''
+
+		printf "\n%s\n" "${red}writing results to $cfile"
+		[[ -d '/etc/xbps.d/' ]] || mkdir -p '/etc/xbps.d/'
+		[[ -e "$cfile"       ]] && mv "$cfile" "$cfile.old"
+
+		: >| "$cfile"
+		{
+			echo "# $cfile"
+			echo '############################################################################'
+			echo '# Result of VOID mirrors'
+			echo '# Generated with void-testmirror'
+			echo '# https://raw.githubusercontent.com/vcatafesta/chili/master/void-testmirror'
+			echo '# https://chililinux.com'
+			echo "# on date: $(date)"
+			echo '############################################################################'
+		} >> "$cfile"
+
+		for list in "${Sorted[@]}"; do
+		   ctime=$( cut -d, -f1 <<< "$list")
+		   mirror=$( cut -d, -f2 <<< "$list")
+		   geo=$( cut -d, -f3- <<< "$list")
+			echo '' 															>> "$cfile"
+			echo "# top $contador - ($geo) - result: $ctime"	>> "$cfile"
+			if ((contador > 1)); then
+				chash='#'
+			fi
+			{
+				echo "${chash}repository=${mirror}current"
+				if [[ $mirror = 'http://void.chililinux.com/voidlinux/' || $mirror = 'http://void.chilios.com.br/voidlinux/' ]] ; then
+					echo "${chash}repository=${mirror}extras"
+				fi
+				echo "${chash}repository=${mirror}current/nonfree"
+				echo "${chash}repository=${mirror}current/multilib"
+				echo "${chash}repository=${mirror}current/multilib/nonfree"
+			} >> "$cfile"
+			((++contador))
+		done
+	fi
+}
+
+print_top_mirror() {
+	if ! ((quiet)); then
+		local contador=1
+		padl "TOP_10" 100 '='
+
+		for list in "${Sorted[@]}"; do
+		   ctime=$(  cut -d, -f1  <<< "$list")
+		   mirror=$( cut -d, -f2  <<< "$list")
+		   geo=$(    cut -d, -f3- <<< "$list")
+			printf "%4d %-20s %-65s %-s\n" "$contador" "$geo" "$mirror" "${green}$ctime${reset}"
+			if (( contador > 9 )); then
+				return
+			fi
+			((++contador))
+		done
+		padr "TOP_10" 100 '='
+	fi
+}
+
+main_test_mirror() {
+	fping=10000
+	frepo=0
+	contador=1
+
+	sh_checknet "${URL_GOOGLE}" || return 1
+	for repo in "${!mirrors[@]}"
+	do
+		filerepo=${mirrors[$repo]}
+		geo=$(geoiplookup "$repo" | head -1 | sed 's/^.*: //')
+		if ! (( typetest )); then 	# ping
+			msgl "Testing (ICMP) for ${orange}$repo${reset} ($geo)"
+#			ping=$(ping -c3 "$repo" | tail -1| awk '{print $4}' | cut -d '/' -f 2 | bc -l)
+			ping=$(ping -qnAc3 "$repo" | tail -1 | awk -F'/' '{print $5}')
+	else
+			msgl "Testing (HTTP) for ${orange}$repo${reset} ($geo)"
+			ping=$(curl -s -w '%{time_total}\n' -o /dev/null "$filerepo/current/x86_64-repodata")
+		fi
+		msgr "${pink}Average time: ${red}$ping${reset}"
+
+		aHits+=("$ping,$filerepo,$geo")
+		if (( $(bc <<< "$ping<$fping") )); then
+			frepo="$repo"
+			fping="$ping"
+		fi
+		((++contador))
+	done
+	sh_sorted_array
+	search_geo
+	print_top_mirror
+	if ((auto)); then
+		write_script
+	else
+		print_script
+	fi
+}
+
+sh_version() {
+   printf "%s\n" "${bold}${cyan}${0##*/} v${_VERSION_}${reset}"
+}
+
+sh_sorted_array(){
+	readarray -t Sorted < <(sort -n < <(printf "%s\n" "${aHits[@]}"))
+}
+
+check_deps() {
+	local errorFound=0
+	declare -a missing
+
+	for d in "${DEPENDENCIES[@]}"; do
+		[[ -z $(command -v "$d") ]] && { missing+=("$d") && errorFound=1 && printf "%s\n" "${red}ERRO${reset}: não encontrei o comando ${orange}'$d'${reset}"; }
+	done
+   #[[ ${#missing[@]} -ne 0 ]]
+   if ((errorFound)); then
+      erro "#### IMPOSSIBLE TO CONTINUE ####"
+      msg "This script needs the commands listed above" >&2
+      msg "Install them and/or make sure they are in your \$PATH" >&2
+      exit 1
+   fi
+}
+
+conf() {
+	read -r -p "$1 [Y/n]"
+	[[ ${REPLY^} == ""  ]] && return $true
+	[[ ${REPLY^} == "Y" ]] && return $true
+	[[ ${REPLY^} == N   ]] && return $false
+	die "ERR: answer must be Y or N"
+}
+
+sh_selfupdate()
+{
+	echo
+   conf "Update ${APP_LOCAL} from internet?"
+   LAUTO=$?
+
+   if (( LAUTO )); then
+      local link="$URL_GITHUB"
+      local tmp_dir="/tmp/chili"
+
+      #internet?
+		sh_checknet "${URL_GITHUB}" || return 1
+
+      log_msg "Ok, let's do it..."
+      [[ -d "${tmp_dir}" ]] || mkdir -p "${tmp_dir}"
+      pushd "${tmp_dir}" >/dev/null 2>&- || return 1
+
+      log_info_msg "${cyan}Clonando $link"
+      #Ok, Puxe o arquivo do repositorio agora!
+      curl --insecure --silent --remote-name "${link}"
+      evaluate_retval
+		popd >/dev/null 2>&- || return
+
+      log_info_msg "${cyan}Setting permissions and copying file"
+      chmod +x "${tmp_dir}/${APP_REMOTE}"
+      evaluate_retval
+
+      log_info_msg "${cyan}Copying file ${yellow}${APP_REMOTE} ${red}to ${yellow}${0}"
+      mv "$0" "$0.old"
+      cp -apf "${tmp_dir}/${APP_REMOTE}" "$0"
+      evaluate_retval
+
+      log_info_msg "${cyan}Removing temporary files"
+      [[ -d "${tmp_dir}" ]] && rm -r "${tmp_dir}"
+      evaluate_retval
+      log_info_msg "${violet}${0} updated successfully, enjoy!"
+      evaluate_retval
+      exit 0
+   fi
+   return 1
+}
+
+sh_usage() {
+   cat <<EOF
+${white}void-testmirror v$_VERSION_${reset}
+${orange}usage: void-testmirror [options] ${reset}
+
+[options] ${reset}
+   ${red}-p  --ping${cyan}          # Use ping for test
+   ${red}-c  --curl${cyan}          # Use Curl download for test
+   ${red}-a  --auto${cyan}          # automatically configure/write in /etc/xbps.d/ with result obtained results
+   ${red}-l  --all${cyan}           # Show all mirrors results
+   ${red}-q  --quiet${cyan}         # Summmary output
+   ${red}-u  --update${cyan}        # update this application in the online repository. Need Internet
+   ${red}-V  --version${cyan}       # Show application version
+   ${red}-n  --nocolor${cyan}       # remove colors from output${reset}
+EOF
+}
+
+init() {
+	#while :; do
+	while test $# -gt 0; do
+      case $1 in
+	      -h | -H | --help)
+	         sh_usage
+	         exit $(($# ? 0 : 1))
+	         ;;
+	      -V | --version)
+	         sh_version
+	         exit $(($# ? 0 : 1))
+	         ;;
+	      -n | --nocolor)
+	         unsetvarcolors
+	         ;;
+	      -q | --quiet)
+	         quiet=1
+	         ;;
+	      -a | --auto)
+	         auto=1
+				;;
+	      -l | --all)
+				mirrors_asia
+				mirrors_au
+				mirrors_eu
+				mirrors_usa
+	         ;;
+	      -p | -P | --ping)
+				nping=1
+				typetest=0
+				appexec+=('main_test_mirror')
+#				main_test_mirror
+#	         exit $(($# ? 0 : 1))
+	         ;;
+	      -c | -C | --curl)
+				ncurl=1
+				typetest=1
+				appexec+=('main_test_mirror')
+#				main_test_mirror
+#	         exit $(($# ? 0 : 1))
+	         ;;
+	      -u | -U | --update)
+				update=1
+				appexec+=('sh_selfupdate')
+#				sh_selfupdate
+#	         exit $(($# ? 0 : 1))
+	         ;;
+	      *) die "operação não suportada: $1 (use -h for help)" ;;
+      esac
+      shift
+   done
+}
+setvarcolors
+log_prefix
+check_deps
+[[ -z $1 ]] && {
+   sh_usage
+   exit $(($# ? 0 : 1))
+}
+mirrors_tier1
+mirrors_br
+init "$@"
+
+# sanity checks
+case $(( update+nping+ncurl )) in
+      0) die 'no operation specified (use -h for help)' ;;
+   [^1]) die 'only one operation may be used at a time' ;;
+esac
+for x in "${appexec[@]}"; do $x; done
