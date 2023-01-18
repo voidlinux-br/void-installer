@@ -35,10 +35,11 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.71.837-20230118'
+readonly _VERSION_='0.71.862-20230118'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz)
 declare -A AsUser
+declare -A idioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3)
 declare -i quiet=0 grafico=0 ncontador=0
 declare -i LAUTO=0 LINSTALL=0 LCHROOT=0 LBIND=0
 declare _DEVICE='/dev/sdX'
@@ -88,15 +89,16 @@ sh_ambiente() {
 	readonly LOGGER=/dev/tty8
 	: "${lEFI=$false}"
 	: "${ccabec="$APP v${_VERSION_}"}"
-	: "${welcome="Welcome to the $APP"}"
 	: "${DIALOG=${DIALOG:-"dialog"}}"
+
+   # flag languages
 
    # flag languages
 	: "${PT_BR=0}"
 	: "${EN_US=1}"
 	: "${DE_DE=2}"
 	: "${FR_FR=3}"
-	: "${LC_DEFAULT=${EN_US}}"
+	: "${LC_DEFAULT=$(sh_getlocale)}"
 
 	# flag dialog exit status codes
 	: "${D_OK=0}"
@@ -1829,11 +1831,12 @@ sh_main() {
 	while true; do
 		i18=$(${DIALOG}                                          \
 			--stdout                                              \
+			--default-item "$LC_DEFAULT"									\
 			--backtitle    "$ccabec"                              \
-			--title        "$welcome"                             \
+			--title        "${welcome[$LC_DEFAULT]}"					\
 			--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"			\
 			--cancel-label "${cmsg_Exit[$LC_DEFAULT]}"            \
-			--menu         "\nChoose the language:"               \
+			--menu         "\n${escolhaIdioma[$LC_DEFAULT]}:"		\
 			0 80 0                                                \
 			0 'Português'                                         \
 			1 'English'                                           \
@@ -2352,18 +2355,36 @@ sh_language() {
 		"EFI not detected \n↓ it is recommended to install BIOS ↓"
 		"EFI nicht erkannt \n↓ Es wird empfohlen, das BIOS zu installieren ↓"
 		"EFI non détecté \n↓ il est recommandé d installer le BIOS ↓")'
-
+	'welcome=("Bem-vindo ao instalador $APP"
+		"Welcome to the $APP installer"
+		"Willkommen beim $APP Installationsprogramm"
+		"Bienvenue dans le programme d installation de $APP")'
+	'escolhaIdioma=("Escolha o idioma"
+		"Choose language"
+		"Sprache wählen"
+		"Choisissez la langue")'
 	)
 	for xmsg in "${langmsg[@]}"; do eval "$xmsg"; done
 	#echo "lang       ${#lang[@]} ${lang[@]} ${lang[$PT_BR]} ${lang[$EN_US]}"
 	#echo "cmsg_ERRO ${#cmsg_ERRO[@]} ${cmsg_ERRO[@]} ${cmsg_ERRO[$PT_BR]} ${cmsg_ERRO[$EN_US]}"
 }
 
+sh_getlocale() {
+	local lc
+
+	LC_DEFAULT="${idioma[pt_BR]}"
+	echo $LC_DEFAULT
+	if lc=$(grep _ <(locale -a) | head -1); then
+		LC_DEFAULT="${idioma[$lc]}"
+	fi
+}
+
+sh_getlocale
+sh_language
 sh_setvarcolors
 sh_ambiente
 sh_ascii_lines
 sh_logprefix
-sh_language
 sh_checkDependencies
 sh_config
 
