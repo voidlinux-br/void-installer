@@ -1842,7 +1842,7 @@ sh_main() {
 			1 'English'                                           \
 			2 'Deustch'                                           \
 			3 'Français'                                          \
-			4 'Spañol'                                            \
+			4 'Español'                                           \
 			5 'Italiano'                                          )
 
 			exit_status=$?
@@ -2373,7 +2373,6 @@ sh_getlocale() {
 	local lc
 
 	LC_DEFAULT="${idioma[pt_BR]}"
-	echo $LC_DEFAULT
 	if lc=$(grep _ <(locale -a) | head -1); then
 		LC_DEFAULT="${idioma[$lc]}"
 	fi
