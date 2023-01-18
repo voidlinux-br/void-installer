@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-#shellcheck disable=SC2145,SC2001,SC2188,SC2015,SC2155,SC2317,SC2320,SC2291,SC2034
+#shellcheck disable=SC2145,SC2001,SC2188,SC2015,SC2155,SC2317,SC2320,SC2291,SC2034,SC2016,SC2154,SC2207,SC2166,SC2128
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/01/15
+#  Altered: 2023/01/18
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -35,11 +35,11 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.69.355-20230115'
+readonly _VERSION_='0.71.837-20230118'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz)
 declare -A AsUser
-declare -i quiet=0 grafico=0 incremento=0
+declare -i quiet=0 grafico=0 ncontador=0
 declare -i LAUTO=0 LINSTALL=0 LCHROOT=0 LBIND=0
 declare _DEVICE='/dev/sdX'
 declare _PART_BIOS="${_DEVICE}1"
@@ -79,17 +79,6 @@ sh_ambiente() {
 	readonly url_google='https://google.com/'
 	readonly url_tarball='http://void.chililinux.com/voidlinux'
 	declare url_mirror='http://void.chililinux.com/voidlinux'
-	readonly cmsgadduser='Criando usuário'
-	readonly cmsgchgpasswd='Ajustando senha'
-	readonly cmsg_part_disk='Visualizar partições do disco'
-	readonly cmsgpart='Particionamento automatico'
-	readonly cmsg_all_mounted_part='O disco selecionado contém partições montadas'
-	readonly cmsgSetKeyboardLayout='Escolher outro layout do teclado'
-	readonly cmsg_umount_partition='Aguarde, Desmontando particao de trabalho'
-	readonly buttonback='Retornar'
-	readonly buttonpart='Info disco'
-	readonly yeslabel='Sim'
-	readonly nolabel='Não'
 	readonly true=1
 	readonly false=0
 	readonly err_fatal=$true
@@ -99,7 +88,15 @@ sh_ambiente() {
 	readonly LOGGER=/dev/tty8
 	: "${lEFI=$false}"
 	: "${ccabec="$APP v${_VERSION_}"}"
+	: "${welcome="Welcome to the $APP"}"
 	: "${DIALOG=${DIALOG:-"dialog"}}"
+
+   # flag languages
+	: "${PT_BR=0}"
+	: "${EN_US=1}"
+	: "${DE_DE=2}"
+	: "${FR_FR=3}"
+	: "${LC_DEFAULT=${EN_US}}"
 
 	# flag dialog exit status codes
 	: "${D_OK=0}"
@@ -133,12 +130,8 @@ sh_ambiente() {
 	RED="\Z1"
 	BOLD="\Zb"
 	RESET="\Zn"
-	LABEL="${BOLD}Use as teclas ${RED}PARA CIMA ${RESET}e ${BOLD}${RED}PARA BAIXO ${RESET}para navegar.\n\
-Use ${BOLD}${RED}TAB ${RESET}para alternar entre os botões e ${BOLD}${RED}ENTER ${RESET}para selecionar."
 	: echo "$err_fatal"
 	: echo "$LAUTO"
-	: echo "$pink"
-	: echo "$cmsgchgpasswd"
 	: echo "$url_google"
 
 	if [ -z "${COLUMNS}" ]; then
@@ -200,13 +193,13 @@ sh_config() {
 	# shellcheck source=/dev/null
 	if 	[[ -f "$app_conf" ]]
 	then 	source "$app_conf"
-	else  die "ERRO: falha na abertura de $app_conf!"
+	else  die "${cmsg_falhaAbertura[$LC_DEFAULT]} $app_conf!"
 	fi
 	sh_setadduser
 }
 
 sh_setadduser() {
-	# usuario/senha/hostmame/group
+	# user/password/hostmame/group
 	AsUser[cfullname]="$_USER_FULLNAME"
 	AsUser[cuser]="$_USER"
 	AsUser[cpass]="$_PASSWD_USER"
@@ -225,33 +218,33 @@ sh_ascii_lines() {
 
 sh_checkroot() {
 	if [ "$(id -u)" != "0" ]; then
-		die "${red} erro: você não pode realizar esta operação a menos que seja root."
+		die "${red} ${cmsg_operRoot[$LC_DEFAULT]}"
 	fi
 }
 
 sh_checknet() {
    xurl="$1"
    # have internet?
-	msg "INFO" "$(log_info_msg "Checando rota de internet para o servidor ${xurl}")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_ChecandoRota[$LC_DEFAULT]} ${xurl}")"
 	response=$(curl --compressed -s -w "%{http_code}\n" -o /dev/null -k --url "${xurl}")
 	if [ "$response" -eq 000 ] && [ "$response" -eq 404 ]
 	then
 		evaluate_retval "1"
-		die "Sem rota para o servidor ($xurl) - Check sua conexão com a internet!"
+		die "${cmsg_SemRota[$LC_DEFAULT]} ($xurl) - ${cmsg_CheckNet[$LC_DEFAULT]}"
    fi
    evaluate_retval "$?"
    return $?
 }
 
 sh_checktarball() {
-	msg "INFO" "$(log_info_msg "Checando existência do tarball rootfs $_TARBALL_ROOTFS")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_ChecandoTarball[$LC_DEFAULT]} rootfs $_TARBALL_ROOTFS")"
 	if ! test -r "$_TARBALL_ROOTFS"; then
 	   evaluate_retval "1" "$err_not_fatal"
-		msg "INFO" "$(log_info_msg "Iniciando download de $url_tarball/live/current/$_TARBALL_ROOTFS")" "$LINENO"
+		msg "INFO" "$(log_info_msg "${cmsg_IniciandoDownload[$LC_DEFAULT]} $url_tarball/live/current/$_TARBALL_ROOTFS")"
 		curl --insecure --silent --remote-name "$url_tarball/live/current/$_TARBALL_ROOTFS" >>"$BOOTLOG" 2>&1 ||
       {
          evaluate_retval "$?"
-         die "Sem rota para o servidor ($url_mirror) - Check sua conexão com a internet!"
+         die "${cmsg_SemRota[$LC_DEFAULT]} ($url_mirror) - ${cmsg_CheckNet[$LC_DEFAULT]}"
 		   return 1
       }
 	fi
@@ -265,31 +258,31 @@ sh_checkDependencies() {
 	declare -a missing
 
 	for d in "${DEPENDENCIES[@]}"; do
-		[[ -z $(command -v "$d") ]] && missing+=("$d") && errorFound=1 && printf '%s\n' "${red}ERRO${reset}: não encontrei o comando ${cyan}'$d'${reset}"
+		[[ -z $(command -v "$d") ]] && missing+=("$d") && errorFound=1 && printf '%s\n' "${red}${cmsg_ERRO[$LC_DEFAULT]}${reset}: ${cmsg_CommandNotFound[$LC_DEFAULT]} ${cyan}'$d'${reset}"
 	done
 	if (( errorFound )); then
-		echo "${yellow}--------------IMPOSSÍVEL CONTINUAR-------------${reset}"
-		echo "Esse script precisa dos comandos listados acima" >&2
-		echo "Instale-os e/ou verifique se estão no seu \$PATH" >&2
+		echo "${yellow}--------------${cmsg_ImpossivelContinuar[$LC_DEFAULT]}-------------${reset}"
+		echo "${cmsg_ImpossivelContinuar1[$LC_DEFAULT]}" >&2
+		echo "${cmsg_ImpossivelContinuar2[$LC_DEFAULT]} \$PATH" >&2
 		echo "${yellow}-----------------------------------------------${reset}"
 
 		if [[ "$distro" = 'void' ]] ; then
 			echo
-			if readconf "${yellow}Instalar o(s) comando(s) '${cyan}${missing[*]}${reset}'?"; then
+			if readconf "${yellow}${cmsg_InstCommand[$LC_DEFAULT]} '${cyan}${missing[*]}${reset}'?"; then
 				if xbps-install -S "${missing[*]}"; then
-					die "INFO: Rode novamente o aplicativo"
+					die "${cmsg_RunNew[$LC_DEFAULT]}"
 				else
-					die "ERRO na instalação dos comandos. Tente manualmente."
+					die "${cmsg_RunNewErro[$LC_DEFAULT]}"
 				fi
 			fi
 		fi
-		die "ERRO: Instalação abortada..."
+		die "${cmsg_ERRO[$LC_DEFAULT]}: ${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..."
 	fi
 }
 
 sh_setvarcolors() {
 	# does the terminal support true-color?
-	if ! [[ -z $(command -v "tput") ]]; then
+	if [[ -n $(command -v "tput") ]]; then
 		#tput setaf 127 | cat -v  #capturar saida
 		tput sgr0 # reset colors
 		bold=$(tput bold)
@@ -362,8 +355,8 @@ sh_logprefix() {
 
 replicate() {
    local Var
-   printf -v Var %"$2s" " "  #  Coloca em $Var $1 espaços
-   echo "${Var// /$1}"       #  Troca os espaços pelo caractere escolhido
+   printf -v Var %"$2s" " "
+   echo "${Var// /$1}"
 }
 
 DOT() {
@@ -371,7 +364,7 @@ DOT() {
 }
 
 msg() {
-	((incremento++))
+	((ncontador++))
 	logmessage=$(sed 's/\\\033[^a-zA-Z]*.//g' <<< "$last_msg")
 	printf "%s\n" "$(timespec) [ INFO ]${2}" >> "$BOOTLOG"
 
@@ -388,7 +381,7 @@ msg() {
 }
 
 fmt() {
-	printf "${bold}${yellow}%03d/%03d${reset}" "$incremento" "$incremento"
+	printf "${bold}${yellow}%03d/%03d${reset}" "$ncontador" "$ncontador"
 	return $?
 }
 
@@ -443,14 +436,13 @@ evaluate_retval() {
 
 	if (( error_value )) ; then
 		if (( error_fatal )) ; then
-			[[ -z "$cmsgdie" ]] && die "Instalação abortada..." || die "$cmsgdie"
+			[[ -z "$cmsgdie" ]] && die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..." || die "$cmsgdie"
 		fi
 	fi
 	return "${error_value}"
 }
 
 log_failure_msg() {
-	local lineno="$2"
 	if ! (( quiet )); then
 	   echo -n -e "${BMPREFIX}${@}"
 	   echo    -e  "${CURS_ZERO}${FAILURE_PREFIX}${SET_COL}${FAILURE_SUFFIX}"
@@ -462,7 +454,6 @@ log_failure_msg() {
 }
 
 log_success_msg() {
-	local lineno="$2"
 	if ! (( quiet )); then
 		echo -n -e "${BMPREFIX}${@}"
 		echo    -e "${CURS_ZERO}${SUCCESS_PREFIX}${SET_COL}${SUCCESS_SUFFIX}"
@@ -490,39 +481,45 @@ die() {
 }
 
 readconf() {
-	read -r -p "$1 [S/n]"
+	if [[ $LC_DEFAULT -eq 0 ]]; then
+		read -r -p "$1 [S/n]"
+	else
+		read -r -p "$1 [Y/n]"
+	fi
 	[[ ${REPLY^} == "" ]] && return $false
 	[[ ${REPLY^} == N ]]  && return $true || return $false
 }
 
 info() {
-	${DIALOG}               			\
-	--colors									\
-	--title  "$1"                    \
-	--backtitle "$ccabec"            \
-	--msgbox    "$2\n$3\n$4\n$5\n$6" \
+	${DIALOG}               					\
+	--colors											\
+	--title  "$1"                    		\
+	--backtitle "$ccabec"            		\
+	--ok-label	"${cmsg_ok[$LC_DEFAULT]}"	\
+	--msgbox    "$2\n$3\n$4\n$5\n$6" 		\
 	0 0
 }
 
 alerta() {
 	log_success_msg "$2"
-	${DIALOG}               			\
-	--title  	"$1"                 \
-	--backtitle "$ccabec"            \
-	--msgbox    "$2\n$3\n$4\n$5\n$6" \
+	${DIALOG}               					\
+	--title  	"$1"                 		\
+	--backtitle "$ccabec"            		\
+	--ok-label	"${cmsg_ok[$LC_DEFAULT]}"	\
+	--msgbox    "$2\n$3\n$4\n$5\n$6" 		\
 	10 60
 }
 
 conf() {
 	xtitle="$1"
 	shift
-	${DIALOG}                        \
-			--colors					      \
-			--title     "$xtitle"      \
-			--backtitle "$ccabec"      \
-			--yes-label "$yeslabel"    \
-			--no-label  "$nolabel"     \
-			--yesno     "$*"           \
+	${DIALOG}                        						\
+			--colors					      						\
+			--title     "$xtitle"      						\
+			--backtitle "$ccabec"      						\
+			--yes-label "${cmsg_yeslabel[$LC_DEFAULT]}"	\
+			--no-label  "${cmsg_nolabel[$LC_DEFAULT]}"	\
+			--yesno     "$*"           						\
 			0 0
 	nchoice=$?
 	return "$nchoice"
@@ -531,13 +528,13 @@ conf() {
 notconf() {
 	xtitle="$1"
 	shift
-	${DIALOG}						\
-		--colors						\
-		--title     "$xtitle"	\
-		--backtitle "$ccabec"	\
-		--yes-label "Não"			\
-		--no-label  "Sim"			\
-		--yesno     "$*"			\
+	${DIALOG}													\
+		--colors													\
+		--title     "$xtitle"								\
+		--backtitle "$ccabec"								\
+		--yes-label "${cmsg_nolabel[$LC_DEFAULT]}"	\
+		--no-label  "${cmsg_yeslabel[$LC_DEFAULT]}"	\
+		--yesno     "$*"										\
 		10 100
 		return $?
 }
@@ -556,35 +553,36 @@ sh_testdisk() {
 sh_mkparted() {
 	local nchoice=0
 
-	msg "INFO" "$(log_info_msg "Testando disco ${_DEVICE} configurado em $app_conf")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_TestandoDisco[$LC_DEFAULT]} ${_DEVICE}")"
 	if ! sh_testdisk; then
-		die "Erro de leitura de disco: $_DEVICE. Check configuração em $app_conf"
+		die "${cmsg_ErroLeituraDisco[$LC_DEFAULT]}: $_DEVICE."
 	fi
 
 	if ! (( grafico )); then
 		if ! (( quiet )); then
 			replicate "=" "$COLUMNS"
 			if ! fdisk -l "$_DEVICE"; then
-				die "Erro de leitura de disco: $_DEVICE. Check configuração em $app_conf"
+				die "${cmsg_ErroLeituraDisco[$LC_DEFAULT]}: $_DEVICE."
 			fi
 			replicate "=" "$COLUMNS"
-			echo "${yellow}** AVISO: ${red}os dados nas partições serão COMPLETAMENTE DESTRUÍDOS para novos filesystems!!${reset}"
+			echo "${yellow}${cwarning[$LC_DEFAULT]} ${red}${cmsg_todos_os_dados_serao_perdidos[$LC_DEFAULT]}${reset}"
 #			replicate "=" "$COLUMNS"
 		fi
 	fi
 
 	if ! (( grafico )); then
-		if readconf "${red}Continuar com o particionamento em ${yellow}${_DEVICE} ${reset}?"; then
+		if readconf "${red}${cmsg_ContinuarParticionamento[$LC_DEFAULT]} ${yellow}${_DEVICE} ${reset}?"; then
 			nchoice=$true
 		fi
 	else
-		if conf "AVISO, CUIDADO, tudo será apagado" "\nContinuar com o particionamento em ${_DEVICE} ?\n" ; then
+		if conf "${yellow}${cwarning[$LC_DEFAULT]} ${red}${cmsg_todos_os_dados_serao_perdidos[$LC_DEFAULT]}${reset}" \
+				  "\n${cmsg_ContinuarParticionamento[$LC_DEFAULT]} ${_DEVICE} ?\n" ; then
 			nchoice=$true
 		fi
 	fi
 
 	if (( nchoice )); then
-		msg "INFO" "$(log_info_msg "Criando partições em ${_DEVICE}")" "$LINENO"
+		msg "INFO" "$(log_info_msg "${cmsg_CriandoParticoes[$LC_DEFAULT]} ${_DEVICE}")"
 		parted --script "$_DEVICE" --                                   		\
 			mklabel gpt                                                       \
 			mkpart primary fat32      1MiB 3MiB   set 1 bios on name 1 BIOS   \
@@ -594,12 +592,12 @@ sh_mkparted() {
 		evaluate_retval "$?"
 		parted --script "$_DEVICE" -- print >>"$BOOTLOG" 2>&1
 	else
-		die "Instalação abortada..."
+		die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..."
 	fi
 }
 
 sh_update_mirror() {
-	msg "INFO" "$(log_info_msg "Configurando mirror em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_Configurando[$LC_DEFAULT]} ${cmsg_Mirror[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	cat > "$dir_install/etc/xbps.d/00-reposytory-main.conf" <<- EOF
 repository=$url_mirror/current
 repository=$url_mirror/current/nonfree
@@ -610,7 +608,7 @@ EOF
 }
 
 sh_update_rc() {
-	msg "INFO" "$(log_info_msg "Ajustando rc.local em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} rc.local ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	cat > "$dir_install"/etc/rc.local <<- EOF
 HOSTNAME="${_HOSTNAME}"
 HARDWARECLOCK="${_CLOCK}"
@@ -621,12 +619,12 @@ EOF
 }
 
 sh_update_locale() {
-	msg "INFO" "$(log_info_msg "Ajustando locales em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	sed -e "/en_US.UTF-8 UTF-8/s/^\#//" -i "$dir_install/etc/default/libc-locales"
 	sed -e "/pt_BR.UTF-8 UTF-8/s/^\#//" -i "$dir_install/etc/default/libc-locales"
 	evaluate_retval "$?" "$err_not_fatal"
 
-	msg "INFO" "$(log_info_msg "Ajustando locale.conf em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} locale.conf ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	cat > "$dir_install/etc/locale.conf" <<- EOF
 LANG=pt_BR.UTF-8
 LC_COLLATE=C
@@ -636,17 +634,17 @@ EOF
 }
 
 sh_update_hostname() {
-	msg "INFO" "$(log_info_msg "Ajustando hostname em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} hostname ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	echo "${_HOSTNAME}" > "$dir_install/etc/hostname"
 	evaluate_retval "$?"
 }
 
 sh_update_timezone() {
-	sh_chroot_job "Ajustando timezone em $_PART_ROOT:$dir_install" "ln -sf /usr/share/zoneinfo/${_TIMEZONE} /etc/localtime" "$err_not_fatal"
+	sh_chroot_job "${cmsg_Ajustando[$LC_DEFAULT]} timezone ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "ln -sf /usr/share/zoneinfo/${_TIMEZONE} /etc/localtime" "$err_not_fatal"
 }
 
 sh_set_keymap() {
-	msg "INFO" "$(log_info_msg "Ajustando teclado ${_KEYMAP} em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} ${cmsg_Teclado[$LC_DEFAULT]} ${_KEYMAP} ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	[[ ! -e "$dir_install/etc/rc.conf" ]] && >| "$dir_install/etc/rc.conf"
 	if [[ -e "$dir_install/etc/rc.conf" ]]; then
 #		echo "KEYMAP=$_KEYMAP" >> "$dir_install/etc/rc.conf"
@@ -657,7 +655,10 @@ sh_set_keymap() {
 }
 
 sh_set_Xkeymap() {
-	msg "INFO" "$(log_info_msg "Ajustando teclado ${_KEYMAP} (X11) em $_PART_ROOT:$dir_install")" "$LINENO"
+	if [[ $_KEYMAP != 'br-abnt2' ]]; then
+		return 0
+	fi
+	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} ${cmsg_Teclado[$LC_DEFAULT]} ${_KEYMAP} (X11) ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	[[ ! -d "$dir_install/etc/X11/xorg.conf.d" ]] && mkdir -p "$dir_install/etc/X11/xorg.conf.d"
 	[[ ! -e "$dir_install/etc/X11/xorg.conf.d/10-keyboard.conf" ]] && cat > "$dir_install/etc/X11/xorg.conf.d/10-keyboard.conf" <<- EOF
 Section "InputClass"
@@ -673,7 +674,7 @@ EOF
 }
 
 sh_update_bashrc() {
-	msg "INFO" "$(log_info_msg "Ajustando bashrc em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} bashrc ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
    [[ ! -e $dir_install/etc/bash/bashrc.d/bashrc.sh ]] && >| $dir_install/etc/bash/bashrc.d/bashrc.sh
 	if [[ -f $dir_install/etc/bash/bashrc.d/bashrc.sh ]]; then
 		echo -e "PS1='\e[32;1m\u \e[33;1m→ \e[36;1m\h \e[37;0m\w\n\e[35;1m�# \e[m'" >> "$dir_install/etc/bash/bashrc.d/bashrc.sh"
@@ -682,7 +683,7 @@ sh_update_bashrc() {
 }
 
 sh_update_wpa_suplicant() {
-	msg "INFO" "$(log_info_msg "Ajustando wpa_supplicant.conf em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} wpa_supplicant.conf ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
    [[ ! -e $dir_install/etc/wpa_supplicant/wpa_supplicant.conf ]] && >| $dir_install/etc/wpa_supplicant/wpa_supplicant.conf
 	if [[ -f $dir_install/etc/wpa_supplicant/wpa_supplicant.conf ]]; then
 		cat > "$dir_install/etc/wpa_supplicant/wpa_supplicant.conf" << EOF
@@ -702,15 +703,15 @@ EOF
 }
 
 sh_mkfs() {
-#	msg "INFO" "$(log_info_msg "Formatando partição BIOS: ${_PART_BIOS} FS ext2")" "$LINENO"
-#	mkfs.ext2 -F -L "EFI" "${_PART_BIOS}" >>"$BOOTLOG" 2>&1
-#	evaluate_retval "$?"
+	#msg "INFO" "$(log_info_msg "${cmsg_FormatandoParticao[$LC_DEFAULT]} BIOS: ${_PART_BIOS} FS ext2")"
+	#mkfs.ext2 -F -L "EFI" "${_PART_BIOS}" >>"$BOOTLOG" 2>&1
+	#evaluate_retval "$?"
 
-	msg "INFO" "$(log_info_msg "Formatando partição EFI: ${_PART_BOOT} FS vfat32")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_FormatandoParticao[$LC_DEFAULT]} EFI: ${_PART_BOOT} FS vfat32")"
 	mkfs.vfat -n "EFI" -F32 "${_PART_BOOT}" >>"$BOOTLOG" 2>&1
 	evaluate_retval
 
-	msg "INFO" "$(log_info_msg "Formatando partição ROOT: ${_PART_ROOT} FS ${mkfs,,}")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_FormatandoParticao[$LC_DEFAULT]} ROOT: ${_PART_ROOT} FS ${mkfs,,}")"
    if [[ "$mkfs" == "ext2" ]]; then
 		mkfs.ext2 -F -L "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
    elif [[ "$mkfs" == "ext3" ]]; then
@@ -728,7 +729,7 @@ sh_mkfs() {
 }
 
 sh_umountfs() {
-	msg "INFO" "$(log_info_msg "Desmontando sistema de arquivo em $dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_DismountFileSystem[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install")"
 	umount -frl "$dir_install" >>"$BOOTLOG" 2>&1
 	LBIND=$false
 	evaluate_retval "$?" "$err_not_fatal"
@@ -736,7 +737,7 @@ sh_umountfs() {
 
 sh_stopmount() {
 	local nchoice
-	msg "INFO" "$(log_info_msg "$cmsg_umount_partition")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_umount_partition[$LC_DEFAULT]}")"
 	umount -rl "$dir_install" >>"$BOOTLOG" 2>&1
 	nchoice=$?
 	evaluate_retval 0
@@ -764,7 +765,7 @@ sh_initbind() {
 	local nchoice
 
 	if ! (( LBIND )); then
-		msg "INFO" "$(log_info_msg "Montando ambiente chroot")" "$LINENO"
+		msg "INFO" "$(log_info_msg "${cmsg_MontandoAmbiente[$LC_DEFAULT]} chroot")"
 		for i in /proc /sys /dev /dev/pts /dev/shm /run /tmp; do
 			mkdir -p "$dir_install$i" >>"$BOOTLOG" 2>&1
 		done
@@ -788,7 +789,7 @@ sh_initbind() {
 sh_stopbind() {
 	local nchoice
 
-	msg "INFO" "$(log_info_msg "Desmontando ambiente chroot")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_DesMontandoAmbiente[$LC_DEFAULT]} chroot")"
 	{
 		umount -r "${dir_install}/proc"
 		umount -r "${dir_install}/sys"
@@ -812,7 +813,7 @@ sh_chroot_job() {
 	local erro_fatal="$3"
 	local lretval=0
 
-	msg "INFO" "$(log_info_msg "$cmsg")" "$LINENO"
+	msg "INFO" "$(log_info_msg "$cmsg")"
 	chroot "$dir_install" "$shell" -c "$cjob" >>"$BOOTLOG" 2>&1
 	lretval="$?"
 	evaluate_retval "$lretval" "$erro_fatal"
@@ -824,15 +825,15 @@ sh_mkuser() {
 
 	if [[ -n "${AsUser[cuser]}" ]]; then
 		if [[ -n "${AsUser[cfullname]}" ]]; then
-			sh_chroot_job "$cmsgadduser: ${AsUser[cuser]} - ${AsUser[cfullname]}" "useradd -m ${AsUser[cuser]} -G ${AsUser[cgroups]} -p ${AsUser[cpass]} -c '${AsUser[cfullname]}'"
+			sh_chroot_job "${cmsg_CriandoUsuario[$LC_DEFAULT]}: ${AsUser[cuser]} - ${AsUser[cfullname]}" "useradd -m ${AsUser[cuser]} -G ${AsUser[cgroups]} -p ${AsUser[cpass]} -c '${AsUser[cfullname]}'"
 		else
-			sh_chroot_job "$cmsgadduser: ${AsUser[cuser]} - ${AsUser[cfullname]}" "useradd -m ${AsUser[cuser]} -G ${AsUser[cgroups]} -p ${AsUser[cpass]}"
+			sh_chroot_job "${cmsg_CriandoUsuario[$LC_DEFAULT]}: ${AsUser[cuser]} - ${AsUser[cfullname]}" "useradd -m ${AsUser[cuser]} -G ${AsUser[cgroups]} -p ${AsUser[cpass]}"
 		fi
-		sh_chroot_job "Ajustando senha usuário : ${AsUser[cuser]}" "(echo ${AsUser[cuser]}:${AsUser[cpass]}) | chpasswd -m > /dev/null 2>&1"
+		sh_chroot_job "${cmsg_AjustandoSenhaUsuario[$LC_DEFAULT]}: ${AsUser[cuser]}" "(echo ${AsUser[cuser]}:${AsUser[cpass]}) | chpasswd -m > /dev/null 2>&1"
 	fi
 
 	if [[ -n "${AsUser[cpassroot]}" ]]; then
-		sh_chroot_job "Ajustando senha usuário : root" "(echo root:${AsUser[cpassroot]}) | chpasswd -m > /dev/null 2>&1"
+		sh_chroot_job "${cmsg_AjustandoSenhaUsuario[$LC_DEFAULT]}: root" "(echo root:${AsUser[cpassroot]}) | chpasswd -m > /dev/null 2>&1"
 	fi
 
 	if [ -d $dir_install/etc/sudoers.d ]; then
@@ -850,7 +851,7 @@ sh_mkfstab() {
 	fsorder=0
 	fi
 
-	msg "INFO" "$(log_info_msg "Gerando fstab em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_Gerando[$LC_DEFAULT]} fstab ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 cat > "$dir_install/etc/fstab" <<- EOF
 #UUID=$(blkid -o value -s UUID "${_PART_BIOS}")	/boot			ext2			defaults 0 2
 UUID=$(blkid -o value -s UUID "${_PART_BOOT}")	/boot/efi	vfat			defaults,noatime 0 2
@@ -865,7 +866,7 @@ sh_mkservice() {
 
 	for service in "${aServices[@]}"
 	do
-		sh_chroot_job "Ativando serviço $service em $_PART_ROOT:$dir_install" "ln -sf /etc/sv/$service /etc/runit/runsvdir/current/" "$err_not_fatal"
+		sh_chroot_job "${cmsg_AtivandoServico[$LC_DEFAULT]} $service ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "ln -sf /etc/sv/$service /etc/runit/runsvdir/current/" "$err_not_fatal"
 	done
 }
 
@@ -880,7 +881,7 @@ sh_mkdir() {
 					"$dir_install/etc/xbps.d"
 					)
 
-	msg "INFO" "$(log_info_msg "Criando diretorios em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_CriandoDiretorios[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	for cdir in "${adir[@]}"
 	do
 		[[ -d "$cdir" ]] || mkdir -p "$cdir"
@@ -889,12 +890,12 @@ sh_mkdir() {
 }
 
 sh_mountfs() {
-	msg "INFO" "$(log_info_msg "Montando partição $_PART_ROOT (ROOT) em $dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_MontandoParticao[$LC_DEFAULT]} $_PART_ROOT (ROOT) ${cmsg_Em[$LC_DEFAULT]} $dir_install")"
 	mkdir -p "$dir_install"
 	mount "${_PART_ROOT}" "$dir_install"
 	evaluate_retval "$?"
 
-	msg "INFO" "$(log_info_msg "Montando partição $_PART_ROOT (EFI) em $dir_install/boot/efi")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_MontandoParticao[$LC_DEFAULT]} $_PART_ROOT (EFI) ${cmsg_Em[$LC_DEFAULT]} $dir_install/boot/efi")"
 	mkdir -p "$dir_install/boot/efi"
 	mount "${_PART_BOOT}" "$dir_install/boot/efi"
 	evaluate_retval "$?"
@@ -914,7 +915,7 @@ sh_X11minimal(){
 	apkgs+=("${aMicrocode[@]}")
 	apkgs+=("${aArchiver[@]}")
 
-	sh_chroot_job "Instalando meta pacotes X em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} meta pacotes X ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_fluxboxminimal() {
@@ -922,8 +923,8 @@ sh_fluxboxminimal() {
 			apkgs+=(cairo galculator-gtk2 adwaita-icon-theme gtk2-engines gtk-engine-murrine)
 			apkgs+=(wicd wicd-gtk qt5ct qt5-styleplugins leafpad dconf volumeicon feh viewnior compton arc-theme ffmpegthumbnailer)
 
-	sh_chroot_job "Instalando Fluxbox em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
-#	sh_chroot_job "Gerando menu customizado do fluxbox em $_PART_ROOT:$dir_install" "fbmenugen -i -o /home/${AsUser[cuser]}/.fluxbox/menu" "$err_not_fatal"
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Fluxbox ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+#	sh_chroot_job "${cmsg_Gerando[$LC_DEFAULT]} menu customizado do fluxbox em $_PART_ROOT:$dir_install" "fbmenugen -i -o /home/${AsUser[cuser]}/.fluxbox/menu" "$err_not_fatal"
 	if [[ -f "$dir_install/home/${AsUser[cuser]}/.fluxbox/startup" ]]; then
 		sed -e "/xmodmap/s//# xmodmap/" -i "$dir_install/home/${AsUser[cuser]}/.fluxbox/startup" >>"$BOOTLOG" 2>&1
  		sed -e '/\# xmodmap/a setxkbmap br -variant abnt2' -i "$dir_install/home/${AsUser[cuser]}/.fluxbox/startup" >>"$BOOTLOG" 2>&1
@@ -932,17 +933,17 @@ sh_fluxboxminimal() {
 
 sh_openboxminimal() {
 	local apkgs=('openbox' 'obconf')
-	sh_chroot_job "Instalando Openbox em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Openbox ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_plasmaminimal() {
 	local apkgs=('plasma-desktop')
-	sh_chroot_job "Instalando Plasma-Desktop em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Plasma-Desktop ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_xfce4minimal() {
 	local apkgs=('xfce4' 'xfce4-whiskermenu-plugin' 'xfce4-pulseaudio-plugin' 'xfce4-screenshooter' 'xfce4-clipman-plugin')
-	sh_chroot_job "Instalando Xfce4 em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Xfce4 ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_gnomeminimal() {
@@ -952,19 +953,19 @@ sh_gnomeminimal() {
 					gnome-nettool gnome-nibbles gnome-recipes gnome-robots gnome-sound-recorder gnome-sudoku
 					gnome-taquin gnome-terminal gnome-tetravex gnome-tweaks gnome-usage hitori iagno lightsoff
 					polari quadrapassel swell-foop sysprof tali)
-	sh_chroot_job "Instalando Gnome em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Gnome ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_i3minimal() {
 	local apkgs=('i3' 'dmenu' 'i3status' 'i3lock' 'geany' 'volumeicon' 'mc' 'scrot' 'ImageMagick'
 					 'gnome-themes-standard' 'axel' 'pasystray' 'mps-youtube' 'youtube-dl' 'mpv' 'xarchiver'
 					 'cava' 'mate-themes')
-	sh_chroot_job "Instalando I3 em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} I3 ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_swayminimal() {
 	local apkgs=('sway')
-	sh_chroot_job "Instalando Sway em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Sway ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_mateminimal() {
@@ -972,22 +973,22 @@ sh_mateminimal() {
 					 'caja-share' 'caja-wallpaper' 'caja-xattr-tags' 'engrampa' 'eom' 'mate-calc' 'mate-icon-theme-faenza'
 					 'mate-media' 'mate-netbook' 'mate-power-manager' 'mate-screensaver' 'mate-sensors-applet' 'mate-system-monitor'
 					 'mate-terminal' 'mate-utils' 'mozo' 'pluma')
-	sh_chroot_job "Instalando Mate em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Mate ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_twmminimal() {
 	local apkgs=('twm')
-	sh_chroot_job "Instalando Twm em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Twm ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_awesomeminimal() {
 	local apkgs=('awesome')
-	sh_chroot_job "Instalando Awesome em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Awesome ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_dwmminimal() {
 	local apkgs=('dwm')
-	sh_chroot_job "Instalando Dwm em $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Dwm ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_backup_partitions() {
@@ -1044,18 +1045,20 @@ sh_choosegrub() {
 	if sh_bootefi; then
 		cefi='on'
 		cbios='off'
-		cextra="Detectado boot via EFI \n↓ é recomendável instalar ↓"
+		cextra="${cmsg_ExtraEfi[$LC_DEFAULT]}"
 	else
-		cextra="EFI não detectado \n↓ é recomendável instalar BIOS ↓"
+		cextra="${cmsg_ExtraNotEfi[$LC_DEFAULT]}"
 	fi
 
 	mbr=$(${DIALOG} --title "** BOOTLOADER (GRUB) **"					\
 		--default-item "$_BOOTLOADER"											\
 		--colors 																	\
-		--radiolist "$LABEL\n\n$cextra"										\
+		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"						\
+		--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"					\
+		--radiolist 	"${cmsg_LABEL[$LC_DEFAULT]}\n\n$cextra"		\
 		0 0 0																			\
-		BIOS    "Sistema Básico de Entrada e Saída" $cbios          \
-		EFI     "Interface de Firmaware Extensivel" $cefi           \
+		BIOS    "${cmsg_Bios[$LC_DEFAULT]}" 					$cbios	\
+		EFI     "${cmsg_Efi[$LC_DEFAULT]}"  					$cefi		\
 		2>&1 >/dev/tty )
 
 	exit_status=$?
@@ -1081,18 +1084,21 @@ sh_choosefilesystem() {
 	local exit_status
 
 	cextra="↓ é recomendável EXT4 ↓"
-	mkfs=$(${DIALOG} --title "** FILESYSTEM **"							\
+	mkfs=$(${DIALOG}																\
+		--title 			"${cmsg_TitleFileSystem[$LC_DEFAULT]}"			\
 		--default-item "$_FILESYSTEM"											\
 		--colors 																	\
-		--radiolist "$LABEL\n\n$cextra"										\
-		10 70 0																		\
-		ext4     "Linux Ext4 - Rápido e maduro (journal)"	"on"		\
-		btrfs    "Oracle Btrfs - Novos recursos - imaturo"	"off"		\
-		ext2     "Linux Ext2 (sem journal)"						"off"		\
-		ext3     "Linux Ext3 (journal)"							"off"		\
+		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"						\
+		--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"					\
+		--radiolist 	"${cmsg_LABEL[$LC_DEFAULT]}\n\n$cextra"		\
+		11 70 0																		\
+		ext4     "Linux Ext4"										"on"		\
+		btrfs    "Oracle Btrfs"										"off"		\
+		ext2     "Linux Ext2"										"off"		\
+		ext3     "Linux Ext3"										"off"		\
+		ext3     "Linux Ext3"										"off"		\
 		f2fs   	"Flash-Friendly Filesystem"					"off"		\
-		ext3     "Linux Ext3 (journal)"							"off"		\
-		xfs      "SGI's Xfs - Alto desempenho"					"off"		\
+		xfs      "SGI's Xfs"											"off"		\
 		2>&1 >/dev/tty )
 
 	exit_status=$?
@@ -1108,9 +1114,10 @@ sh_choosefilesystem() {
 sh_choosetimezone() {
 	timezone=$(${DIALOG} --title "** TIMEZONE **"	\
 		--default-item "${_TIMEZONE#America/}"			\
-		--colors 												\
 		--colors													\
-		--radiolist "$LABEL"									\
+		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"	\
+		--ok-label 	"${cmsg_Aceitar[$LC_DEFAULT]}"	\
+		--radiolist "${cmsg_LABEL[$LC_DEFAULT]}"		\
 		0 70 0													\
 		Araguaina		"America/Araguaina"		"off"	\
 		Bahia				"America/Bahia"			"off"	\
@@ -1158,9 +1165,10 @@ sh_choosemirror() {
 
 	mirror=$(${DIALOG} --title "** MIRROR **"			\
 		--default-item "${_MIRROR}"						\
-		--colors 												\
 		--colors													\
-		--radiolist "$LABEL"									\
+		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"	\
+		--ok-label 	"${cmsg_Aceitar[$LC_DEFAULT]}"	\
+		--radiolist "${cmsg_LABEL[$LC_DEFAULT]}"		\
 		0 0 0														\
 		'OuroPreto'			'BR:Ouro Preto/MG    - https://voidlinux.com.br/repo/'					"${AFlag['OuroPreto']}"		\
 		'PimentaBueno'		'BR:Pimenta Bueno/RO - http://void.chililinux.com/voidlinux/'			"${AFlag['PimentaBueno']}"	\
@@ -1201,13 +1209,13 @@ sh_choosedisk() {
 
     	sd=$(${DIALOG}  																				\
 					--default-item "$_DEVICE"														\
-    				--backtitle	 	"$ccabec - Configuração disco destino"					\
-    				--title 			"** DISCO **"						  							\
-    				--cancel-label "$buttonback"													\
+    				--backtitle	 	"$ccabec"														\
+    				--title 			"${cmsg_TitleDisco[$LC_DEFAULT]}"						\
+    				--cancel-label "${cmsg_ButtonBack[$LC_DEFAULT]}"						\
     				--colors																				\
 	            --extra-button                                                    \
-               --extra-label  "$buttonpart"                                      \
-    				--menu 			"$LABEL" 0 0 10 "${array[@]}" 2>&1 >/dev/tty 	)
+               --extra-label  "${cmsg_info_disco[$LC_DEFAULT]}"						\
+    				--menu 			"${cmsg_LABEL[$LC_DEFAULT]}" 0 0 10 "${array[@]}" 2>&1 >/dev/tty 	)
 
     	exit_status=$?
 		case $exit_status in
@@ -1216,7 +1224,7 @@ sh_choosedisk() {
 	  		;;
 		3)
       	result=$(fdisk -l "$sd");
-         display_result "$result" "$cmsgpart" "$cmsg_part_disk"
+         display_result "$result" "${cmsg_part_disk[$LC_DEFAULT]}"
          continue
          ;;
 		esac
@@ -1256,29 +1264,26 @@ sh_choosedisk() {
 sh_checkdisk() {
 	local dsk
 
-	msg "INFO" "$(log_info_msg "Aguardando, checando por partições montadas no disco: $_DEVICE")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_ChecandoParticoesMontadas[$LC_DEFAULT]}: $_DEVICE")"
 	dsk=$(df -h | grep "$_DEVICE" | awk '{print $1, $2, $3, $4, $5, $6, $7}')
 
 	if [[ -n "$dsk" ]]; then
-		evaluate_retval "$err_fatal" "$err_fatal" "$cmsg_all_mounted_part: $dsk"
+		evaluate_retval "$err_fatal" "$err_fatal" "${cmsg_all_mounted_part[$LC_DEFAULT]}: $dsk"
 		return 1
 	fi
 	return 0
 }
 
 display_result() {
-	local xbacktitle=$ccabec
-
-	if [[ "$3" != "" ]] ; then
-		xbacktitle="$3"
-	fi
-	${DIALOG}								\
-			--backtitle	"$xbacktitle"	\
-		   --title		"$2"				\
-			--beep							\
-			--no-collapse					\
-			--no-cr-wrap					\
-			--msgbox    "$1"				\
+	${DIALOG}												\
+			--colors					   					\
+			--backtitle	"$ccabec"						\
+		   --title		"$2"								\
+			--beep											\
+			--ok-label	"${cmsg_ok[$LC_DEFAULT]}"	\
+			--no-collapse									\
+			--no-cr-wrap									\
+			--msgbox    "$1"								\
 			00 0
 }
 
@@ -1286,24 +1291,24 @@ sh_confadduser() {
 	while true
 	do
 		exec 3>&1
-		usertext=$(${DIALOG}					\
-			--title		"** EXTRA **"		\
-			--colors					         \
-			--backtitle	"$ccabec"			\
-			--insecure	"$@"					\
-			--mixedform	"$LABEL"				\
-			0 0 0									\
-			"Nome Completo: "                        1 1 "${AsUser[cfullname]}"           1 28 40 0 0 \
-			"Username: "                             2 1 "${AsUser[cuser]}"               2 28 20 0 0 \
-			"Password user (${AsUser[cpass]}): "     3 1 "${AsUser[cpass]}"               3 28 20 0 1 \
-			"Password root (${AsUser[cpassroot]}): " 4 1 "${AsUser[cpassroot]}"           4 28 20 0 1 \
-			"Hostname: "                             5 1 "${AsUser[chostname]}"           5 28 20 0 0 \
-			"Disco destino: "                        6 1 "${_DEVICE}"                     6 28 20 0 2 \
-			"Tam/Modelo: "                           7 1 "${SIZE_ORIGEM}/${MODEL_ORIGEM}" 7 28 20 0 2 \
-			"FileSystem: "                           8 1 "${mkfs}"                        8 28 20 0 2 \
-			"Teclado: "                              9 1 "${_KEYMAP}"                     9 28 20 0 2 \
-			"Timezone: "                            10 1 "${_TIMEZONE}"                  10 28 20 0 2 \
-			"Window Manager: "                      11 1 "${_WINDOWMANAGER[*]}"          11 28 30 0 2 \
+		usertext=$(${DIALOG}									\
+			--title		"** EXTRA **"						\
+			--colors					         				\
+			--backtitle	"$ccabec"							\
+			--insecure	"$@"									\
+			--mixedform	"${cmsg_LABEL[$LC_DEFAULT]}"	\
+			0 0 0													\
+			"${cmsg_Extra1[$LC_DEFAULT]}: "				1 1 "${AsUser[cfullname]}"           1 28 40 0 0 \
+			"${cmsg_Extra2[$LC_DEFAULT]}: "          	2 1 "${AsUser[cuser]}"               2 28 20 0 0 \
+			"${cmsg_Extra3[$LC_DEFAULT]} (${AsUser[cpass]}): "     	3 1 "${AsUser[cpass]}"               3 28 20 0 1 \
+			"${cmsg_Extra4[$LC_DEFAULT]} (${AsUser[cpassroot]}): " 	4 1 "${AsUser[cpassroot]}"           4 28 20 0 1 \
+			"Hostname: "                            	5 1 "${AsUser[chostname]}"           5 28 20 0 0 \
+			"${cmsg_Extra6[$LC_DEFAULT]}: "          	6 1 "${_DEVICE}"                     6 28 20 0 2 \
+			"Tam/Model: "                           	7 1 "${SIZE_ORIGEM}/${MODEL_ORIGEM}" 7 28 20 0 2 \
+			"FileSystem: "                           	8 1 "${mkfs}"                        8 28 20 0 2 \
+			"${cmsg_Extra9[$LC_DEFAULT]}: "          	9 1 "${_KEYMAP}"                     9 28 20 0 2 \
+			"Timezone: "                             10 1 "${_TIMEZONE}"                  10 28 20 0 2 \
+			"${cmsg_Extra11[$LC_DEFAULT]}: "         11 1 "${_WINDOWMANAGER[*]}"          11 28 30 0 2 \
 			2>&1 1>&3)
 
 			exit_status=$?
@@ -1356,7 +1361,6 @@ sh_confadduser() {
 					_PASSWD_USER="${AsUser[cpass]}"
 					_PASSWD_ROOT="${AsUser[cpassroot]}"
 					_HOSTNAME="${AsUser[chostname]}"
-					log_wait_msg 'Configurações efetuadas. Prosseguindo com instalação.'
 					LEXTRA=$true
 					#evaluate_retval "$?"
 					;;
@@ -1370,14 +1374,14 @@ sh_confwifi() {
 	while true
 	do
 		exec 3>&1
-		wifitext=$(${DIALOG}						\
-			--title		"** REDE WIFI **"		\
-			--colors					      	   \
-			--backtitle	"$ccabec"				\
-			--insecure	"$@"						\
-			--mixedform	"$LABEL"					\
-			0 0 0										\
-			"Rede Wifi : "	1 1 "$_REDE_WIFI"		1 15 40 0 0 \
+		wifitext=$(${DIALOG}											\
+			--title		"** REDE WIFI **"							\
+			--colors					      	   					\
+			--backtitle	"$ccabec"									\
+			--insecure	"$@"											\
+			--mixedform	"${cmsg_LABEL[$LC_DEFAULT]}"			\
+			0 0 0															\
+			"Rede Wifi : "	1 1 "$_REDE_WIFI"		1 15 40 0 0	\
 			"Senha Wifi: " 2 1 "$_SENHA_WIFI"	2 15 40 0 1 \
 			2>&1 1>&3)
 
@@ -1390,7 +1394,6 @@ sh_confwifi() {
 					mapfile -t <<< "$wifitext" aWifi
 					_REDE_WIFI="${aWifi[0]}"
 					_SENHA_WIFI="${aWifi[1]}"
-					log_wait_msg 'Configurações efetuadas. Prosseguindo com instalação.'
 					LWIFI=$true
 					#evaluate_retval "$?"
 					;;
@@ -1418,13 +1421,13 @@ ${white}${APP} v$_VERSION_${reset}
 ${orange}usage: ${APP} ${reset}[<options>]
 
 [<options>] ${reset}
-   ${red}-i  --install${cyan}       # Instalar
-   ${red}-c  --chroot${cyan}        # Rodar chroot na partição instalada
-   ${red}-g  --grafico${cyan}       # Ativar modo grafico
-   ${red}-q  --quiet${cyan}         # Saida resumida
-   ${red}-v  --version${cyan}       # Mostrar versao do aplicativo
-   ${red}-n  --nocolor${cyan}       # Remove cores da saida
-   ${red}-h  --help${cyan}          # Este help${reset}
+   ${red}-i  --install${cyan}       #${cmsg_Usage1[$LC_DEFAULT]}
+   ${red}-c  --chroot${cyan}        #${cmsg_Usage2[$LC_DEFAULT]}
+   ${red}-g  --grafico${cyan}       #${cmsg_Usage3[$LC_DEFAULT]}
+   ${red}-q  --quiet${cyan}         #${cmsg_Usage4[$LC_DEFAULT]}
+   ${red}-v  --version${cyan}       #${cmsg_Usage5[$LC_DEFAULT]}
+   ${red}-n  --nocolor${cyan}       #${cmsg_Usage6[$LC_DEFAULT]}
+   ${red}-h  --help${cyan}          #${cmsg_Usage7[$LC_DEFAULT]}${reset}
 EOF
 }
 
@@ -1464,11 +1467,11 @@ init() {
 
 sh_mkefiroaming() {
 	#Caminho de inicialização padrão/reserva
-	msg "INFO" "$(log_info_msg "Criando diretorio: $dir_install/boot/efi/EFI/BOOT")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_CriandoDiretorios[$LC_DEFAULT]}: $dir_install/boot/efi/EFI/BOOT")"
 	mkdir -p "$dir_install/boot/efi/EFI/BOOT" >>"$BOOTLOG" 2>&1
 	evaluate_retval "$?" "$err_not_fatal"
 
-	msg "INFO" "$(log_info_msg "Copiando caminho de inicialização padrão/reserva para: $dir_install/boot/efi/BOOT")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_CopiandoCaminhoReserva[$LC_DEFAULT]}: $dir_install/boot/efi/BOOT")"
 	cp "$dir_install/boot/efi/EFI/$cnickefi/grubx64.efi" "$dir_install/boot/efi/EFI/BOOT/BOOTX64.EFI" >>"$BOOTLOG" 2>&1
 	evaluate_retval "$?" "$err_not_fatal"
 }
@@ -1486,7 +1489,7 @@ sh_choosewm() {
 	declare -A aWm
 	local x
 
-	aWm[tty]="Somente terminal, sem interface gráfica"
+	aWm[tty]="${cmsg_tty[LC_DEFAULT]}"
 	aWm[awesome]="Awesome"
 	aWm[dwm]="Dwm"
 	aWm[fluxbox]="Fluxbox"
@@ -1507,10 +1510,12 @@ sh_choosewm() {
 		aFlag[$x]='on'
 	done
 
-	wm=$(${DIALOG} --title "** GERENCIADOR DE JANELAS (wm) **"		\
+	wm=$(${DIALOG} --title "** ${cmsg_Wm[$LC_DEFAULT]^^} **"			\
 		--default-item "$_WINDOWMANAGER"										\
 		--colors 																	\
-		--checklist "$LABEL"														\
+		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"						\
+		--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"					\
+		--checklist 	"${cmsg_LABEL[$LC_DEFAULT]}"						\
 		0 70 0																		\
 		tty     			"${aWm[tty]}"				"${aFlag[tty]}"		\
 		awesome			"${aWm[awesome]}"			"${aFlag[awesome]}"	\
@@ -1539,7 +1544,7 @@ sh_choosewm() {
 strtoarray() {
 	local anew
 	IFS=' ' read -r -a anew <<< "$1"
-	echo ${anew[@]}
+	echo "${anew[@]}"
 }
 
 lenarraystr() {
@@ -1549,7 +1554,7 @@ lenarraystr() {
 }
 
 sh_choosekeymap() {
-	if notconf "*** TECLADO ***" "Layout atual : \Zb\Z1$_KEYMAP${RESET}" "\n\n$cmsgSetKeyboardLayout?"; then
+	if notconf "*** ${cmsg_Teclado[$LC_DEFAULT]^^} ***" "${cmsg_LayoutAtual[$LC_DEFAULT]} : \Zb\Z1$_KEYMAP${RESET}" "\n\n${cmsgSetKeyboardLayout[$LC_DEFAULT]}?"; then
 		LTECLADO=$true
 		return 0
 	fi
@@ -1564,18 +1569,18 @@ sh_choosekeymap() {
 		options+=("${item%%.*}" "")
 	done
 
-	keymap=$(${DIALOG}                        		\
-					--colors										\
-					--default-item "$_KEYMAP"				\
-					--backtitle "${ccabec}"       		\
-					--title "definir layout do teclado"	\
-					--menu "$LABEL"                 		\
-					0 70 0    	                   		\
+	keymap=$(${DIALOG}                        							\
+					--colors															\
+					--default-item	"$_KEYMAP"									\
+					--backtitle 	"${ccabec}"       						\
+					--title 			"${cmsg_descTeclado[$LC_DEFAULT]}"	\
+					--menu 			"${cmsg_LABEL[$LC_DEFAULT]}"			\
+					0 70 0    	                   							\
 					"${options[@]}" 3>&1 1>&2 2>&3)
 
 	nchoice=$?
 	if ! (( nchoice )); then
-		#loadkeys "$keymap"
+		loadkeys "$keymap"
 		_KEYMAP="$keymap"
 		LTECLADO=$true
 	fi
@@ -1585,7 +1590,7 @@ sh_choosekeymap() {
 sh_chmodtmp() {
 	local cfile="$dir_install/etc/runit/core-services/03-filesystems.sh"
 
-	msg "INFO" "$(log_info_msg "Ajustando permissões em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} ${cmsg_Permissoes[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	if [[ -e "$cfile" ]]; then
 	{
 		echo ''
@@ -1600,7 +1605,7 @@ sh_chmodtmp() {
 sh_copiavoid-install() {
 	local cfile="void-install"
 
-	msg "INFO" "$(log_info_msg "Copiando void-install para $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_Copiando[$LC_DEFAULT]} void-install ${cmsg_Para[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	if [[ -e "$cfile" ]]; then
 		cp "$cfile" "$dir_install/usr/bin/" >>"$BOOTLOG" 2>&1
 	fi
@@ -1608,66 +1613,66 @@ sh_copiavoid-install() {
 }
 
 display_config() {
-	[[ -z "$LDISCO"    ]] && local _device="não definido"     || local _device=${_DEVICE}
-	[[ -z "$LDISCO"    ]] && local _modelo="não definido"     || local _modelo=${SIZE_ORIGEM}/${MODEL_ORIGEM}
-	[[ -z "$LFS"       ]] && local _mkfs="não definido"       || local _mkfs=${mkfs}
-	[[ -z "$LGRUB"     ]] && local _bootloader="não definido" || local _bootloader=${mbr}
-	[[ -z "$LEXTRA"    ]] && local _fullname="não definido"   || local _fullname=${_USER_FULLNAME}
-	[[ -z "$LEXTRA"    ]] && local _hostname="não definido"   || local _hostname=${_HOSTNAME}
-	[[ -z "$LTIMEZONE" ]] && local _timezone="não definido"   || local _timezone=${_TIMEZONE}
+	[[ -z "$LDISCO"    ]] && local _device="${cmsg_naodefinido[LC_DEFAULT]}"		|| local _device=${_DEVICE}
+	[[ -z "$LDISCO"    ]] && local _modelo="${cmsg_naodefinido[LC_DEFAULT]}"		|| local _modelo=${SIZE_ORIGEM}/${MODEL_ORIGEM}
+	[[ -z "$LFS"       ]] && local _mkfs="${cmsg_naodefinido[LC_DEFAULT]}"			|| local _mkfs=${mkfs}
+	[[ -z "$LGRUB"     ]] && local _bootloader="${cmsg_naodefinido[LC_DEFAULT]}"	|| local _bootloader=${mbr}
+	[[ -z "$LEXTRA"    ]] && local _fullname="${cmsg_naodefinido[LC_DEFAULT]}"		|| local _fullname=${_USER_FULLNAME}
+	[[ -z "$LEXTRA"    ]] && local _hostname="${cmsg_naodefinido[LC_DEFAULT]}"		|| local _hostname=${_HOSTNAME}
+	[[ -z "$LTIMEZONE" ]] && local _timezone="${cmsg_naodefinido[LC_DEFAULT]}"		|| local _timezone=${_TIMEZONE}
 	SETUP="\
-                            \n\nNome Completo       : \Zb\Z1${_fullname}${RESET}\
-                            \nUsername            : \Zb\Z1${_USER}${RESET}\
-                            \nPassword user       : \Zb\Z1${_PASSWD_USER}${RESET}\
-                            \nPassword root       : \Zb\Z1${_PASSWD_ROOT}${RESET}\
+                            \n\n${cmsg_Extra1[$LC_DEFAULT]}       : \Zb\Z1${_fullname}${RESET}\
+                            \n${cmsg_Extra2[$LC_DEFAULT]}        : \Zb\Z1${_USER}${RESET}\
+                            \n${cmsg_Extra3[$LC_DEFAULT]}       : \Zb\Z1${_PASSWD_USER}${RESET}\
+                            \n${cmsg_Extra4[$LC_DEFAULT]}          : \Zb\Z1${_PASSWD_ROOT}${RESET}\
                             \nHostname            : \Zb\Z1${_hostname}${RESET}\
-                            \nDisco destino       : \Zb\Z1${_device}${RESET}\
-                            \nTam/Modelo:         : \Zb\Z1${_modelo}${RESET}\
+                            \n${cmsg_Extra6[$LC_DEFAULT]}       : \Zb\Z1${_device}${RESET}\
+                            \nTam/Model:          : \Zb\Z1${_modelo}${RESET}\
                             \nFileSystem          : \Zb\Z1${_mkfs}${RESET}\
                             \nBootloader          : \Zb\Z1${_bootloader}${RESET}\
-                            \nTeclado             : \Zb\Z1${_KEYMAP}${RESET}\
+                            \n${cmsg_Extra9[$LC_DEFAULT]}             : \Zb\Z1${_KEYMAP}${RESET}\
                             \nTimezone            : \Zb\Z1${_timezone}${RESET}\
-                            \nGerenciador Janelas : \Zb\Z1${_WINDOWMANAGER[*]}${RESET}\
+                            \n${cmsg_Extra11[$LC_DEFAULT]} : \Zb\Z1${_WINDOWMANAGER[*]}${RESET}\
                             \n"
 }
 
 sh_checkinstall() {
 	if [ -z "$LDISCO" ]; then
-	  	alerta "DISCO" "O disco não foi configurado, faça isso antes de iniciar a instalação."
-		DEFITEM="Disco"
-	     return 1
+		alerta "${cmsg_Disco[$LC_DEFAULT]}" "${cmsg_NotConfDisco[$LC_DEFAULT]}"
+		DEFITEM="${cmsg_Disco[$LC_DEFAULT]}"
+		return 1
 	elif [ -z "$LFS" ]; then
-		alerta "FILESYSTEM" "O filesystem não foi configurado, faça isso antes de iniciar a instalação."
+		alerta "FILESYSTEM" "${cmsg_NotConfFileSystem[$LC_DEFAULT]}"
 		DEFITEM="FileSystem"
 		return 1
 	elif [ -z "$LGRUB" ]; then
-		alerta "BOOTLOADER" "O Bootloader não foi configurado, faça isso antes de iniciar a instalação."
+		alerta "BOOTLOADER" "${cmsg_NotConfBootLoader[$LC_DEFAULT]}"
 		DEFITEM="BootLoader"
 		return 1
 	elif [ -z "$LTECLADO" ]; then
-		alerta "TECLADO" "O teclado não foi configurado, faça isso antes de iniciar a instalação."
-		DEFITEM="Teclado"
+		alerta "${cmsg_Teclado[$LC_DEFAULT]}" "${cmsg_NotConfTeclado[$LC_DEFAULT]}"
+		DEFITEM="${cmsg_Teclado[$LC_DEFAULT]}"
 		return 1
 	elif [ -z "$LTIMEZONE" ]; then
-		alerta "TIMEZONE" "O timezone não foi configurado, faça isso antes de iniciar a instalação."
+		alerta "TIMEZONE" "${cmsg_NotConfTimezone[$LC_DEFAULT]}"
 		DEFITEM="Timezone"
 		return 1
 	elif [ -z "$LWM" ]; then
-		alerta "WINDOW MANAGER" "O Gerenciador de Janelas não foi configurado, faça isso antes de iniciar a instalação."
+		alerta "WM" "${cmsg_NotConfWm[$LC_DEFAULT]}"
 		DEFITEM="Wm"
 		return 1
 	elif [ -z "$LWIFI" ]; then
-		alerta "REDE WIFI" "Rede wifi não foi configurada, faça isso antes de iniciar a instalação."
+		alerta "WIFI" "${cmsg_NotConfWifi[$LC_DEFAULT]}"
 		DEFITEM="Wifi"
 		return 1
 	elif [ -z "$LEXTRA" ]; then
-		alerta "EXTRA" "Extra não foi configurado, faça isso antes de iniciar a instalação."
+		alerta "EXTRA" "${cmsg_NotConfExtra[$LC_DEFAULT]}"
 		DEFITEM="Extra"
 		return 1
 	fi
 
 	display_config
-	if conf "Configurações salvas para instalação" "$SETUP \nDeseja iniciar a instalação?"; then
+	if conf "${cmsg_ConfSalva[LC_DEFAULT]}" "$SETUP \n${cmsg_descInstalar[$LC_DEFAULT]}?"; then
 		return 0
 	fi
 	return 1
@@ -1689,26 +1694,26 @@ sh_install() {
 	sh_mountfs
 	sh_mkdir
 
-	msg "INFO" "$(log_info_msg "Descompactando rootfs em $_PART_ROOT:$dir_install")" "$LINENO"
+	msg "INFO" "$(log_info_msg "${cmsg_Descompactando[$LC_DEFAULT]} rootfs ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	if tar xpf "$_TARBALL_ROOTFS" --xattrs-include='*.*' --numeric-owner -C $dir_install >>"$BOOTLOG" 2>&1; then
 		evaluate_retval "$?"
 		sh_initbind
 
-		msg "INFO" "$(log_info_msg "Copiando /etc/resolv.conf para $_PART_ROOT:$dir_install")" "$LINENO"
+		msg "INFO" "$(log_info_msg "${cmsg_Copiando[$LC_DEFAULT]} /etc/resolv.conf ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 		cp /etc/resolv.conf "$dir_install/etc/" >>"$BOOTLOG" 2>&1
 		evaluate_retval "$?"
 
 		sh_update_mirror
-		sh_chroot_job "Atualizando repositorio em $_PART_ROOT:$dir_install" "xbps-install -Suy xbps"
-#		sh_chroot_job "Atualizando sistema em $_PART_ROOT:$dir_install" "xbps-install -uy"
-		sh_chroot_job "Instalando pacotes base em $_PART_ROOT:$dir_install" "xbps-install -y ${abase[*]}"
-		sh_chroot_job "Instalando pacotes adicionais em $_PART_ROOT:$dir_install" "xbps-install -y $_PKGS"
+		sh_chroot_job "${cmsg_AtualizandoRepositorio[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -Suy xbps"
+#		sh_chroot_job "${cmsg_Atualizando[$LC_DEFAULT]} sistema em $_PART_ROOT:$dir_install" "xbps-install -uy"
+		sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${abase[*]}"
+		sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y $_PKGS"
 
 		sh_update_hostname
 		sh_update_rc
 		sh_update_timezone
 		sh_update_locale
-		sh_chroot_job "Reconfigurando locales em $_PART_ROOT:$dir_install" "xbps-reconfigure -f glibc-locales"
+		sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-reconfigure -f glibc-locales"
 		sh_mkuser
 		sh_mkfstab
 		sh_set_keymap
@@ -1716,17 +1721,17 @@ sh_install() {
 		sh_update_wpa_suplicant
 
 		case "$mbr" in
-			"BIOS") 	sh_chroot_job "Instalando GRUB i386-pc em $_DEVICE" "grub-install --target=i386-pc $_DEVICE --recheck"
+			"BIOS") 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} GRUB i386-pc ${cmsg_Em[$LC_DEFAULT]} $_DEVICE" "grub-install --target=i386-pc $_DEVICE --recheck"
 						;;
-		    "EFI")	sh_chroot_job "Instalando GRUB i386-pc em $_DEVICE" "grub-install --target=i386-pc $_DEVICE --recheck"
-						sh_chroot_job "Instalando GRUB EFI em $_PART_BOOT" "grub-install --target=x86_64-efi --efi-directory=/boot/efi --boot-directory=/boot --bootloader-id=$cnickefi --recheck"
+		    "EFI")	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} GRUB i386-pc ${cmsg_Em[$LC_DEFAULT]} $_DEVICE" "grub-install --target=i386-pc $_DEVICE --recheck"
+						sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} GRUB EFI ${cmsg_Em[$LC_DEFAULT]} $_PART_BOOT" "grub-install --target=x86_64-efi --efi-directory=/boot/efi --boot-directory=/boot --bootloader-id=$cnickefi --recheck"
 						sh_mkefiroaming
 						;;
 		esac
-		sh_chroot_job "Gerando grub.cfg em $_PART_ROOT:$dir_install" "grub-mkconfig -o /boot/grub/grub.cfg"
+		sh_chroot_job "${cmsg_Gerando[$LC_DEFAULT]} grub.cfg ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "grub-mkconfig -o /boot/grub/grub.cfg"
 
 		if [[ "${#_WINDOWMANAGER[@]}" -eq 1 ]]; then
-			if [[ "${_WINDOWMANAGER[@]}" = 'tty' ]]; then
+			if [[ "${_WINDOWMANAGER}" = 'tty' ]]; then
 				:
 			fi
 		else
@@ -1754,10 +1759,10 @@ sh_install() {
 		sh_chmodtmp
 		sh_copiavoid-install
 		quiet=$false
-		alerta "$ccabec" "Instalação finalizada com sucesso."
+		alerta "$ccabec" "${cmsg_FinalizadaComSucesso[LC_DEFAULT]}"
 	else
 		evaluate_retval "$?" "$err_not_fatal"
-		die "Erro tar #$?. Problemas para descompactar o tarball $_TARBALL_ROOTFS em $dir_install"
+		die "${cmsg_ERRO[LC_DEFAULT]} tar #$?. ${cmsg_ErroTar[LC_DEFAULT]} $_TARBALL_ROOTFS ${cmsg_Em[LC_DEFAULT]} $dir_install"
 	fi
 	sh_umountfs
 	exit 0
@@ -1768,56 +1773,597 @@ sh_menu() {
 	do
 		sh_touchconf
 		if [ -z "$DEFITEM" ]; then
-			DEFITEM="Disco"
+			DEFITEM="${cmsg_Disco[$LC_DEFAULT]}"
 		fi
 
-		menu=$(${DIALOG}	--backtitle "$ccabec"				\
-			--clear														\
-			--colors														\
-			--default-item "$DEFITEM"								\
-			--cancel-label "Sair"									\
-			--extra-button --extra-label "Definições"			\
-			--title "void-install - MENU DE INSTALAÇÃO"		\
-			--menu "$LABEL" 9 100 0									\
-			"Disco" 			"Definir disco destino"				\
-			"FileSystem" 	"Definir sistema de arquivos"		\
-			"BootLoader" 	"Definir bootloader"					\
-			"Teclado" 		"Definir teclado do sistema"		\
-			"Timezone" 		"Definir fuso horário"				\
-			"Wm" 				"Definir gerenciador de janela"	\
-			"Wifi" 			"Definir rede e senha wifi"		\
-			"Extra" 			"Definir usuário,senha,hostname"	\
-			"Mirror"			"Escolher espelho"					\
-			"Instalar" 		"Iniciar instalação" 				\
-			"Sair" 			"Encerrar instalação" 2>&1 >/dev/tty )
+		menu=$(${DIALOG}																		\
+			--backtitle "$ccabec"															\
+			--clear																				\
+			--colors																				\
+			--default-item "$DEFITEM"														\
+			--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"							\
+			--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"								\
+			--extra-button --extra-label "${cmsg_Definicoes[$LC_DEFAULT]}"		\
+			--title "$APP - ${cmsg_MenuInstalacao[$LC_DEFAULT]}"					\
+			--menu "${cmsg_LABEL[$LC_DEFAULT]}" 9 100 0								\
+			"${cmsg_Disco[$LC_DEFAULT]}"		"${cmsg_descDisco[$LC_DEFAULT]}"	\
+			"FileSystem"							"${cmsg_descFileSystem[$LC_DEFAULT]}"				\
+			"BootLoader"							"${cmsg_descBootLoader[$LC_DEFAULT]}"				\
+			"${cmsg_Teclado[$LC_DEFAULT]}"	"${cmsg_descTeclado[$LC_DEFAULT]}"					\
+			"Timezone" 								"${cmsg_descTimezone[$LC_DEFAULT]}"					\
+			"Wm" 										"${cmsg_descWm[$LC_DEFAULT]}"							\
+			"Wifi" 									"${cmsg_descWifi[$LC_DEFAULT]}"						\
+			"Extra"									"${cmsg_descExtra[$LC_DEFAULT]}"						\
+			"${cmsg_Mirror[$LC_DEFAULT]}"		"${cmsg_descMirror[$LC_DEFAULT]}"					\
+			"${cmsg_Instalar[$LC_DEFAULT]}"	"${cmsg_descInstalar[$LC_DEFAULT]}"					\
+			"${cmsg_Sair[$LC_DEFAULT]}"		"${cmsg_descSair[$LC_DEFAULT]}" 2>&1 >/dev/tty 	)
 
 		if [ $? -eq 3 ]; then
 			display_config
-			info "Configurações salvas para instalação" "$SETUP"
+			info "${cmsg_ConfSalva[LC_DEFAULT]}" "$SETUP"
 			continue
 		fi
 
 		case "$menu" in
-			"Disco")			sh_choosedisk        && [ -n "$LDISCO" ]		&& DEFITEM="FileSystem";;
-			"FileSystem")	sh_choosefilesystem  && [ -n "$LFS" ]			&& DEFITEM="BootLoader";;
-			"BootLoader")	sh_choosegrub        && [ -n "$LGRUB" ]		&& DEFITEM="Teclado";;
-        	"Teclado") 		sh_choosekeymap      && [ -n "$LTECLADO" ]	&& DEFITEM="Timezone";;
-        	"Timezone") 	sh_choosetimezone    && [ -n "$LTIMEZONE" ]	&& DEFITEM="Wm";;
-        	"Wm") 			sh_choosewm          && [ -n "$LWM" ]			&& DEFITEM="Wifi";;
-        	"Wifi") 			sh_confwifi          && [ -n "$LWIFI" ]		&& DEFITEM="Extra";;
-        	"Extra") 		sh_confadduser "$@"  && [ -n "$LEXTRA" ]		&& DEFITEM="Mirror";;
-        	"Mirror") 		sh_choosemirror "$@" && [ -n "$LMIRROR" ]		&& DEFITEM="Instalar";;
-   		"Instalar") 	sh_install;;
-        	"Sair")			die "Instalação foi abortada...";;
-	      *) 				${DIALOG} --title "$ccabec" --yesno "\nSair do instalador sem instalar?" 8 70 && die
+			"${cmsg_Disco[$LC_DEFAULT]}")		sh_choosedisk        && [ -n "$LDISCO" ]		&& DEFITEM="FileSystem";;
+			"FileSystem")							sh_choosefilesystem  && [ -n "$LFS" ]			&& DEFITEM="BootLoader";;
+			"BootLoader")							sh_choosegrub        && [ -n "$LGRUB" ]		&& DEFITEM="${cmsg_Teclado[$LC_DEFAULT]}";;
+        	"${cmsg_Teclado[$LC_DEFAULT]}")	sh_choosekeymap      && [ -n "$LTECLADO" ]	&& DEFITEM="Timezone";;
+        	"Timezone") 							sh_choosetimezone    && [ -n "$LTIMEZONE" ]	&& DEFITEM="Wm";;
+        	"Wm") 									sh_choosewm          && [ -n "$LWM" ]			&& DEFITEM="Wifi";;
+        	"Wifi") 									sh_confwifi "$@"     && [ -n "$LWIFI" ]		&& DEFITEM="Extra";;
+        	"Extra")									sh_confadduser "$@"  && [ -n "$LEXTRA" ]		&& DEFITEM="${cmsg_Mirror[$LC_DEFAULT]}";;
+        	"${cmsg_Mirror[$LC_DEFAULT]}")	sh_choosemirror "$@" && [ -n "$LMIRROR" ]		&& DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}";;
+   		"${cmsg_Instalar[$LC_DEFAULT]}")	sh_install;;
+        	"${cmsg_Sair[$LC_DEFAULT]}")		die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}...";;
+	      *) ${DIALOG} --title "$ccabec" --yes-label "${cmsg_Aceitar[$LC_DEFAULT]}" --no-label "${cmsg_Sair[$LC_DEFAULT]}" --yesno "\n${cmsg_SairSemInstalar[$LC_DEFAULT]}?" 8 70 && die
 		esac
 	done
+}
+
+scrend() {
+	exit "$1"
+}
+
+sh_main() {
+	while true; do
+		i18=$(${DIALOG}                                          \
+			--stdout                                              \
+			--backtitle    "$ccabec"                              \
+			--title        "$welcome"                             \
+			--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"			\
+			--cancel-label "${cmsg_Exit[$LC_DEFAULT]}"            \
+			--menu         "\nChoose the language:"               \
+			0 80 0                                                \
+			0 'Português'                                         \
+			1 'English'                                           \
+			2 'Deustch'                                           \
+			3 'Français'                                          \
+			4 'Spañol'                                            \
+			5 'Italiano'                                          )
+
+			exit_status=$?
+			case $exit_status in
+				"$D_ESC"|"$D_CANCEL")
+					clear
+					scrend 0
+					;;
+			esac
+			LC_DEFAULT="$i18"; init "$@";break
+	done
+}
+
+sh_language() {
+	langmsg=(
+		'lang=("pt_BR"
+			"en_US"
+			"de_DE"
+			"fr_FR")'
+		'cmsg_LABEL=("Use as teclas ${RED}PARA CIMA ${RESET}e ${RED}PARA BAIXO ${RESET}para navegar.\nUse ${RED}TAB ${RESET}para alternar entre os botões e ${RED}ENTER ${RESET}para selecionar."
+			"Use the ${RED}UP ${RESET}and ${RED}DOWN ${RESET}keys to navigate.\nUse ${RED}TAB ${RESET}to toggle between buttons and ${RED}ENTER ${RESET}to select."
+			"Verwenden Sie die Tasten ${RED}UP ${RESET}und ${RED}DOWN${RESET}, um zu navigieren.\nVerwenden Sie ${RED}TAB${RESET}, um zwischen den Schaltflächen zu wechseln, und ${RED}ENTER ${RESET}auswählen."
+			"Utilisez les touches ${RED}HAUT ${RESET}et ${RED}BAS ${RESET}pour naviguer.\nUtilisez ${RED}TAB ${RESET}pour basculer entre les boutons et ${RED}ENTRÉE ${RESET}pour sélectionner")'
+		'cmsg_Definicoes=("Definições"
+			"Definitions"
+			"Definitionen"
+			"Définitions")'
+		'cmsg_naodefinido=("não definido"
+			"undefined"
+			"nicht definiert"
+			"indéfini")'
+		'cmsg_AjustandoSenhaUsuario=("Ajustando senha usuário"
+			"Setting user password"
+			"Benutzerpasswort setzen"
+			"Définition du mot de passe utilisateur")'
+		'cmsg_CriandoUsuario=("Criando usuário"
+			"Creating user"
+			"Benutzer erstellen"
+			"Création d un utilisateur")'
+		'cmsg_MenuInstalacao=("MENU DE INSTALAÇÃO"
+			"INSTALLATION MENU"
+			"INSTALLATIONSMENÜ"
+			"MENU D INSTALLATION")'
+		'cmsg_DesMontandoAmbiente=("Desmontando ambiente"
+			"Dismantling environment"
+			"Abbauumgebung"
+			"Environnement de démantèlement")'
+		'cmsg_MontandoAmbiente=("Montando ambiente"
+			"Setting up environment"
+			"Umgebung einrichten"
+			"mise en place de l environnement")'
+		'cmsg_MontandoParticao=("Montando partição"
+			"Mounting partition"
+			"Montagepartition"
+			"Cloison de montage")'
+		'cmsg_Gerando=("Gerando"
+			"Generating"
+			"Erstellen"
+			"Générateur")'
+		'cmsg_Ajustando=("Ajustando"
+			"Adjusting"
+			"Anpassen"
+			"Réglage")'
+		'cmsg_Copiando=("Copiando"
+			"Copying"
+			"Kopieren"
+			"Copier")'
+		'cmsg_Descompactando=("Descompactando"
+			"Unpacking"
+			"Auspacken"
+			"Déballage")'
+		'cmsg_Atualizando=("Atualizando"
+			"Updating"
+			"Aktualisierung"
+			"Mise à jour")'
+		'cmsg_Instalando=("Instalando"
+			"Installing"
+			"Installieren"
+			"Installation")'
+		'cmsg_Configurando=("Configurando"
+			"Setting"
+			"Einstellung"
+			"Paramètre")'
+		'cmsg_Em=("em"
+			"in"
+			"in"
+			"dans")'
+		'cmsg_ERRO=("ERRO"
+			"ERROR"
+			"ERROR"
+			"ERREUR")'
+		'cmsg_Aceitar=("Aceitar"
+			"Accept"
+			"Akzeptieren"
+			"Accepter")'
+		'cmsg_Sair=("Sair"
+			"Exit"
+			"Verlassene"
+			"Partir")'
+		'cmsg_Instalar=("Instalar"
+			"Install"
+			"Installieren"
+			"Installer")'
+		'cmsg_Mirror=("Mirror"
+			"Mirror"
+			"Spiegel"
+			"Miroiter")'
+		'cmsg_Disco=("Disco"
+			"Disk"
+			"Disko"
+			"Disco")'
+		'cmsg_Teclado=("Teclado"
+			"Keyboard"
+			"Klaviatur"
+			"Clavier")'
+		'cmsg_SairSemInstalar=("Sair sem instalar"
+			"Exit without installing"
+			"Beenden ohne zu installieren"
+			"Quitter sans installer")'
+		'cmsg_tty=("Somente terminal, sem interface gráfica"
+			"Terminal only, no GUI"
+			"Nur Terminal, keine GUI"
+			"Terminal uniquement, pas d interface graphique")'
+		'cmsg_descDisco=("Definir disco destino"
+			"Set destination disk"
+			"Zielfestplatte festlegen"
+			"Définir le disque de destination")'
+		'cmsg_descFileSystem=("Definir sistema de arquivos"
+			"Set file system"
+			"Dateisystem definieren"
+			"Définir le système de fichiers")'
+		'cmsg_descBootLoader=("Definir bootloader"
+			"Set bootloader"
+			"Bootloader einstellen"
+			"Définir le chargeur de démarrage")'
+		'cmsg_descTeclado=("Definir teclado do sistema"
+			"Set system keyboard"
+			"Systemtastatur einstellen"
+			"Définir le clavier système")'
+		'cmsg_descTimezone=("Definir fuso horário"
+			"Set time zone"
+			"Zeitzone einstellen"
+			"Régler le fuseau horaire")'
+		'cmsg_descWm=("Definir gerenciador de janelas"
+			"Set window manager"
+			"Fenstermanager definieren"
+			"Définir le gestionnaire de fenêtres")'
+		'cmsg_descWifi=("Definir rede e senha wifi"
+			"Set wifi network and password"
+			"Stellen Sie das WLAN-Netzwerk und das Passwort ein"
+			"Définir le réseau wifi et le mot de passe")'
+		'cmsg_descExtra=("Definir usuário,senha,hostname"
+			"Set user,password,hostname"
+			"Legen Sie Benutzer,Passwort und Hostname fest"
+			"Définir l utilisateur,le mot de passe,le nom d hôte")'
+		'cmsg_descMirror=("Escolher espelho"
+			"Choose mirror"
+			"Spiegel wählen"
+			"Choisir miroir")'
+		'cmsg_descInstalar=("Iniciar instalação"
+			"Start installation"
+			"Installation starten"
+			"Lancer l installation")'
+		'cmsg_descSair=("Encerrar instalação"
+			"Close installation"
+			"Installation schließen"
+			"Fermer l installation")'
+		'cmsg_InstalacaoAbortada=("Instalação abortada"
+			"Installation aborted"
+			"Installation abgebrochen"
+			"Installation interrompue")'
+		'cmsg_ChecandoRota=("Checando rota de internet para o servidor"
+			"Checking internet route to server"
+			"Überprüfung der Internetroute zum Server"
+			"Vérification de la route Internet vers le serveur")'
+		'cmsg_falhaAbertura=("ERRO: falha de abertura de"
+			"ERROR: Failed to open"
+			"FEHLER: Öffnen fehlgeschlagen"
+			"ERREUR : Échec de l ouverture")'
+		'cmsg_operRoot=("erro: você não pode realizar esta operação a menos que seja root."
+			"error: you cannot perform this operation unless you are root."
+			"Fehler: Sie können diesen Vorgang nur ausführen, wenn Sie root sind."
+			"erreur : vous ne pouvez pas effectuer cette opération si vous n êtes pas root.")'
+		'cmsg_ButtonBack=("Voltar"
+			"Back"
+			"Zurückkehren"
+			"Retourner")'
+		'cmsg_info_disco=("Info disco"
+			"Disk info"
+			"Festplatteninfo"
+			"Disque va")'
+		'cmsg_ok=("Ok"
+			"Ok"
+			"Ok"
+			"D_Accord")'
+		'cmsg_Exit=("Sair"
+			"Exit"
+			"Ausgehen"
+			"Sortir")'
+		'cmsg_Select=("Selecionar"
+			"Select"
+			"Auswählen"
+			"Sélectionner")'
+		'cmsg_disco_origem=("DISCO DE ORIGEM"
+			"SOURCE DISK"
+			"QUELLDISK"
+			"DISQUE SOURCE")'
+		'cmsg_disco_destino=("DISCO DE DESTINO"
+			"DESTINATION DISK"
+			"ZIELDISKETTE"
+			"DISQUE DE DESTINATION")'
+		'cmsg_dest=("Escolha o disco de DESTINO:"
+			"Choose destination DISK:"
+			"Wahl der DESTINATION-Festplatte"
+			"Choisissez le disque DESTINATION")'
+		'cmsg_yeslabel=("Sim"
+			"Yes"
+			"Ja"
+			"Oui")'
+		'cmsg_nolabel=("Não"
+			"No"
+			"Nein"
+			"Nom")'
+		'cmsg_disco_identico=("Disco ORIGEM e DESTINO não podem ser o mesmo!"
+			"SOURCE and DESTINATION disk can be the same!"
+			"SOURCE- und DESTINY-Datenträger dürfen nicht identisch sein"
+			"Les disques SOURCE et DESTINY ne peuvent pas être identiques !")'
+		'cmsg_nec_dismount=("Necessário desmontar particao para reparticionar automaticamente."
+			"Need to dismount partition to repartition automatically."
+			"Sie müssen die Partition aushängen, um sie automatisch neu zu partitionieren."
+			"Besoin de démonter la partition pour repartitionner automatiquement.")'
+		'cmsg_formatando_particao=("Formatando partição"
+			"Formatting partition"
+   		"Partition formatieren"
+   		"Partition de formatage")'
+	'cmsg_todos_os_dados_serao_perdidos=("Todos os dados disco DESTINO serão perdidos!"
+			"All DESTINATION disk data will be lost!"
+			"Alle DESTINATION-Festplattendaten gehen verloren!"
+			"Toutes les données du disque DESTINATION seront perdues!")'
+	'cmsg_continuar_com_a_clonagem=("Continuar com a clonagem"
+			"Continue with the cloning"
+			"Fahren Sie mit dem Klonen fort"
+			"Continuer le clonage")'
+	'cwarning=("** AVISO **"
+			"** WARNING **"
+			"** NOTIZ **"
+			"** AVIS **")'
+	'cmsg_choose_disk=("Escolha o disco de ORIGEM:"
+			"Choose the SOURCE disk:"
+			"Wählen Sie die SOURCE-Festplatte"
+			"Choisissez le disque SOURCE")'
+	'cmsg_DismountFileSystem=("Desmontando sistema de arquivos"
+			"Unmounting file system"
+			"Unmounten des Dateisystems"
+			"Démontage du système de fichiers")'
+	'cmsg_FinalizadaComSucesso=("Instalação finalizada com sucesso."
+			"Installation completed successfully."
+			"Installation erfolgreich abgeschlossen."
+			"L installation s est terminée avec succès.")'
+	'cmsg_ErroTar=("Falha ao descompactar o tarball"
+			"Failed to unpack the tarball."
+			"Der Tarball konnte nicht entpackt werden."
+			"Impossible de décompresser l archive tar.")'
+	'cmsg_Para=("para"
+		"for"
+		"pro"
+		"pour")'
+	'cmsg_ConfSalva=("Configurações salvas para instalação"
+		"Settings saved for installation"
+		"Für die Installation gespeicherte Einstellungen"
+		"Paramètres enregistrés pour l installation")'
+	'cmsg_Operacao=("nenhuma operação especificada - use -h para ajuda"
+		"no operation specified - use -h for help"
+		"keine Operation angegeben - verwenden Sie -h für Hilfe"
+		"aucune opération spécifiée - utilisez -h pour l aide")'
+	'cmsg_OneOperacao=("apenas uma operação pode ser usada por vez"
+			"only one operation can be used at a time"
+			"es kann jeweils nur eine Operation verwendet werden"
+			"une seule opération peut être utilisée à la fois")'
+	'cmsg_TestandoDisco=("Testando disco"
+		"Testing disk"
+		"Testscheibe"
+		"Disque de test")'
+	'cmsg_ContinuarParticionamento=("Continuar com o particionamento em"
+		"Continue with partitioning on"
+		"Fahren Sie mit Partitionierung fort"
+		"Continuer avec le partitionnement sur")'
+	'cmsg_FormatandoParticao=("Formatando partição"
+		"Formatting partition"
+		"Partition formatieren"
+		"Partition de formatage")'
+	'cmsg_AtivandoServico=("Ativando serviço"
+		"Activating service"
+		"Aktivierungsdienst"
+		"Service d activation")'
+	'cmsg_Permissoes=("permissões"
+		"permissions"
+		"Berechtigungen"
+		"autorisations")'
+	'cmsg_ChecandoTarball=("Checando existência do tarball"
+		"Checking existence of tarball"
+		"Überprüfung der Existenz des Tarballs"
+		"Vérification de l existence de l archive tar")'
+	'cmsg_IniciandoDownload=("Iniciando download de"
+		"Starting download"
+		"Download wird gestartet"
+		"Démarrage du téléchargement")'
+	'cmsg_CriandoParticoes=("Criando partições em"
+		"Creating partitions in"
+		"Partitionen erstellen in"
+		"Création de partitions dans")'
+	'cmsg_CriandoDiretorios=("Criando diretórios em"
+		"Creating directories in"
+		"Erstellen von Verzeichnissen in"
+		"Création de répertoires dans")'
+	'cmsg_AtualizandoRepositorio=("Atualizando repositório em"
+		"Updating repository in"
+		"Repository aktualisieren in"
+		"Mise à jour du référentiel dans")'
+	'cmsg_AtualizandoPacotesBase=("Atualizando pacotes base em"
+		"Updating base packages in"
+		"Aktualisieren von Basispaketen in"
+		"Mise à jour des packages de base dans")'
+	'cmsg_AtualizandoPacotesAdicionais=("Atualizando pacotes adicionais em"
+		"Updating additional packages in"
+		"Aktualisieren zusätzlicher Pakete in"
+		"Mise à jour de packages supplémentaires dans")'
+	'cmsg_part_disk=("Visualizar partições do disco"
+		"View disk partitions"
+		"Anzeigen von Festplattenpartitionen"
+		"Afficher les partitions de disque")'
+	'cmsg_TitleDisco=("** DISCO **"
+		"** DISK **"
+		"** DISKO **"
+		"** DISCO **")'
+	'cmsg_TitleFileSystem=("** FILESYSTEM **"
+		"** FILESYSTEM **"
+		"** DATEISYSTEM **"
+		"** SYSTÈME DE FICHIERS **")'
+	'cmsg_ChecandoParticoesMontadas=("Checando por partições montadas no disco"
+		"Checking for mounted partitions on disk"
+		"Suche nach gemounteten Partitionen auf der Festplatte"
+		"Vérification des partitions montées sur le disque")'
+	'cmsg_all_mounted_part=("O disco selecionado contém partições montadas"
+		"The selected disk contains mounted partitions"
+		"Die ausgewählte Festplatte enthält gemountete Partitionen"
+		"Le disque sélectionné contient des partitions montées")'
+	'cmsgSetKeyboardLayout=("Escolher outro layout de teclado"
+		"Choose another keyboard layout"
+		"Wählen Sie ein anderes Tastaturlayout"
+		"Choisissez une autre disposition de clavier")'
+	'cmsg_LayoutAtual=("Layout atual"
+		"Current layout"
+		"Aktuelle Anordnung"
+		"Mise en page actuelle")'
+	'cmsg_umount_partition=("Aguarde, Desmontando particao de trabalho"
+		"Please wait, Unmounting work partition"
+		"Bitte warten, Arbeitspartition wird ausgehängt"
+		"Veuillez patienter, Démontage de la partition de travail")'
+	'cmsg_ErroLeituraDisco=("Erro de leitura do disco"
+		"Disk read error"
+		"Fehler beim Lesen der Festplatte"
+		"Erreur de lecture du disque")'
+	'cmsg_SemRota=("Sem rota para o servidor"
+		"No route to server"
+		"Keine Route zum Server"
+		"Pas de route vers le serveur")'
+	'cmsg_CheckNet=("Check sua conexão com a internet!"
+		"Check your internet connection!"
+		"Prüfe deine Internetverbindung!"
+		"Vérifiez votre connection internet!")'
+	'cmsg_CommandNotFound=("não encontrei o comando"
+		"I didn t find the command"
+		"Ich habe den Befehl nicht gefunden"
+		"je n ai pas trouvé la commande")'
+		'cmsg_ImpossivelContinuar=("IMPOSSÍVEL CONTINUAR"
+		"IMPOSSIBLE TO CONTINUE"
+		"UNMÖGLICH WEITER"
+		"IMPOSSIBLE DE CONTINUER")'
+	'cmsg_ImpossivelContinuar1=("Esse script precisa dos comandos listados acima"
+		"This script needs the commands listed above"
+		"Dieses Skript benötigt die oben aufgeführten Befehle"
+		"Ce script a besoin des commandes listées ci-dessus")'
+	'cmsg_ImpossivelContinuar2=("Instale-os e/ou verifique se estão no seu"
+		"Install them and/or make sure they are on your"
+		"Installieren Sie sie und/oder vergewissern Sie sich, dass sie sich auf Ihrem befinden"
+		"Installez-les et/ou assurez-vous qu ils sont sur votre")'
+	'cmsg_InstCommand=("Instalar o(s) comando(s)"
+		"Install the command(s)"
+		"Befehl(e) installieren"
+		"Installez la ou les commandes")'
+	'cmsg_RunNew=("INFO: Rode novamente o aplicativo"
+		"INFO: Run the application again"
+		"INFO: Führen Sie die Anwendung erneut aus"
+		"INFO : Exécutez à nouveau l application")'
+	'cmsg_RunNewErro=("ERRO na instalação dos comandos. Tente manualmente."
+		"ERROR installing commands. Try manually."
+		"FEHLER beim Installieren von Befehlen. Versuchen Sie es manuell."
+		"ERREUR lors de l installation des commandes. Essayez manuellement.")'
+	'cmsg_CopiandoCaminhoReserva=("Criando caminho de inicialização padrão/reserva para"
+		"Creating default/reserve boot path for"
+		"Erstellen eines Standard-/Reserve-Startpfads für"
+		"Création d un chemin de démarrage par défaut/réservé pour")'
+	'cmsg_Wm=("gerenciador de janelas (wm)"
+		"window manager (wm)"
+		"Fenstermanager (wm)"
+		"gestionnaire de fenêtres (wm)")'
+	'cmsg_NotConfDisco=("O disco não foi configurado, faça isso antes de iniciar a instalação."
+		"The disk has not been configured, please do this before starting the installation."
+		"Die Festplatte wurde noch nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Le disque n a pas été configuré, veuillez le faire avant de commencer l installation.")'
+	'cmsg_NotConfFileSystem=("O filesystem não foi configurado, faça isso antes de iniciar a instalação."
+		"The filesystem has not been configured, please do this before starting the installation."
+		"Das Dateisystem wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Le système de fichiers n a pas été configuré, veuillez le faire avant de commencer l installation.")'
+	'cmsg_NotConfBootLoader=("O Bootloader não foi configurado, faça isso antes de iniciar a instalação."
+		"Bootloader has not been configured, please do this before starting the installation."
+		"Bootloader wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Bootloader n a pas été configuré, veuillez le faire avant de commencer l installation.")'
+	'cmsg_NotConfTeclado=("O teclado não foi configurado, faça isso antes de iniciar a instalação."
+		"The keyboard has not been configured, please do this before starting the installation."
+		"Die Tastatur wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Le clavier n a pas été configuré, veuillez le faire avant de commencer l installation.")'
+	'cmsg_NotConfTimezone=("O timezone não foi configurado, faça isso antes de iniciar a instalação."
+		"The timezone has not been configured, do this before starting the installation."
+		"Die Zeitzone wurde nicht konfiguriert, tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Le fuseau horaire n a pas été configuré, faites-le avant de commencer l installation.")'
+	'cmsg_NotConfWm=("O Gerenciador de Janelas não foi configurado, faça isso antes de iniciar a instalação."
+		"Window Manager has not been configured, please do this before starting the installation."
+		"Window Manager wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Le gestionnaire de fenêtres n a pas été configuré, veuillez le faire avant de commencer l installation.")'
+	'cmsg_NotConfWifi=("Rede wifi não foi configurada, faça isso antes de iniciar a instalação."
+		"WiFi network has not been configured, do this before starting the installation."
+		"Das WiFi-Netzwerk wurde nicht konfiguriert, tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Le réseau WiFi n a pas été configuré, faites-le avant de commencer l installation.")'
+	'cmsg_NotConfExtra=("Extra não foi configurado, faça isso antes de iniciar a instalação."
+		"Extra has not been configured, please do this before starting the installation."
+		"Extra wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Extra n a pas été configuré, veuillez le faire avant de commencer l installation.")'
+
+	'cmsg_Usage1=("Instalar"
+		"Install"
+		"Installieren"
+		"Installer")'
+	'cmsg_Usage2=("Rodar chroot na partição instalada"
+		"Run chroot on installed partition"
+		"Führen Sie Chroot auf der installierten Partition aus"
+		"Exécutez chroot sur la partition installée")'
+	'cmsg_Usage3=("Ativar modo gráfico"
+		"Enable graphics mode"
+		"Grafikmodus aktivieren"
+		"Activer le mode graphique")'
+	'cmsg_Usage4=("Saída resumida"
+		"Summarized output"
+		"Zusammengefasste Ausgabe"
+		"Sortie résumée")'
+	'cmsg_Usage5=("Mostrar versão do aplicativo"
+		"Show app version"
+		"App-Version anzeigen"
+		"Afficher la version de l application")'
+	'cmsg_Usage6=("Remove cores da saída"
+		"Remove colors from output"
+		"Farben aus der Ausgabe entfernen"
+		"Supprimer les couleurs de la sortie")'
+	'cmsg_Usage7=("Este help"
+		"This help"
+		"Diese Hilfe"
+		"Cette aide")'
+	'cmsg_Extra1=("Nome Completo"
+		"Full Name"
+		"Vollständiger Name"
+		"Nom et prénom")'
+	'cmsg_Extra2=("Nome usuário"
+		"Username"
+		"Nutzername"
+		"Nom d utilisateur")'
+	'cmsg_Extra3=("Senha usuário"
+		"Password user"
+		"Kennwortbenutzer"
+		"Mot de passe utilisateur")'
+	'cmsg_Extra4=("Senha root"
+		"Root password"
+		"Root-Passwort"
+		"Mot de passe racine")'
+	'cmsg_Extra6=("Disco destino"
+		"Target disk"
+		"Zielfestplatte"
+		"Disque cible")'
+	'cmsg_Extra9=("Teclado"
+		"Keyboard"
+		"Klaviatur"
+		"Clavier")'
+	'cmsg_Extra11=("Gerenciador Janelas"
+		"Window Manager"
+		"Fenstermanager"
+		"Gestionnaire Fenêtres")'
+	'cmsg_Bios=("Sistema Básico de Entrada e Saída"
+		"Basic Entry and Exit System"
+		"Grundlegendes Ein- und Ausstiegssystem"
+		"Système d entrée et de sortie de base")'
+	'cmsg_Efi=("Interface de Firmware Extensível"
+		"Extensible Firmware Interface"
+		"Erweiterbare Firmware-Schnittstelle"
+		"Interface de micrologiciel extensible")'
+	'cmsg_ExtraEfi=("Detectado boot via EFI \n↓ é recomendável instalar ↓"
+		"EFI boot detected \n↓ install recommended ↓"
+		"EFI-Start erkannt \n↓ Installation empfohlen ↓"
+		"Démarrage EFI détecté \n↓ installation recommandée ↓")'
+	'cmsg_ExtraNotEfi=("EFI não detectado \n↓ é recomendável instalar BIOS ↓"
+		"EFI not detected \n↓ it is recommended to install BIOS ↓"
+		"EFI nicht erkannt \n↓ Es wird empfohlen, das BIOS zu installieren ↓"
+		"EFI non détecté \n↓ il est recommandé d installer le BIOS ↓")'
+
+	)
+	for xmsg in "${langmsg[@]}"; do eval "$xmsg"; done
+	#echo "lang       ${#lang[@]} ${lang[@]} ${lang[$PT_BR]} ${lang[$EN_US]}"
+	#echo "cmsg_ERRO ${#cmsg_ERRO[@]} ${cmsg_ERRO[@]} ${cmsg_ERRO[$PT_BR]} ${cmsg_ERRO[$EN_US]}"
 }
 
 sh_setvarcolors
 sh_ambiente
 sh_ascii_lines
 sh_logprefix
+sh_language
 sh_checkDependencies
 sh_config
 
@@ -1826,16 +2372,14 @@ sh_config
 	exit $(($# ? 0 : 1))
 }
 sh_disableprintk
-init "$@"
+sh_main "$@"
+#init "$@"
 
 # sanity checks
 case $(( LINSTALL+LCHROOT )) in
-	0) die 'nenhum operação especificada (use -h para ajuda)' ;;
-	[^1]) die 'apenas uma operação pode ser usada por vez' ;;
+		0)	clear; die "${cmsg_Operacao[$LC_DEFAULT]}";;
+	[^1])	clear; die "${cmsg_OneOperacao[$LC_DEFAULT]}";;
 esac
 sh_checkroot
 for x in "${appexec[@]}"; do $x; done
 sh_enableprintk
-
-:<<'comment'
-comment
