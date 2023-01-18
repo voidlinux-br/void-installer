@@ -35,11 +35,12 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.71.862-20230118'
+readonly _VERSION_='0.72.901-20230118'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz)
 declare -A AsUser
-declare -A idioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3)
+declare -A Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
+declare -A Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
 declare -i quiet=0 grafico=0 ncontador=0
 declare -i LAUTO=0 LINSTALL=0 LCHROOT=0 LBIND=0
 declare _DEVICE='/dev/sdX'
@@ -621,16 +622,17 @@ EOF
 }
 
 sh_update_locale() {
+	local lc="${LOCALE}.UTF-8"
 	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	sed -e "/en_US.UTF-8 UTF-8/s/^\#//" -i "$dir_install/etc/default/libc-locales"
-	sed -e "/pt_BR.UTF-8 UTF-8/s/^\#//" -i "$dir_install/etc/default/libc-locales"
+	sed -e "/$lc UTF-8/s/^\#//" -i "$dir_install/etc/default/libc-locales"
 	evaluate_retval "$?" "$err_not_fatal"
 
 	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} locale.conf ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	cat > "$dir_install/etc/locale.conf" <<- EOF
-LANG=pt_BR.UTF-8
+LANG=$lc
 LC_COLLATE=C
-LC_ALL=pt_BR.UTF-8
+LC_ALL=$lc
 EOF
 	evaluate_retval "$?"
 }
@@ -1852,7 +1854,10 @@ sh_main() {
 					scrend 0
 					;;
 			esac
-			LC_DEFAULT="$i18"; init "$@";break
+			LC_DEFAULT="$i18"
+			LOCALE="${Alocale[$i18]}"
+  			init "$@"
+			break
 	done
 }
 
@@ -1861,295 +1866,411 @@ sh_language() {
 		'lang=("pt_BR"
 			"en_US"
 			"de_DE"
-			"fr_FR")'
+			"fr_FR"
+			"es_ES"
+			"it_IT")'
 		'cmsg_LABEL=("Use as teclas ${RED}PARA CIMA ${RESET}e ${RED}PARA BAIXO ${RESET}para navegar.\nUse ${RED}TAB ${RESET}para alternar entre os botões e ${RED}ENTER ${RESET}para selecionar."
 			"Use the ${RED}UP ${RESET}and ${RED}DOWN ${RESET}keys to navigate.\nUse ${RED}TAB ${RESET}to toggle between buttons and ${RED}ENTER ${RESET}to select."
 			"Verwenden Sie die Tasten ${RED}UP ${RESET}und ${RED}DOWN${RESET}, um zu navigieren.\nVerwenden Sie ${RED}TAB${RESET}, um zwischen den Schaltflächen zu wechseln, und ${RED}ENTER ${RESET}auswählen."
-			"Utilisez les touches ${RED}HAUT ${RESET}et ${RED}BAS ${RESET}pour naviguer.\nUtilisez ${RED}TAB ${RESET}pour basculer entre les boutons et ${RED}ENTRÉE ${RESET}pour sélectionner")'
+			"Utilisez les touches ${RED}HAUT ${RESET}et ${RED}BAS ${RESET}pour naviguer.\nUtilisez ${RED}TAB ${RESET}pour basculer entre les boutons et ${RED}ENTRÉE ${RESET}pour sélectionner"
+			"Use las teclas ${RED}ARRIBA ${RESET}y ${RED}ABAJO ${RESET}para navegar.\nUse ${RED}TAB ${RESET}para cambiar entre botones y ${RED}ENTER ${RESET}para seleccionar."
+			"Usa i tasti ${RED}SU ${RESET}e ${RED}GIÙ ${RESET}per navigare.\nUsa ${RED}TAB ${RESET}per spostarti tra i pulsanti e ${RED}ENTER ${RESET} selezionare.")'
 		'cmsg_Definicoes=("Definições"
 			"Definitions"
 			"Definitionen"
-			"Définitions")'
+			"Définitions"
+			"Definiciones"
+			"Definizioni")'
 		'cmsg_naodefinido=("não definido"
 			"undefined"
 			"nicht definiert"
-			"indéfini")'
+			"indéfini"
+			"no definido"
+			"non definito")'
 		'cmsg_AjustandoSenhaUsuario=("Ajustando senha usuário"
 			"Setting user password"
 			"Benutzerpasswort setzen"
-			"Définition du mot de passe utilisateur")'
+			"Définition du mot de passe utilisateur"
+			"Configuración de contraseña de usuario"
+			"Impostazione password utente")'
 		'cmsg_CriandoUsuario=("Criando usuário"
 			"Creating user"
 			"Benutzer erstellen"
-			"Création d un utilisateur")'
+			"Création d un utilisateur"
+			"Creando usuario"
+			"Creazione dell utente")'
 		'cmsg_MenuInstalacao=("MENU DE INSTALAÇÃO"
 			"INSTALLATION MENU"
 			"INSTALLATIONSMENÜ"
-			"MENU D INSTALLATION")'
+			"MENU D INSTALLATION"
+			"MENÚ DE INSTALACIÓN"
+			"MENÙ INSTALLAZIONE")'
 		'cmsg_DesMontandoAmbiente=("Desmontando ambiente"
 			"Dismantling environment"
 			"Abbauumgebung"
-			"Environnement de démantèlement")'
+			"Environnement de démantèlement"
+			"Ambiente de desmantelamiento"
+			"Ambiente di smantellamento")'
 		'cmsg_MontandoAmbiente=("Montando ambiente"
 			"Setting up environment"
 			"Umgebung einrichten"
-			"mise en place de l environnement")'
+			"Mise en place de l environnement"
+			"Configurando el entorno"
+			"Impostazione dell ambiente")'
 		'cmsg_MontandoParticao=("Montando partição"
 			"Mounting partition"
 			"Montagepartition"
-			"Cloison de montage")'
+			"Cloison de montage"
+			"Tabique de montaje"
+			"Partizione di montaggio")'
 		'cmsg_Gerando=("Gerando"
 			"Generating"
 			"Erstellen"
-			"Générateur")'
+			"Générateur"
+			"Generando"
+			"Generando")'
 		'cmsg_Ajustando=("Ajustando"
 			"Adjusting"
 			"Anpassen"
-			"Réglage")'
+			"Réglage"
+			"Ajustando"
+			"Regolazione")'
 		'cmsg_Copiando=("Copiando"
 			"Copying"
 			"Kopieren"
-			"Copier")'
+			"Copier"
+			"Proceso de copiar"
+			"Copiando")'
 		'cmsg_Descompactando=("Descompactando"
 			"Unpacking"
 			"Auspacken"
-			"Déballage")'
+			"Déballage"
+			"Desempacar"
+			"Disimbalaggio")'
 		'cmsg_Atualizando=("Atualizando"
 			"Updating"
 			"Aktualisierung"
-			"Mise à jour")'
+			"Mise à jour"
+			"Actualizando"
+			"In aggiornamento")'
 		'cmsg_Instalando=("Instalando"
 			"Installing"
 			"Installieren"
-			"Installation")'
+			"Installation"
+			"Instalando"
+			"Installazione")'
 		'cmsg_Configurando=("Configurando"
 			"Setting"
 			"Einstellung"
-			"Paramètre")'
+			"Paramètre"
+			"Paramètre"
+			"Entorno")'
 		'cmsg_Em=("em"
 			"in"
 			"in"
-			"dans")'
+			"dans"
+			"en"
+			"in")'
 		'cmsg_ERRO=("ERRO"
 			"ERROR"
 			"ERROR"
-			"ERREUR")'
+			"ERREUR"
+			"ERROR"
+			"ERRORE")'
 		'cmsg_Aceitar=("Aceitar"
 			"Accept"
 			"Akzeptieren"
-			"Accepter")'
+			"Accepter"
+			"Aceptar"
+			"Accettare")'
 		'cmsg_Sair=("Sair"
 			"Exit"
 			"Verlassene"
-			"Partir")'
+			"Partir"
+			"Vete"
+			"Partire")'
 		'cmsg_Instalar=("Instalar"
 			"Install"
 			"Installieren"
-			"Installer")'
+			"Installer"
+			"Instalar"
+			"Installare")'
 		'cmsg_Mirror=("Mirror"
 			"Mirror"
 			"Spiegel"
-			"Miroiter")'
+			"Miroiter"
+			"Espejo"
+			"Specchio")'
 		'cmsg_Disco=("Disco"
 			"Disk"
 			"Disko"
+			"Disco"
+			"Disco"
 			"Disco")'
 		'cmsg_Teclado=("Teclado"
 			"Keyboard"
 			"Klaviatur"
-			"Clavier")'
+			"Clavier"
+			"Teclado"
+			"Tastiera")'
 		'cmsg_SairSemInstalar=("Sair sem instalar"
 			"Exit without installing"
 			"Beenden ohne zu installieren"
-			"Quitter sans installer")'
+			"Quitter sans installer"
+			"Salir sin instalar"
+			"Uscire senza installare")'
 		'cmsg_tty=("Somente terminal, sem interface gráfica"
 			"Terminal only, no GUI"
 			"Nur Terminal, keine GUI"
-			"Terminal uniquement, pas d interface graphique")'
+			"Terminal uniquement, pas d interface graphique"
+			"Solo terminal, sin GUI"
+			"Solo terminale, nessuna GUI")'
 		'cmsg_descDisco=("Definir disco destino"
 			"Set destination disk"
 			"Zielfestplatte festlegen"
-			"Définir le disque de destination")'
+			"Définir le disque de destination"
+			"Establecer disco de destino"
+			"impostare il disco di destinazione")'
 		'cmsg_descFileSystem=("Definir sistema de arquivos"
 			"Set file system"
 			"Dateisystem definieren"
-			"Définir le système de fichiers")'
+			"Définir le système de fichiers"
+			"Definir sistema de archivos"
+			"Definire il file system")'
 		'cmsg_descBootLoader=("Definir bootloader"
 			"Set bootloader"
 			"Bootloader einstellen"
-			"Définir le chargeur de démarrage")'
+			"Définir le chargeur de démarrage"
+			"Configurar el gestor de arranque"
+			"Imposta il bootloader")'
 		'cmsg_descTeclado=("Definir teclado do sistema"
 			"Set system keyboard"
 			"Systemtastatur einstellen"
-			"Définir le clavier système")'
+			"Définir le clavier système"
+			"Configurar el teclado del sistema"
+			"Imposta la tastiera di sistema")'
 		'cmsg_descTimezone=("Definir fuso horário"
 			"Set time zone"
 			"Zeitzone einstellen"
-			"Régler le fuseau horaire")'
+			"Régler le fuseau horaire"
+			"Establecer zona horaria"
+			"Impostare il fuso orario")'
 		'cmsg_descWm=("Definir gerenciador de janelas"
 			"Set window manager"
 			"Fenstermanager definieren"
-			"Définir le gestionnaire de fenêtres")'
+			"Définir le gestionnaire de fenêtres"
+			"Definir administrador de ventanas"
+			"Definisci gestore di finestre")'
 		'cmsg_descWifi=("Definir rede e senha wifi"
 			"Set wifi network and password"
 			"Stellen Sie das WLAN-Netzwerk und das Passwort ein"
-			"Définir le réseau wifi et le mot de passe")'
+			"Définir le réseau wifi et le mot de passe"
+			"Establecer red wifi y contraseña"
+			"Imposta la rete wifi e la password")'
 		'cmsg_descExtra=("Definir usuário,senha,hostname"
 			"Set user,password,hostname"
 			"Legen Sie Benutzer,Passwort und Hostname fest"
-			"Définir l utilisateur,le mot de passe,le nom d hôte")'
+			"Définir l utilisateur,le mot de passe,le nom d hôte"
+			"Establecer usuario,contraseña,nombre de host"
+			"Imposta utente,password,nome host")'
 		'cmsg_descMirror=("Escolher espelho"
 			"Choose mirror"
 			"Spiegel wählen"
-			"Choisir miroir")'
+			"Choisir miroir"
+			"Elegir espejo"
+			"Scegli lo specchio")'
 		'cmsg_descInstalar=("Iniciar instalação"
 			"Start installation"
 			"Installation starten"
-			"Lancer l installation")'
+			"Lancer l installation"
+			"Comenzar la instalación"
+			"Avviare l installazione")'
 		'cmsg_descSair=("Encerrar instalação"
 			"Close installation"
 			"Installation schließen"
-			"Fermer l installation")'
+			"Fermer l installation"
+			"Cerrar instalación"
+			"Chiudere l installazione")'
 		'cmsg_InstalacaoAbortada=("Instalação abortada"
 			"Installation aborted"
 			"Installation abgebrochen"
-			"Installation interrompue")'
+			"Installation interrompue"
+			"Instalación abortada"
+			"Installazione interrotta")'
 		'cmsg_ChecandoRota=("Checando rota de internet para o servidor"
 			"Checking internet route to server"
 			"Überprüfung der Internetroute zum Server"
-			"Vérification de la route Internet vers le serveur")'
+			"Vérification de la route Internet vers le serveur"
+			"Comprobación de la ruta de Internet al servidor"
+			"Verifica del percorso Internet verso il server")'
 		'cmsg_falhaAbertura=("ERRO: falha de abertura de"
 			"ERROR: Failed to open"
 			"FEHLER: Öffnen fehlgeschlagen"
-			"ERREUR : Échec de l ouverture")'
+			"ERREUR : Échec de l ouverture"
+			"ERROR: No se pudo abrir"
+			"ERRORE: Impossibile aprire")'
 		'cmsg_operRoot=("erro: você não pode realizar esta operação a menos que seja root."
 			"error: you cannot perform this operation unless you are root."
 			"Fehler: Sie können diesen Vorgang nur ausführen, wenn Sie root sind."
-			"erreur : vous ne pouvez pas effectuer cette opération si vous n êtes pas root.")'
+			"erreur: vous ne pouvez pas effectuer cette opération si vous n êtes pas root."
+			"error: no puede realizar esta operación a menos que sea root."
+			"errore: non puoi eseguire questa operazione se non sei root.")'
 		'cmsg_ButtonBack=("Voltar"
 			"Back"
 			"Zurückkehren"
-			"Retourner")'
+			"Retourner"
+			"Vuelve"
+			"Ritorno")'
 		'cmsg_info_disco=("Info disco"
 			"Disk info"
 			"Festplatteninfo"
-			"Disque va")'
+			"Disque va"
+			"Información del disco"
+			"Informazioni sul disco")'
 		'cmsg_ok=("Ok"
 			"Ok"
 			"Ok"
-			"D_Accord")'
+			"D_Accord"
+			"Ok"
+			"Ok")'
 		'cmsg_Exit=("Sair"
 			"Exit"
 			"Ausgehen"
-			"Sortir")'
+			"Sortir"
+			"Vete"
+			"Partire")'
 		'cmsg_Select=("Selecionar"
 			"Select"
 			"Auswählen"
-			"Sélectionner")'
+			"Sélectionner"
+			"Seleccione"
+			"Selezionare")'
 		'cmsg_disco_origem=("DISCO DE ORIGEM"
 			"SOURCE DISK"
 			"QUELLDISK"
-			"DISQUE SOURCE")'
+			"DISQUE SOURCE"
+			"DISCO FONTE"
+			"DISCO SORGENTE")'
 		'cmsg_disco_destino=("DISCO DE DESTINO"
 			"DESTINATION DISK"
 			"ZIELDISKETTE"
-			"DISQUE DE DESTINATION")'
+			"DISQUE DE DESTINATION"
+			"DISCO DE DESTINO"
+			"DISCO DI DESTINAZIONE")'
 		'cmsg_dest=("Escolha o disco de DESTINO:"
 			"Choose destination DISK:"
 			"Wahl der DESTINATION-Festplatte"
-			"Choisissez le disque DESTINATION")'
+			"Choisissez le disque DESTINATION"
+			"Elija el disco de DESTINO"
+			"Scegli il disco DESTINAZIONE")'
 		'cmsg_yeslabel=("Sim"
 			"Yes"
 			"Ja"
-			"Oui")'
+			"Oui"
+			"Sí"
+			"Sì")'
 		'cmsg_nolabel=("Não"
 			"No"
 			"Nein"
-			"Nom")'
-		'cmsg_disco_identico=("Disco ORIGEM e DESTINO não podem ser o mesmo!"
-			"SOURCE and DESTINATION disk can be the same!"
-			"SOURCE- und DESTINY-Datenträger dürfen nicht identisch sein"
-			"Les disques SOURCE et DESTINY ne peuvent pas être identiques !")'
-		'cmsg_nec_dismount=("Necessário desmontar particao para reparticionar automaticamente."
-			"Need to dismount partition to repartition automatically."
-			"Sie müssen die Partition aushängen, um sie automatisch neu zu partitionieren."
-			"Besoin de démonter la partition pour repartitionner automatiquement.")'
-		'cmsg_formatando_particao=("Formatando partição"
-			"Formatting partition"
-   		"Partition formatieren"
-   		"Partition de formatage")'
+			"Nom"
+			"No"
+			"Non")'
 	'cmsg_todos_os_dados_serao_perdidos=("Todos os dados disco DESTINO serão perdidos!"
 			"All DESTINATION disk data will be lost!"
 			"Alle DESTINATION-Festplattendaten gehen verloren!"
-			"Toutes les données du disque DESTINATION seront perdues!")'
-	'cmsg_continuar_com_a_clonagem=("Continuar com a clonagem"
-			"Continue with the cloning"
-			"Fahren Sie mit dem Klonen fort"
-			"Continuer le clonage")'
+			"Toutes les données du disque DESTINATION seront perdues!"
+			"¡Se perderán todos los datos del disco de DESTINO!"
+			"Tutti i dati del disco DESTINATION andranno persi!")'
 	'cwarning=("** AVISO **"
 			"** WARNING **"
 			"** NOTIZ **"
-			"** AVIS **")'
-	'cmsg_choose_disk=("Escolha o disco de ORIGEM:"
-			"Choose the SOURCE disk:"
-			"Wählen Sie die SOURCE-Festplatte"
-			"Choisissez le disque SOURCE")'
+			"** AVIS **"
+			"** DARSE CUENTA **"
+			"** AVVISO **")'
 	'cmsg_DismountFileSystem=("Desmontando sistema de arquivos"
 			"Unmounting file system"
 			"Unmounten des Dateisystems"
-			"Démontage du système de fichiers")'
+			"Démontage du système de fichiers"
+			"Desmontar el sistema de archivos"
+			"Smontaggio del file system")'
 	'cmsg_FinalizadaComSucesso=("Instalação finalizada com sucesso."
 			"Installation completed successfully."
 			"Installation erfolgreich abgeschlossen."
-			"L installation s est terminée avec succès.")'
+			"L installation s est terminée avec succès."
+			"Instalación completada con éxito"
+			"Installazione completata con successo")'
 	'cmsg_ErroTar=("Falha ao descompactar o tarball"
 			"Failed to unpack the tarball."
 			"Der Tarball konnte nicht entpackt werden."
-			"Impossible de décompresser l archive tar.")'
+			"Impossible de décompresser l archive tar."
+			"Error al desempaquetar el tarball"
+			"Impossibile decomprimere il tarball")'
 	'cmsg_Para=("para"
 		"for"
 		"pro"
-		"pour")'
+		"pour"
+		"por"
+		"per")'
 	'cmsg_ConfSalva=("Configurações salvas para instalação"
 		"Settings saved for installation"
 		"Für die Installation gespeicherte Einstellungen"
-		"Paramètres enregistrés pour l installation")'
+		"Paramètres enregistrés pour l installation"
+		"Configuraciones guardadas para la instalación"
+		"Impostazioni salvate per l installazione")'
 	'cmsg_Operacao=("nenhuma operação especificada - use -h para ajuda"
 		"no operation specified - use -h for help"
 		"keine Operation angegeben - verwenden Sie -h für Hilfe"
-		"aucune opération spécifiée - utilisez -h pour l aide")'
+		"aucune opération spécifiée - utilisez -h pour l aide"
+		"no se especificó ninguna operación - use -h para obtener ayuda"
+		"nessuna operazione specificata - usa -h per aiuto")'
 	'cmsg_OneOperacao=("apenas uma operação pode ser usada por vez"
-			"only one operation can be used at a time"
-			"es kann jeweils nur eine Operation verwendet werden"
-			"une seule opération peut être utilisée à la fois")'
+		"only one operation can be used at a time"
+		"es kann jeweils nur eine Operation verwendet werden"
+		"une seule opération peut être utilisée à la fois"
+		"solo se puede usar una operación a la vez"
+		"è possibile utilizzare una sola operazione alla volta")'
 	'cmsg_TestandoDisco=("Testando disco"
 		"Testing disk"
 		"Testscheibe"
-		"Disque de test")'
+		"Disque de test"
+		"Disco de prueba"
+		"Disco di prova")'
 	'cmsg_ContinuarParticionamento=("Continuar com o particionamento em"
 		"Continue with partitioning on"
 		"Fahren Sie mit Partitionierung fort"
-		"Continuer avec le partitionnement sur")'
+		"Continuer avec le partitionnement sur"
+		"Continuar con la partición en"
+		"Continua con il partizionamento attivo")'
 	'cmsg_FormatandoParticao=("Formatando partição"
 		"Formatting partition"
 		"Partition formatieren"
-		"Partition de formatage")'
+		"Partition de formatage"
+		"Partición de formato"
+		"Partizione di formattazione")'
 	'cmsg_AtivandoServico=("Ativando serviço"
 		"Activating service"
 		"Aktivierungsdienst"
-		"Service d activation")'
+		"Service d activation"
+		"Servicio de activación"
+		"Servizio di attivazione")'
 	'cmsg_Permissoes=("permissões"
 		"permissions"
 		"Berechtigungen"
-		"autorisations")'
+		"autorisations"
+		"permisos"
+		"autorizzazioni")'
 	'cmsg_ChecandoTarball=("Checando existência do tarball"
 		"Checking existence of tarball"
 		"Überprüfung der Existenz des Tarballs"
-		"Vérification de l existence de l archive tar")'
+		"Vérification de l existence de l archive tar"
+		"Comprobando la existencia de tarball"
+		"Controllo dell esistenza di tarball")'
 	'cmsg_IniciandoDownload=("Iniciando download de"
 		"Starting download"
 		"Download wird gestartet"
-		"Démarrage du téléchargement")'
+		"Démarrage du téléchargement"
+		"Descarga Puesta en marcha"
+		"Avvio del download")'
 	'cmsg_CriandoParticoes=("Criando partições em"
 		"Creating partitions in"
 		"Partitionen erstellen in"
@@ -2372,16 +2493,18 @@ sh_language() {
 sh_getlocale() {
 	local lc
 
-	LC_DEFAULT="${idioma[pt_BR]}"
-	if lc=$(grep _ <(locale -a) | head -1); then
-		LC_DEFAULT="${idioma[$lc]}"
+	LC_DEFAULT="${Aidioma[pt_BR]}"
+	LOCALE="pt_BR"
+	if lc=$(grep _ <(locale -a) | head -1 | cut -c1-5); then
+		LOCALE="$lc"
+		LC_DEFAULT="${Aidioma[$lc]}"
 	fi
 }
 
+sh_ambiente
 sh_getlocale
 sh_language
 sh_setvarcolors
-sh_ambiente
 sh_ascii_lines
 sh_logprefix
 sh_checkDependencies
