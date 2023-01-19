@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/01/18
+#  Altered: 2023/01/19
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -35,7 +35,7 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.73.943-20230118'
+readonly _VERSION_='0.74.985-20230119'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz)
 declare -A AsUser
@@ -356,6 +356,40 @@ replicate() {
 	printf -v Var %"$2s" " "
 	echo "${Var// /$1}"
 }
+
+padr() {
+	texto=$1
+	COLS=$2
+	char=$3
+	if test $# -eq 1; then
+		COLS=$(tput cols)
+		char='='
+	fi
+	printf "%*s\n" $COLS "$texto" |sed "s/ /$char/g"
+}
+
+padl() {
+	texto=$1
+	COLS=$2
+	char=$3
+	if test $# -eq 1; then
+		COLS=$(tput cols)
+		char='='
+	fi
+	printf "%-*s\n" $COLS "$texto" |sed "s/ /$char/g"
+}
+
+padc() {
+	texto=$1
+	COLS=$2
+	char=$3
+	if test $# -eq 1; then
+		COLS=$(tput cols)
+		char='='
+	fi
+	printf "%*s\n" $(((${#texto} + $COLS) / 2)) "$texto" | sed "s/ /$char/g"
+}
+
 
 DOT() {
 	printf "%s" "${blue}:: ${reset}"
@@ -1083,7 +1117,7 @@ sh_choosefilesystem() {
 	local cextra
 	local exit_status
 
-	cextra="↓ é recomendável EXT4 ↓"
+	cextra="${cmsg_mkfs[$LC_DEFAULT]}"
 	mkfs=$(${DIALOG}																\
 		--title 			"${cmsg_TitleFileSystem[$LC_DEFAULT]}"			\
 		--default-item "$_FILESYSTEM"											\
@@ -1627,18 +1661,18 @@ display_config() {
 	[[ -z "$LEXTRA"    ]] && local _hostname="${cmsg_naodefinido[LC_DEFAULT]}"		|| local _hostname=${_HOSTNAME}
 	[[ -z "$LTIMEZONE" ]] && local _timezone="${cmsg_naodefinido[LC_DEFAULT]}"		|| local _timezone=${_TIMEZONE}
 	SETUP="\
-                            \n\n${cmsg_Extra1[$LC_DEFAULT]}       : \Zb\Z1${_fullname}${RESET}\
-                            \n${cmsg_Extra2[$LC_DEFAULT]}        : \Zb\Z1${_USER}${RESET}\
-                            \n${cmsg_Extra3[$LC_DEFAULT]}       : \Zb\Z1${_PASSWD_USER}${RESET}\
-                            \n${cmsg_Extra4[$LC_DEFAULT]}          : \Zb\Z1${_PASSWD_ROOT}${RESET}\
-                            \nHostname            : \Zb\Z1${_hostname}${RESET}\
-                            \n${cmsg_Extra6[$LC_DEFAULT]}       : \Zb\Z1${_device}${RESET}\
-                            \nTam/Model:          : \Zb\Z1${_modelo}${RESET}\
-                            \nFileSystem          : \Zb\Z1${_mkfs}${RESET}\
-                            \nBootloader          : \Zb\Z1${_bootloader}${RESET}\
-                            \n${cmsg_Teclado[$LC_DEFAULT]}             : \Zb\Z1${_KEYMAP}${RESET}\
-                            \nTimezone            : \Zb\Z1${_timezone}${RESET}\
-                            \n${cmsg_Extra11[$LC_DEFAULT]} : \Zb\Z1${_WINDOWMANAGER[*]}${RESET}\
+                            			\n\n$(padr "${cmsg_Extra1[$LC_DEFAULT]} :" 30 ' ') \Zb\Z1${_fullname}${RESET}\
+                            			  \n$(padr "${cmsg_Extra2[$LC_DEFAULT]} :" 30 ' ') \Zb\Z1${_USER}${RESET}\
+                                      \n$(padr "${cmsg_Extra3[$LC_DEFAULT]} :" 30 ' ') \Zb\Z1${_PASSWD_USER}${RESET}\
+                                      \n$(padr "${cmsg_Extra4[$LC_DEFAULT]} :" 30 ' ') \Zb\Z1${_PASSWD_ROOT}${RESET}\
+                                                         \n$(padr "Hostname :" 30 ' ') \Zb\Z1${_hostname}${RESET}\
+                                      \n$(padr "${cmsg_Extra6[$LC_DEFAULT]} :" 30 ' ') \Zb\Z1${_device}${RESET}\
+                                                        \n$(padr "Tam/Model :" 30 ' ') \Zb\Z1${_modelo}${RESET}\
+                                                       \n$(padr "FileSystem :" 30 ' ') \Zb\Z1${_mkfs}${RESET}\
+                                                       \n$(padr "Bootloader :" 30 ' ') \Zb\Z1${_bootloader}${RESET}\
+                                     \n$(padr "${cmsg_Teclado[$LC_DEFAULT]} :" 30 ' ') \Zb\Z1${_KEYMAP}${RESET}\
+                                                         \n$(padr "Timezone :" 30 ' ') \Zb\Z1${_timezone}${RESET}\
+                                     \n$(padr "${cmsg_Extra11[$LC_DEFAULT]} :" 30 ' ') \Zb\Z1${_WINDOWMANAGER[*]}${RESET}\
                             \n"
 }
 
@@ -1876,7 +1910,7 @@ sh_language() {
 			"Verwenden Sie die Tasten ${RED}UP ${RESET}und ${RED}DOWN${RESET}, um zu navigieren.\nVerwenden Sie ${RED}TAB${RESET}, um zwischen den Schaltflächen zu wechseln, und ${RED}ENTER ${RESET}auswählen."
 			"Utilisez les touches ${RED}HAUT ${RESET}et ${RED}BAS ${RESET}pour naviguer.\nUtilisez ${RED}TAB ${RESET}pour basculer entre les boutons et ${RED}ENTRÉE ${RESET}pour sélectionner"
 			"Use las teclas ${RED}ARRIBA ${RESET}y ${RED}ABAJO ${RESET}para navegar.\nUse ${RED}TAB ${RESET}para cambiar entre botones y ${RED}ENTER ${RESET}para seleccionar."
-			"Usa i tasti ${RED}SU ${RESET}e ${RED}GIÙ ${RESET}per navigare.\nUsa ${RED}TAB ${RESET}per spostarti tra i pulsanti e ${RED}ENTER ${RESET} selezionare.")'
+			"Usa i tasti ${RED}SU ${RESET}e ${RED}GIÙ ${RESET}per navigare.\nUsa ${RED}TAB ${RESET}per spostarti tra i pulsanti e ${RED}ENTER ${RESET}selezionare.")'
 		'cmsg_Definicoes=("Definições"
 			"Definitions"
 			"Definitionen"
@@ -2390,167 +2424,255 @@ sh_language() {
 	'cmsg_ImpossivelContinuar1=("Esse script precisa dos comandos listados acima"
 		"This script needs the commands listed above"
 		"Dieses Skript benötigt die oben aufgeführten Befehle"
-		"Ce script a besoin des commandes listées ci-dessus")'
+		"Ce script a besoin des commandes listées ci-dessus"
+		"Este script necesita los comandos enumerados anteriormente"
+		"Questo script necessita dei comandi sopra elencati")'
 	'cmsg_ImpossivelContinuar2=("Instale-os e/ou verifique se estão no seu"
 		"Install them and/or make sure they are on your"
 		"Installieren Sie sie und/oder vergewissern Sie sich, dass sie sich auf Ihrem befinden"
-		"Installez-les et/ou assurez-vous qu ils sont sur votre")'
+		"Installez-les et/ou assurez-vous qu ils sont sur votre"
+		"Instálelos y/o asegúrese de que estén en su"
+		"Installali e/o assicurati che siano sul tuo")'
 	'cmsg_InstCommand=("Instalar o(s) comando(s)"
 		"Install the command(s)"
 		"Befehl(e) installieren"
-		"Installez la ou les commandes")'
+		"Installez la ou les commandes"
+		"Instale los comandos"
+		"Installa i comandi")'
 	'cmsg_RunNew=("INFO: Rode novamente o aplicativo"
 		"INFO: Run the application again"
 		"INFO: Führen Sie die Anwendung erneut aus"
-		"INFO : Exécutez à nouveau l application")'
+		"INFO : Exécutez à nouveau l application"
+		"INFO: Vuelva a ejecutar la aplicación"
+		"INFORMAZIONI: eseguire nuovamente l applicazione")'
 	'cmsg_RunNewErro=("ERRO na instalação dos comandos. Tente manualmente."
 		"ERROR installing commands. Try manually."
 		"FEHLER beim Installieren von Befehlen. Versuchen Sie es manuell."
-		"ERREUR lors de l installation des commandes. Essayez manuellement.")'
+		"ERREUR lors de l installation des commandes. Essayez manuellement."
+		"ERROR al instalar comandos. Prueba manualmente."
+		"ERRORE durante l installazione dei comandi. Prova manualmente.")'
 	'cmsg_CopiandoCaminhoReserva=("Criando caminho de inicialização padrão/reserva para"
 		"Creating default/reserve boot path for"
 		"Erstellen eines Standard-/Reserve-Startpfads für"
-		"Création d un chemin de démarrage par défaut/réservé pour")'
+		"Création d un chemin de démarrage par défaut/réservé pour"
+		"Creación de una ruta de arranque predeterminada/reservada para"
+		"Creazione del percorso di avvio predefinito/riservato per")'
 	'cmsg_Wm=("gerenciador de janelas (wm)"
 		"window manager (wm)"
 		"Fenstermanager (wm)"
-		"gestionnaire de fenêtres (wm)")'
+		"gestionnaire de fenêtres (wm)"
+		"gestor de ventanas (wm)"
+		"gestore di finestre (wm)")'
 	'cmsg_NotConfDisco=("O disco não foi configurado, faça isso antes de iniciar a instalação."
 		"The disk has not been configured, please do this before starting the installation."
 		"Die Festplatte wurde noch nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
-		"Le disque n a pas été configuré, veuillez le faire avant de commencer l installation.")'
+		"Le disque n a pas été configuré, veuillez le faire avant de commencer l installation."
+		"El disco no ha sido configurado, hágalo antes de iniciar la instalación."
+		"Il disco non è stato configurato, eseguire questa operazione prima di avviare l installazione.")'
 	'cmsg_NotConfFileSystem=("O filesystem não foi configurado, faça isso antes de iniciar a instalação."
 		"The filesystem has not been configured, please do this before starting the installation."
 		"Das Dateisystem wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
-		"Le système de fichiers n a pas été configuré, veuillez le faire avant de commencer l installation.")'
+		"Le système de fichiers n a pas été configuré, veuillez le faire avant de commencer l installation."
+		"El sistema de archivos no se ha configurado, hágalo antes de iniciar la instalación."
+		"Il filesystem non è stato configurato, eseguire questa operazione prima di iniziare l installazione.")'
 	'cmsg_NotConfBootLoader=("O Bootloader não foi configurado, faça isso antes de iniciar a instalação."
 		"Bootloader has not been configured, please do this before starting the installation."
 		"Bootloader wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
-		"Bootloader n a pas été configuré, veuillez le faire avant de commencer l installation.")'
+		"Bootloader n a pas été configuré, veuillez le faire avant de commencer l installation."
+		"No se ha configurado el gestor de arranque, hágalo antes de iniciar la instalación."
+		"Bootloader non è stato configurato, eseguire questa operazione prima di iniziare l installazione.")'
 	'cmsg_NotConfTeclado=("O teclado não foi configurado, faça isso antes de iniciar a instalação."
 		"The keyboard has not been configured, please do this before starting the installation."
 		"Die Tastatur wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
-		"Le clavier n a pas été configuré, veuillez le faire avant de commencer l installation.")'
+		"Le clavier n a pas été configuré, veuillez le faire avant de commencer l installation."
+		"El teclado no ha sido configurado, hazlo antes de iniciar la instalación."
+		"La tastiera non è stata configurata, farlo prima di iniziare l installazione.")'
 	'cmsg_NotConfTimezone=("O timezone não foi configurado, faça isso antes de iniciar a instalação."
 		"The timezone has not been configured, do this before starting the installation."
 		"Die Zeitzone wurde nicht konfiguriert, tun Sie dies, bevor Sie mit der Installation beginnen."
-		"Le fuseau horaire n a pas été configuré, faites-le avant de commencer l installation.")'
+		"Le fuseau horaire n a pas été configuré, faites-le avant de commencer l installation."
+		"La zona horaria no ha sido configurada, hazlo antes de iniciar la instalación."
+		"Il fuso orario non è stato configurato, farlo prima di iniziare l installazione.")'
 	'cmsg_NotConfWm=("O Gerenciador de Janelas não foi configurado, faça isso antes de iniciar a instalação."
 		"Window Manager has not been configured, please do this before starting the installation."
 		"Window Manager wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
-		"Le gestionnaire de fenêtres n a pas été configuré, veuillez le faire avant de commencer l installation.")'
+		"Le gestionnaire de fenêtres n a pas été configuré, veuillez le faire avant de commencer l installation."
+		"El Administrador de ventanas no se ha configurado, hágalo antes de comenzar la instalación."
+		"Window Manager non è stato configurato, eseguire questa operazione prima di iniziare l installazione.")'
 	'cmsg_NotConfWifi=("Rede wifi não foi configurada, faça isso antes de iniciar a instalação."
 		"WiFi network has not been configured, do this before starting the installation."
 		"Das WiFi-Netzwerk wurde nicht konfiguriert, tun Sie dies, bevor Sie mit der Installation beginnen."
-		"Le réseau WiFi n a pas été configuré, faites-le avant de commencer l installation.")'
+		"Le réseau WiFi n a pas été configuré, faites-le avant de commencer l installation."
+		"No se ha configurado la red WiFi, hazlo antes de iniciar la instalación."
+		"La rete WiFi non è stata configurata, farlo prima di iniziare l installazione.")'
 	'cmsg_NotConfExtra=("Extra não foi configurado, faça isso antes de iniciar a instalação."
 		"Extra has not been configured, please do this before starting the installation."
 		"Extra wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
-		"Extra n a pas été configuré, veuillez le faire avant de commencer l installation.")'
+		"Extra n a pas été configuré, veuillez le faire avant de commencer l installation."
+		"Extra no se ha configurado, hágalo antes de comenzar la instalación."
+		"Extra non è stato configurato, eseguire questa operazione prima di iniziare l installazione.")'
 	'cmsg_Usage1=("Instalar"
 		"Install"
 		"Installieren"
-		"Installer")'
+		"Installer"
+		"Instalar"
+		"Installare")'
 	'cmsg_Usage2=("Rodar chroot na partição instalada"
 		"Run chroot on installed partition"
 		"Führen Sie Chroot auf der installierten Partition aus"
-		"Exécutez chroot sur la partition installée")'
+		"Exécutez chroot sur la partition installée"
+		"Ejecute chroot en la partición instalada"
+		"Esegui chroot sulla partizione installata")'
 	'cmsg_Usage3=("Ativar modo gráfico"
 		"Enable graphics mode"
 		"Grafikmodus aktivieren"
-		"Activer le mode graphique")'
+		"Activer le mode graphique"
+		"Habilitar el modo de gráficos"
+		"Abilitare la modalità grafica")'
 	'cmsg_Usage4=("Saída resumida"
 		"Summarized output"
 		"Zusammengefasste Ausgabe"
-		"Sortie résumée")'
+		"Sortie résumée"
+		"Salida resumida"
+		"Riepilogo dell output")'
 	'cmsg_Usage5=("Mostrar versão do aplicativo"
 		"Show app version"
 		"App-Version anzeigen"
-		"Afficher la version de l application")'
+		"Afficher la version de l application"
+		"Mostrar versión de la aplicación"
+		"Mostra la versione dell app")'
 	'cmsg_Usage6=("Remove cores da saída"
 		"Remove colors from output"
 		"Farben aus der Ausgabe entfernen"
-		"Supprimer les couleurs de la sortie")'
+		"Supprimer les couleurs de la sortie"
+		"Eliminar colores de la salida"
+		"Rimuovi i colori dall output")'
 	'cmsg_Usage7=("Este help"
 		"This help"
 		"Diese Hilfe"
-		"Cette aide")'
+		"Cette aide"
+		"Es ayuda"
+		"È aiuto")'
 	'cmsg_Extra1=("Nome Completo"
 		"Full Name"
 		"Vollständiger Name"
-		"Nom et prénom")'
-	'cmsg_Extra2=("Nome usuário"
+		"Nom et prénom"
+		"Nombre completo"
+		"Nome e cognome")'
+	'cmsg_Extra2=("Nome usuario"
 		"Username"
 		"Nutzername"
-		"Nom d utilisateur")'
-	'cmsg_Extra3=("Senha usuário"
+		"Nom d utilisateur"
+		"Nombre de usuario"
+		"Nome utente")'
+	'cmsg_Extra3=("Senha usuario"
 		"Password user"
 		"Kennwortbenutzer"
-		"Mot de passe utilisateur")'
+		"Mot de passe utilisateur"
+		"Contraseña de usuario"
+		"Password utente")'
 	'cmsg_Extra4=("Senha root"
 		"Root password"
 		"Root-Passwort"
-		"Mot de passe racine")'
+		"Mot de passe racine"
+		"Contraseña raíz"
+		"Password di root")'
 	'cmsg_Extra6=("Disco destino"
 		"Target disk"
 		"Zielfestplatte"
-		"Disque cible")'
+		"Disque cible"
+		"Disco de destino"
+		"Disco di destinazione")'
 	'cmsg_Extra11=("Gerenciador Janelas"
 		"Window Manager"
 		"Fenstermanager"
-		"Gestionnaire Fenêtres")'
+		"Gestionnaire Fenêtres"
+		"Administrador de Windows"
+		"Gestore di Windows")'
 	'cmsg_Bios=("Sistema Básico de Entrada e Saída"
 		"Basic Entry and Exit System"
 		"Grundlegendes Ein- und Ausstiegssystem"
-		"Système d entrée et de sortie de base")'
+		"Système d entrée et de sortie de base"
+		"Sistema Básico de Entrada y Salida"
+		"Sistema di ingresso e uscita di base")'
 	'cmsg_Efi=("Interface de Firmware Extensível"
 		"Extensible Firmware Interface"
 		"Erweiterbare Firmware-Schnittstelle"
-		"Interface de micrologiciel extensible")'
+		"Interface de micrologiciel extensible"
+		"Interfaz de Firmware Extensible"
+		"Interfaccia Firmware Estensibile")'
 	'cmsg_ExtraEfi=("Detectado boot via EFI \n↓ é recomendável instalar ↓"
 		"EFI boot detected \n↓ install recommended ↓"
 		"EFI-Start erkannt \n↓ Installation empfohlen ↓"
-		"Démarrage EFI détecté \n↓ installation recommandée ↓")'
+		"Démarrage EFI détecté \n↓ installation recommandée ↓"
+		"Arranque EFI detectado \n↓ instalación recomendada ↓"
+		"Avvio EFI rilevato \n↓ installazione consigliata ↓")'
 	'cmsg_ExtraNotEfi=("EFI não detectado \n↓ é recomendável instalar BIOS ↓"
 		"EFI not detected \n↓ it is recommended to install BIOS ↓"
 		"EFI nicht erkannt \n↓ Es wird empfohlen, das BIOS zu installieren ↓"
-		"EFI non détecté \n↓ il est recommandé d installer le BIOS ↓")'
+		"EFI non détecté \n↓ il est recommandé d installer le BIOS ↓"
+		"EFI no detectado \n↓ se recomienda instalar BIOS ↓"
+		"EFI non rilevato \n↓ si consiglia di installare il BIOS ↓")'
 	'welcome=("Bem-vindo ao instalador $APP"
 		"Welcome to the $APP installer"
 		"Willkommen beim $APP Installationsprogramm"
-		"Bienvenue dans le programme d installation de $APP")'
+		"Bienvenue dans le programme d installation de $APP"
+		"Bienvenido al instalador $APP"
+		"Benvenuto nel programma di installazione $APP")'
 	'escolhaIdioma=("Escolha o idioma"
 		"Choose language"
 		"Sprache wählen"
-		"Choisissez la langue")'
+		"Choisissez la langue"
+		"Elige lengua"
+		"Scegli la lingua")'
 	'cmsg_adduser1=("Usuário não pode ser root! Novamente?"
 		"User cannot be root! Again?"
 		"Benutzer kann nicht root sein! Nochmal?"
-		"L utilisateur ne peut pas être root ! De nouveau?")'
+		"L utilisateur ne peut pas être root ! De nouveau?"
+		"¡El usuario no puede ser root! ¿Otra vez?"
+		"L utente non può essere root! Di nuovo?")'
 	'cmsg_adduser2=("Usuário não pode ser vazio! Novamente?"
 		"User cannot be empty! Again?"
 		"Benutzer darf nicht leer sein! Nochmal?"
-		"L utilisateur ne peut pas être vide ! De nouveau?")'
+		"L utilisateur ne peut pas être vide ! De nouveau?"
+		"¡El usuario no puede estar vacío! ¿Otra vez?"
+		"L utente non può essere vuoto! Di nuovo?")'
 	'cmsg_adduser3=("Senha do usuário não pode ser vazia! Novamente?"
 		"User password cannot be empty! Again?"
 		"Das Benutzerpasswort darf nicht leer sein! Nochmal?"
-		"Le mot de passe utilisateur ne peut pas être vide ! De nouveau?")'
+		"Le mot de passe utilisateur ne peut pas être vide ! De nouveau?"
+		"¡La contraseña de usuario no puede estar vacía! ¿Otra vez?"
+		"La password utente non può essere vuota! Di nuovo?")'
 	'cmsg_adduser4=("Senha de root não pode ser vazia! Novamente?"
 		"Root password cannot be empty! Again?"
 		"Das Root-Passwort darf nicht leer sein! Nochmal?"
-		"Le mot de passe root ne peut pas être vide ! De nouveau?")'
+		"Le mot de passe root ne peut pas être vide ! De nouveau?"
+		"¡La contraseña raíz no puede estar vacía! ¿Otra vez?"
+		"La password di root non può essere vuota! Di nuovo?")'
 	'cmsg_adduserCancel=("Cadastro de usuário cancelado"
 		"Canceled user registration"
 		"Abgebrochene Benutzerregistrierung"
-		"Enregistrement de l utilisateur annulé")'
+		"Enregistrement de l utilisateur annulé"
+		"Registro de usuario cancelado"
+		"Registrazione utente annullata")'
 	'cmsg_redewifi=("Rede wifi"
 		"Wifi network"
 		"Wifi-Netzwerk"
-		"Réseau Wi-Fi")'
+		"Réseau Wi-Fi"
+		"Red WiFi"
+		"Rete Wi-Fi")'
 	'cmsg_senhawifi=("Senha wifi"
 		"Wifi password"
 		"WLAN Passwort"
-		"Mot de passe WiFi")'
+		"Mot de passe WiFi"
+		"Contraseña de wifi"
+		"Password Wi-Fi")'
+	'cmsg_mkfs=("↓ é recomendável ext4 ↓"
+		"↓ ext4 is recommended ↓"
+		"↓ ext4 wird empfohlen ↓"
+		"↓ ext4 est recommandé ↓"
+		"↓ Se recomienda ext4 ↓"
+		"↓ Si consiglia ext4 ↓")'
 
 	)
 	for xmsg in "${langmsg[@]}"; do eval "$xmsg"; done
