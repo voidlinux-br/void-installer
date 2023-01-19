@@ -35,7 +35,7 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.74.985-20230119'
+readonly _VERSION_='0.75.01-20230119'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz)
 declare -A AsUser
@@ -79,7 +79,7 @@ sh_ambiente() {
 	readonly dir_install='/mnt/voidlinux'
 	readonly app_conf='/tmp/void-install.conf'
 	readonly url_google='https://google.com/'
-	readonly url_tarball='http://void.chililinux.com/voidlinux'
+	readonly url_tarball='https://github.com/voidlinux-br/void-installer/raw/master'
 	declare url_mirror='http://void.chililinux.com/voidlinux'
 	readonly true=1
 	readonly false=0
@@ -236,20 +236,30 @@ sh_checknet() {
    return $?
 }
 
+sh_downloadtarball() {
+	msg "INFO" "$(log_info_msg "${cmsg_IniciandoDownload[$LC_DEFAULT]} $url_tarball/live/current/$_TARBALL_ROOTFS")"
+	#curl --insecure --silent --remote-name "$url_tarball/live/current/$_TARBALL_ROOTFS" >>"$BOOTLOG" 2>&1 ||
+	curl -L -C - --insecure --silent --remote-name "$url_tarball/$_TARBALL_ROOTFS" >>"$BOOTLOG" 2>&1 ||
+	{
+		evaluate_retval "$?"
+		die "${cmsg_SemRota[$LC_DEFAULT]} ($url_mirror) - ${cmsg_CheckNet[$LC_DEFAULT]}"
+		return 1
+	}
+	evaluate_retval 0
+	return 0
+}
+
 sh_checktarball() {
 	msg "INFO" "$(log_info_msg "${cmsg_ChecandoTarball[$LC_DEFAULT]} rootfs $_TARBALL_ROOTFS")"
-	if ! test -r "$_TARBALL_ROOTFS"; then
+	if ! tar -tf "$_TARBALL_ROOTFS" >>"$BOOTLOG" 2>&1; then
 	   evaluate_retval "1" "$err_not_fatal"
-		msg "INFO" "$(log_info_msg "${cmsg_IniciandoDownload[$LC_DEFAULT]} $url_tarball/live/current/$_TARBALL_ROOTFS")"
-		curl --insecure --silent --remote-name "$url_tarball/live/current/$_TARBALL_ROOTFS" >>"$BOOTLOG" 2>&1 ||
-      {
-         evaluate_retval "$?"
-         die "${cmsg_SemRota[$LC_DEFAULT]} ($url_mirror) - ${cmsg_CheckNet[$LC_DEFAULT]}"
-		   return 1
-      }
+		rm -f void-x86_64-base-minimal-current.tar.xz
+		sh_downloadtarball
+	else
+	   evaluate_retval "0"
+		return 0
 	fi
-	evaluate_retval 0
-   return $?
+	return "$?"
 }
 
 sh_checkDependencies() {
@@ -2295,12 +2305,12 @@ sh_language() {
 		"autorisations"
 		"permisos"
 		"autorizzazioni")'
-	'cmsg_ChecandoTarball=("Checando existência do tarball"
-		"Checking existence of tarball"
-		"Überprüfung der Existenz des Tarballs"
-		"Vérification de l existence de l archive tar"
-		"Comprobando la existencia de tarball"
-		"Controllo dell esistenza di tarball")'
+	'cmsg_ChecandoTarball=("Checando existência e integridade do tarball"
+		"Checking tarball existence and integrity"
+		"Existenz und Integrität des Tarballs prüfen"
+		"Vérification de l existence et de l intégrité de l archive tar"
+		"Comprobación de la existencia e integridad de tarball"
+		"Controllo dell esistenza e dell integrità del tarball")'
 	'cmsg_IniciandoDownload=("Iniciando download de"
 		"Starting download"
 		"Download wird gestartet"
