@@ -35,7 +35,7 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.72.901-20230118'
+readonly _VERSION_='0.73.943-20230118'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz)
 declare -A AsUser
@@ -88,11 +88,8 @@ sh_ambiente() {
 	readonly shell='/bin/sh'
 	readonly BOOTLOG="/tmp/void-install-$(sh_diahora).log"
 	readonly LOGGER=/dev/tty8
-	: "${lEFI=$false}"
 	: "${ccabec="$APP v${_VERSION_}"}"
 	: "${DIALOG=${DIALOG:-"dialog"}}"
-
-   # flag languages
 
    # flag languages
 	: "${PT_BR=0}"
@@ -340,10 +337,8 @@ sh_logprefix() {
    FAILURE="${red}"
    INFO="${cyan}"
    BRACKET="${blue}"
-#  BMPREFIX="     "
    BMPREFIX=""
    DOTPREFIX="  ${blue}::${reset} "
-
    SUCCESS_PREFIX="${SUCCESS}  ↑  ${NORMAL}"
    SUCCESS_SUFFIX="${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}"
    FAILURE_PREFIX="${FAILURE}  ↓  ${NORMAL}"
@@ -357,9 +352,9 @@ sh_logprefix() {
 }
 
 replicate() {
-   local Var
-   printf -v Var %"$2s" " "
-   echo "${Var// /$1}"
+	local Var
+	printf -v Var %"$2s" " "
+	echo "${Var// /$1}"
 }
 
 DOT() {
@@ -625,7 +620,7 @@ sh_update_locale() {
 	local lc="${LOCALE}.UTF-8"
 	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	sed -e "/en_US.UTF-8 UTF-8/s/^\#//" -i "$dir_install/etc/default/libc-locales"
-	sed -e "/$lc UTF-8/s/^\#//" -i "$dir_install/etc/default/libc-locales"
+	sed -e "/$lc UTF-8/s/^\#//"         -i "$dir_install/etc/default/libc-locales"
 	evaluate_retval "$?" "$err_not_fatal"
 
 	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} locale.conf ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
@@ -918,8 +913,7 @@ sh_X11minimal(){
 	apkgs+=("${aPerfumaria[@]}")
 	apkgs+=("${aMicrocode[@]}")
 	apkgs+=("${aArchiver[@]}")
-
-	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} meta pacotes X ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_fluxboxminimal() {
@@ -931,7 +925,9 @@ sh_fluxboxminimal() {
 #	sh_chroot_job "${cmsg_Gerando[$LC_DEFAULT]} menu customizado do fluxbox em $_PART_ROOT:$dir_install" "fbmenugen -i -o /home/${AsUser[cuser]}/.fluxbox/menu" "$err_not_fatal"
 	if [[ -f "$dir_install/home/${AsUser[cuser]}/.fluxbox/startup" ]]; then
 		sed -e "/xmodmap/s//# xmodmap/" -i "$dir_install/home/${AsUser[cuser]}/.fluxbox/startup" >>"$BOOTLOG" 2>&1
- 		sed -e '/\# xmodmap/a setxkbmap br -variant abnt2' -i "$dir_install/home/${AsUser[cuser]}/.fluxbox/startup" >>"$BOOTLOG" 2>&1
+		if [[ $_KEYMAP = 'br-abnt2' ]]; then
+	 		sed -e '/\# xmodmap/a setxkbmap br -variant abnt2' -i "$dir_install/home/${AsUser[cuser]}/.fluxbox/startup" >>"$BOOTLOG" 2>&1
+		fi
 	fi
 }
 
@@ -1215,7 +1211,8 @@ sh_choosedisk() {
 					--default-item "$_DEVICE"														\
     				--backtitle	 	"$ccabec"														\
     				--title 			"${cmsg_TitleDisco[$LC_DEFAULT]}"						\
-    				--cancel-label "${cmsg_ButtonBack[$LC_DEFAULT]}"						\
+		   		--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"							\
+ 					--cancel-label "${cmsg_ButtonBack[$LC_DEFAULT]}"						\
     				--colors																				\
 	            --extra-button                                                    \
                --extra-label  "${cmsg_info_disco[$LC_DEFAULT]}"						\
@@ -1295,24 +1292,26 @@ sh_confadduser() {
 	while true
 	do
 		exec 3>&1
-		usertext=$(${DIALOG}									\
-			--title		"** EXTRA **"						\
-			--colors					         				\
-			--backtitle	"$ccabec"							\
-			--insecure	"$@"									\
-			--mixedform	"${cmsg_LABEL[$LC_DEFAULT]}"	\
-			0 0 0													\
-			"${cmsg_Extra1[$LC_DEFAULT]}: "				1 1 "${AsUser[cfullname]}"           1 28 40 0 0 \
-			"${cmsg_Extra2[$LC_DEFAULT]}: "          	2 1 "${AsUser[cuser]}"               2 28 20 0 0 \
-			"${cmsg_Extra3[$LC_DEFAULT]} (${AsUser[cpass]}): "     	3 1 "${AsUser[cpass]}"               3 28 20 0 1 \
-			"${cmsg_Extra4[$LC_DEFAULT]} (${AsUser[cpassroot]}): " 	4 1 "${AsUser[cpassroot]}"           4 28 20 0 1 \
-			"Hostname: "                            	5 1 "${AsUser[chostname]}"           5 28 20 0 0 \
-			"${cmsg_Extra6[$LC_DEFAULT]}: "          	6 1 "${_DEVICE}"                     6 28 20 0 2 \
-			"Tam/Model: "                           	7 1 "${SIZE_ORIGEM}/${MODEL_ORIGEM}" 7 28 20 0 2 \
-			"FileSystem: "                           	8 1 "${mkfs}"                        8 28 20 0 2 \
-			"${cmsg_Extra9[$LC_DEFAULT]}: "          	9 1 "${_KEYMAP}"                     9 28 20 0 2 \
-			"Timezone: "                             10 1 "${_TIMEZONE}"                  10 28 20 0 2 \
-			"${cmsg_Extra11[$LC_DEFAULT]}: "         11 1 "${_WINDOWMANAGER[*]}"          11 28 30 0 2 \
+		usertext=$(${DIALOG}												\
+			--title			"** EXTRA **"								\
+			--colors					         							\
+			--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"		\
+			--cancel-label "${cmsg_ButtonBack[$LC_DEFAULT]}"	\
+			--backtitle	"$ccabec"										\
+			--insecure	"$@"												\
+			--mixedform	"${cmsg_LABEL[$LC_DEFAULT]}"				\
+			0 0 0																\
+			"${cmsg_Extra1[$LC_DEFAULT]}: "									1 1 "${AsUser[cfullname]}"           1 28 40 0 0 \
+			"${cmsg_Extra2[$LC_DEFAULT]}: "									2 1 "${AsUser[cuser]}"               2 28 20 0 0 \
+			"${cmsg_Extra3[$LC_DEFAULT]} (${AsUser[cpass]}): "			3 1 "${AsUser[cpass]}"               3 28 20 0 1 \
+			"${cmsg_Extra4[$LC_DEFAULT]} (${AsUser[cpassroot]}): "	4 1 "${AsUser[cpassroot]}"           4 28 20 0 1 \
+			"Hostname: "															5 1 "${AsUser[chostname]}"           5 28 20 0 0 \
+			"${cmsg_Extra6[$LC_DEFAULT]}: "									6 1 "${_DEVICE}"                     6 28 20 0 2 \
+			"Tam/Model: "															7 1 "${SIZE_ORIGEM}/${MODEL_ORIGEM}" 7 28 20 0 2 \
+			"FileSystem: "															8 1 "${mkfs}"                        8 28 20 0 2 \
+			"${cmsg_Teclado[$LC_DEFAULT]}: "									9 1 "${_KEYMAP}"                     9 28 20 0 2 \
+			"Timezone: "														  10 1 "${_TIMEZONE}"                  10 28 20 0 2 \
+			"${cmsg_Extra11[$LC_DEFAULT]}: "								  11 1 "${_WINDOWMANAGER[*]}"          11 28 30 0 2 \
 			2>&1 1>&3)
 
 			exit_status=$?
@@ -1330,32 +1329,32 @@ sh_confadduser() {
 					_HOSTNAME="${aUser[4]}"
 
 					if [[ "${AsUser[cuser]}" == "root" ]]; then
-						if ! conf "*** USER ***" "\nUsuário não pode ser root! Novamente?"; then
-							die "*** USER *** " "Cadastro de usuário cancelado"
+						if ! conf "*** USER ***" "\n${cmsg_adduser1[$LC_DEFAULT]}"; then
+							die "*** USER *** " "${cmsg_adduserCancel[$LC_DEFAULT]}"
 							return 1
 						fi
 						sh_confadduser
 					fi
 
 					if [[ -z "${AsUser[cuser]}" ]]; then
-						if ! conf "*** USER ***" "\nUsuário não pode ser vazio! Novamente?"; then
-							die "*** USER *** " "Cadastro de usuário cancelado"
+						if ! conf "*** USER ***" "\n${cmsg_adduser2[$LC_DEFAULT]}"; then
+							die "*** USER *** " "${cmsg_adduserCancel[$LC_DEFAULT]}"
 							return 1
 						fi
 						sh_confadduser
 					fi
 
 					if [[ -z "${AsUser[cpass]}" ]]; then
-						if ! conf "*** USER ***" "\nSenha do usuário não pode ser vazia! Novamente?"; then
-							die "*** USER *** " "Cadastro de usuário cancelado"
+						if ! conf "*** USER ***" "\n${cmsg_adduser3[$LC_DEFAULT]}"; then
+							die "*** USER *** " "${cmsg_adduserCancel[$LC_DEFAULT]}"
 							return 1
 						fi
 						sh_confadduser
 					fi
 
 					if [[ -z "${AsUser[cpassroot]}" ]]; then
-						if ! conf "*** ROOT ***" "\nSenha de root não pode ser vazia! Novamente?"; then
-							die "*** ROOT *** " "Cadastro de usuário cancelado"
+						if ! conf "*** ROOT ***" "\n${cmsg_adduser4[$LC_DEFAULT]}"; then
+							die "*** ROOT *** " "${cmsg_adduserCancel[$LC_DEFAULT]}"
 							return 1
 						fi
 						sh_confadduser
@@ -1378,15 +1377,17 @@ sh_confwifi() {
 	while true
 	do
 		exec 3>&1
-		wifitext=$(${DIALOG}											\
-			--title		"** REDE WIFI **"							\
-			--colors					      	   					\
-			--backtitle	"$ccabec"									\
-			--insecure	"$@"											\
-			--mixedform	"${cmsg_LABEL[$LC_DEFAULT]}"			\
-			0 0 0															\
-			"Rede Wifi : "	1 1 "$_REDE_WIFI"		1 15 40 0 0	\
-			"Senha Wifi: " 2 1 "$_SENHA_WIFI"	2 15 40 0 1 \
+		wifitext=$(${DIALOG}												\
+			--title			"** REDE WIFI **"							\
+			--colors					      	   						\
+   		--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"		\
+			--cancel-label	"${cmsg_ButtonBack[$LC_DEFAULT]}"	\
+			--backtitle		"$ccabec"									\
+			--insecure		"$@"											\
+			--mixedform		"${cmsg_LABEL[$LC_DEFAULT]}"			\
+			0 0 0																\
+			"${cmsg_redewifi[$LC_DEFAULT]}: "	1 1 "$_REDE_WIFI"		1 20 40 0 0		\
+			"${cmsg_senhawifi[$LC_DEFAULT]}: "	2 1 "$_SENHA_WIFI"	2 20 40 0 1 	\
 			2>&1 1>&3)
 
 			exit_status=$?
@@ -1399,7 +1400,6 @@ sh_confwifi() {
 					_REDE_WIFI="${aWifi[0]}"
 					_SENHA_WIFI="${aWifi[1]}"
 					LWIFI=$true
-					#evaluate_retval "$?"
 					;;
 			esac
 		exec 3>&-
@@ -1481,11 +1481,11 @@ sh_mkefiroaming() {
 }
 
 sh_bootefi() {
-	lEFI=$false
+	LEFI=$false
 	if efivar --list >>"$BOOTLOG" 2>&1; then
-		lEFI=$true
+		LEFI=$true
 	  fi
-	[[ $lEFI -eq $true ]] && return 0 || return 1
+	[[ $LEFI -eq $true ]] && return 0 || return 1
 }
 
 sh_choosewm() {
@@ -1577,6 +1577,8 @@ sh_choosekeymap() {
 					--colors															\
 					--default-item	"$_KEYMAP"									\
 					--backtitle 	"${ccabec}"       						\
+		   		--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"		\
+ 					--cancel-label "${cmsg_ButtonBack[$LC_DEFAULT]}"	\
 					--title 			"${cmsg_descTeclado[$LC_DEFAULT]}"	\
 					--menu 			"${cmsg_LABEL[$LC_DEFAULT]}"			\
 					0 70 0    	                   							\
@@ -1634,7 +1636,7 @@ display_config() {
                             \nTam/Model:          : \Zb\Z1${_modelo}${RESET}\
                             \nFileSystem          : \Zb\Z1${_mkfs}${RESET}\
                             \nBootloader          : \Zb\Z1${_bootloader}${RESET}\
-                            \n${cmsg_Extra9[$LC_DEFAULT]}             : \Zb\Z1${_KEYMAP}${RESET}\
+                            \n${cmsg_Teclado[$LC_DEFAULT]}             : \Zb\Z1${_KEYMAP}${RESET}\
                             \nTimezone            : \Zb\Z1${_timezone}${RESET}\
                             \n${cmsg_Extra11[$LC_DEFAULT]} : \Zb\Z1${_WINDOWMANAGER[*]}${RESET}\
                             \n"
@@ -2274,75 +2276,117 @@ sh_language() {
 	'cmsg_CriandoParticoes=("Criando partições em"
 		"Creating partitions in"
 		"Partitionen erstellen in"
-		"Création de partitions dans")'
+		"Création de partitions dans"
+		"Creación de particiones en"
+		"Creazione di partizioni in")'
 	'cmsg_CriandoDiretorios=("Criando diretórios em"
 		"Creating directories in"
 		"Erstellen von Verzeichnissen in"
-		"Création de répertoires dans")'
+		"Création de répertoires dans"
+		"Creación de directorios en"
+		"Creazione di directory in")'
 	'cmsg_AtualizandoRepositorio=("Atualizando repositório em"
 		"Updating repository in"
 		"Repository aktualisieren in"
-		"Mise à jour du référentiel dans")'
+		"Mise à jour du référentiel dans"
+		"Actualización de repositorios en"
+		"Aggiornamento dei repository in")'
+	'cmsg_InstalandoMetaPacotes=("Instalando meta pacote X em"
+		"Installing metapackage X in"
+		"Installieren von Metapaket X in"
+		"Installation du métapaquet X dans"
+		"Instalación del metapaquete X en"
+		"Installazione del metapacchetto X in")'
 	'cmsg_AtualizandoPacotesBase=("Atualizando pacotes base em"
 		"Updating base packages in"
 		"Aktualisieren von Basispaketen in"
-		"Mise à jour des packages de base dans")'
+		"Mise à jour des packages de base dans"
+		"Actualización de paquetes base en"
+		"Aggiornamento dei pacchetti base in")'
 	'cmsg_AtualizandoPacotesAdicionais=("Atualizando pacotes adicionais em"
 		"Updating additional packages in"
 		"Aktualisieren zusätzlicher Pakete in"
-		"Mise à jour de packages supplémentaires dans")'
+		"Mise à jour de packages supplémentaires dans"
+		"Actualización de paquetes adicionales en"
+		"Aggiornamento di pacchetti aggiuntivi in")'
 	'cmsg_part_disk=("Visualizar partições do disco"
 		"View disk partitions"
 		"Anzeigen von Festplattenpartitionen"
-		"Afficher les partitions de disque")'
+		"Afficher les partitions de disque"
+		"Ver particiones de disco"
+		"Visualizza le partizioni del disco")'
 	'cmsg_TitleDisco=("** DISCO **"
 		"** DISK **"
 		"** DISKO **"
+		"** DISCO **"
+		"** DISCO **"
 		"** DISCO **")'
 	'cmsg_TitleFileSystem=("** FILESYSTEM **"
 		"** FILESYSTEM **"
 		"** DATEISYSTEM **"
-		"** SYSTÈME DE FICHIERS **")'
+		"** SYSTÈME DE FICHIERS **"
+		"** SISTEMA DE ARCHIVOS **"
+		"** FILESYSTEM **")'
 	'cmsg_ChecandoParticoesMontadas=("Checando por partições montadas no disco"
 		"Checking for mounted partitions on disk"
 		"Suche nach gemounteten Partitionen auf der Festplatte"
-		"Vérification des partitions montées sur le disque")'
+		"Vérification des partitions montées sur le disque"
+		"Comprobación de particiones montadas en el disco"
+		"Controllo delle partizioni montate su disco")'
 	'cmsg_all_mounted_part=("O disco selecionado contém partições montadas"
 		"The selected disk contains mounted partitions"
 		"Die ausgewählte Festplatte enthält gemountete Partitionen"
-		"Le disque sélectionné contient des partitions montées")'
+		"Le disque sélectionné contient des partitions montées"
+		"El disco seleccionado contiene particiones montadas"
+		"Il disco selezionato contiene partizioni montate")'
 	'cmsgSetKeyboardLayout=("Escolher outro layout de teclado"
 		"Choose another keyboard layout"
 		"Wählen Sie ein anderes Tastaturlayout"
-		"Choisissez une autre disposition de clavier")'
+		"Choisissez une autre disposition de clavier"
+		"Elija otro diseño de teclado"
+		"Scegli un altro layout di tastiera")'
 	'cmsg_LayoutAtual=("Layout atual"
 		"Current layout"
 		"Aktuelle Anordnung"
-		"Mise en page actuelle")'
+		"Mise en page actuelle"
+		"Diseño actual"
+		"Disposizione attuale")'
 	'cmsg_umount_partition=("Aguarde, Desmontando particao de trabalho"
 		"Please wait, Unmounting work partition"
 		"Bitte warten, Arbeitspartition wird ausgehängt"
-		"Veuillez patienter, Démontage de la partition de travail")'
+		"Veuillez patienter, Démontage de la partition de travail"
+		"Espere, desmontando la partición de trabajo"
+		"Attendere, smontaggio della partizione di lavoro in corso")'
 	'cmsg_ErroLeituraDisco=("Erro de leitura do disco"
 		"Disk read error"
 		"Fehler beim Lesen der Festplatte"
-		"Erreur de lecture du disque")'
+		"Erreur de lecture du disque"
+		"Error de lectura de disco"
+		"Errore di lettura del disco")'
 	'cmsg_SemRota=("Sem rota para o servidor"
 		"No route to server"
 		"Keine Route zum Server"
-		"Pas de route vers le serveur")'
+		"Pas de route vers le serveur"
+		"Sin ruta al servidor"
+		"Nessun instradamento al server")'
 	'cmsg_CheckNet=("Check sua conexão com a internet!"
 		"Check your internet connection!"
 		"Prüfe deine Internetverbindung!"
-		"Vérifiez votre connection internet!")'
+		"Vérifiez votre connection internet!"
+		"¡Comprueba tu conexión a Internet!"
+		"Controlla la tua connessione Internet!")'
 	'cmsg_CommandNotFound=("não encontrei o comando"
-		"I didn t find the command"
-		"Ich habe den Befehl nicht gefunden"
-		"je n ai pas trouvé la commande")'
-		'cmsg_ImpossivelContinuar=("IMPOSSÍVEL CONTINUAR"
+		"i didn t find the command"
+		"ich habe den Befehl nicht gefunden"
+		"je n ai pas trouvé la commande"
+		"no encontre el comando"
+		"non ho trovato il comando")'
+	'cmsg_ImpossivelContinuar=("IMPOSSÍVEL CONTINUAR"
 		"IMPOSSIBLE TO CONTINUE"
 		"UNMÖGLICH WEITER"
-		"IMPOSSIBLE DE CONTINUER")'
+		"IMPOSSIBLE DE CONTINUER"
+		"IMPOSIBLE CONTINUAR"
+		"IMPOSSIBILE CONTINUARE")'
 	'cmsg_ImpossivelContinuar1=("Esse script precisa dos comandos listados acima"
 		"This script needs the commands listed above"
 		"Dieses Skript benötigt die oben aufgeführten Befehle"
@@ -2403,7 +2447,6 @@ sh_language() {
 		"Extra has not been configured, please do this before starting the installation."
 		"Extra wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
 		"Extra n a pas été configuré, veuillez le faire avant de commencer l installation.")'
-
 	'cmsg_Usage1=("Instalar"
 		"Install"
 		"Installieren"
@@ -2452,10 +2495,6 @@ sh_language() {
 		"Target disk"
 		"Zielfestplatte"
 		"Disque cible")'
-	'cmsg_Extra9=("Teclado"
-		"Keyboard"
-		"Klaviatur"
-		"Clavier")'
 	'cmsg_Extra11=("Gerenciador Janelas"
 		"Window Manager"
 		"Fenstermanager"
@@ -2484,6 +2523,35 @@ sh_language() {
 		"Choose language"
 		"Sprache wählen"
 		"Choisissez la langue")'
+	'cmsg_adduser1=("Usuário não pode ser root! Novamente?"
+		"User cannot be root! Again?"
+		"Benutzer kann nicht root sein! Nochmal?"
+		"L utilisateur ne peut pas être root ! De nouveau?")'
+	'cmsg_adduser2=("Usuário não pode ser vazio! Novamente?"
+		"User cannot be empty! Again?"
+		"Benutzer darf nicht leer sein! Nochmal?"
+		"L utilisateur ne peut pas être vide ! De nouveau?")'
+	'cmsg_adduser3=("Senha do usuário não pode ser vazia! Novamente?"
+		"User password cannot be empty! Again?"
+		"Das Benutzerpasswort darf nicht leer sein! Nochmal?"
+		"Le mot de passe utilisateur ne peut pas être vide ! De nouveau?")'
+	'cmsg_adduser4=("Senha de root não pode ser vazia! Novamente?"
+		"Root password cannot be empty! Again?"
+		"Das Root-Passwort darf nicht leer sein! Nochmal?"
+		"Le mot de passe root ne peut pas être vide ! De nouveau?")'
+	'cmsg_adduserCancel=("Cadastro de usuário cancelado"
+		"Canceled user registration"
+		"Abgebrochene Benutzerregistrierung"
+		"Enregistrement de l utilisateur annulé")'
+	'cmsg_redewifi=("Rede wifi"
+		"Wifi network"
+		"Wifi-Netzwerk"
+		"Réseau Wi-Fi")'
+	'cmsg_senhawifi=("Senha wifi"
+		"Wifi password"
+		"WLAN Passwort"
+		"Mot de passe WiFi")'
+
 	)
 	for xmsg in "${langmsg[@]}"; do eval "$xmsg"; done
 	#echo "lang       ${#lang[@]} ${lang[@]} ${lang[$PT_BR]} ${lang[$EN_US]}"
