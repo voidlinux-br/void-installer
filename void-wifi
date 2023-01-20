@@ -96,6 +96,14 @@ sh_enableprintk() {
 	fi
 }
 
+sh_ascii_lines() {
+   if [[ "$LANG" =~ 'UTF-8' ]]; then
+      export NCURSES_NO_UTF8_ACS=0
+   else
+      export NCURSES_NO_UTF8_ACS=1
+   fi
+}
+
 sh_checkroot() {
 	if [ "$(id -u)" != "0" ]; then
 		die "${red} erro: você não pode realizar esta operação a menos que seja root."
@@ -196,6 +204,7 @@ sh_confwifi() {
 			exit_status=$?
 			case $exit_status in
 				"$D_ESC"|"$D_CANCEL")
+					clear
 					return
 					;;
 				"$D_OK")
@@ -215,5 +224,6 @@ sh_confwifi() {
 sh_checkroot
 sh_checkDependencies
 sh_disableprintk
+sh_ascii_lines
 sh_confwifi
 sh_enableprintk

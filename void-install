@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/01/19
+#  Altered: 2023/01/20
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -35,7 +35,7 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.75.01-20230119'
+readonly _VERSION_='0.75.15-20230120'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz)
 declare -A AsUser
@@ -1155,9 +1155,32 @@ sh_choosefilesystem() {
 	LFS=$true
 }
 
+sh_timedatectl() {
+   local _localtime
+
+	if [[ -n $(command -v timedatectl) ]]; then
+	   _localtime=$(awk '{print $3}' <(grep 'Time zone' <(timedatectl)))
+	   if [[ -n "$_localtime" ]]; then
+   	   echo "$_localtime"
+	      return 0
+		fi
+   else
+      _localtime=$(cut -d'"' -f2 <(grep TIMEZONE /etc/rc.conf))
+      if [[ -n "$_localtime" ]]; then
+         echo "$_localtime"
+         return 0
+      fi
+   fi
+   return 1
+}
+
 sh_choosetimezone() {
+	local _localtime
+	local defaultitem
+
+	_localtime=$(sh_timedatectl) && defaultitem="${_localtime##*/}" || defaultitem="${_TIMEZONE##*/}"
 	timezone=$(${DIALOG} --title "** TIMEZONE **"	\
-		--default-item "${_TIMEZONE#America/}"			\
+		--default-item "$defaultitem"						\
 		--colors													\
 		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"	\
 		--ok-label 	"${cmsg_Aceitar[$LC_DEFAULT]}"	\
@@ -1178,7 +1201,8 @@ sh_choosetimezone() {
 		Recife			"America/Recife"			"off"	\
 		Rio_Branco		"America/Rio_Branco"		"off"	\
 		Santarem			"America/Santarem"		"off"	\
-		Sao_Paulo		"America/Sao_Paulo"		"on"	\
+		Sao_Paulo		"America/Sao_Paulo"		"off"	\
+		"$defaultitem"	"$_localtime"				"on"	\
 		2>&1 >/dev/tty )
 
 	exit_status=$?
@@ -1652,13 +1676,16 @@ sh_chmodtmp() {
 	evaluate_retval "$?" "$err_not_fatal"
 }
 
-sh_copiavoid-install() {
-	local cfile="void-install"
+sh_copiascripts() {
+	local cfiles=(void-install void-wifi void-testmirror)
+	local script
 
-	msg "INFO" "$(log_info_msg "${cmsg_Copiando[$LC_DEFAULT]} void-install ${cmsg_Para[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
-	if [[ -e "$cfile" ]]; then
-		cp "$cfile" "$dir_install/usr/bin/" >>"$BOOTLOG" 2>&1
-	fi
+	msg "INFO" "$(log_info_msg "${cmsg_Copiando[$LC_DEFAULT]} scripts ${cmsg_Para[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
+	for script in "${cfiles[@]}"; do
+		if [[ -e "$script" ]]; then
+			cp "$script" "$dir_install/usr/bin/" >>"$BOOTLOG" 2>&1
+		fi
+	done
 	evaluate_retval "$?" "$err_not_fatal"
 }
 
@@ -1729,8 +1756,8 @@ sh_checkinstall() {
 }
 
 sh_install() {
-	local abase=('base-system' 'dbus' 'lvm2' 'wireless_tools' 'nano' 'grub' 'grub-x86_64-efi'
-					 'efivar' 'efibootmgr' 'os-prober' 'intel-ucode' 'linux-firmware-amd' 'parted' 'ncurses')
+	local abase=('base-system' 'dbus' 'lvm2' 'wireless_tools' 'nano' 'grub' 'grub-x86_64-efi' 'efivar'
+					 'efibootmgr' 'os-prober' 'intel-ucode' 'linux-firmware-amd' 'parted' 'ncurses' 'xz')
 
 	sh_checkinstall || return 1
 	sh_umountfs
@@ -1807,7 +1834,7 @@ sh_install() {
 #		sh_chroot_job "Certificando que todos pacotes estejam configurados corretamente em $_PART_ROOT:$dir_install" "xbps-reconfigure -fa"
 #		sh_chroot_job "Removendo pacote bootstrap em $_PART_ROOT:$dir_install" "xbps-remove -y base-voidstrap" "$err_not_fatal"
 		sh_chmodtmp
-		sh_copiavoid-install
+		sh_copiascripts
 		quiet=$false
 		alerta "$ccabec" "${cmsg_FinalizadaComSucesso[LC_DEFAULT]}"
 	else
@@ -1866,7 +1893,7 @@ sh_menu() {
         	"${cmsg_Mirror[$LC_DEFAULT]}")	sh_choosemirror "$@" && [ -n "$LMIRROR" ]		&& DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}";;
    		"${cmsg_Instalar[$LC_DEFAULT]}")	sh_install;;
         	"${cmsg_Sair[$LC_DEFAULT]}")		die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}...";;
-	      *) ${DIALOG} --title "$ccabec" --yes-label "${cmsg_Aceitar[$LC_DEFAULT]}" --no-label "${cmsg_Sair[$LC_DEFAULT]}" --yesno "\n${cmsg_SairSemInstalar[$LC_DEFAULT]}?" 8 70 && die
+	      *) ${DIALOG} --title "$ccabec" --yes-label "${cmsg_yeslabel[$LC_DEFAULT]}" --no-label "${cmsg_nolabel[$LC_DEFAULT]}" --yesno "\n${cmsg_SairSemInstalar[$LC_DEFAULT]}?" 8 70 && die
 		esac
 	done
 }
