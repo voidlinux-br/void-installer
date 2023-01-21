@@ -1371,8 +1371,8 @@ sh_choosemirror() {
 					msg "** MIRROR ** void-testmirror" "$(log_info_msg "Wait... ${cmsg_Gerando[$LC_DEFAULT]} test with void-mirror ${xurl}")"
 					result=$(void-testmirror --nocolor --ping --quiet);
 				   evaluate_retval "$?" "$err_not_fatal"
-					[[ -z "$result" ]] && result="\n${RED}ERRO DESCONHECIDO: void-testmirror não retornou resultado${RESET}"
-					info "** MIRROR ** void-testmirror" "$result"
+					[[ -z "$result" ]] && result="${RED}ERRO DESCONHECIDO: void-testmirror não retornou resultado${RESET}"
+					info "** MIRROR ** void-testmirror" "\n$result"
 				else
 					msg "INFO" "$(log_info_msg "Wait... ${cmsg_Gerando[$LC_DEFAULT]} test with void-mirror ${xurl}")"
 				   evaluate_retval "1" "$err_not_fatal"

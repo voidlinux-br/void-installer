@@ -4,7 +4,7 @@
 # Require: xbps-install -S curl bc geoip geoip-data geoipupdate iptutils
 
 #  Created: 2022/11/05
-#  Altered: 2022/12/24
+#  Altered: 2022/02/21
 #
 #  Copyright (c) 2022-2022, Vilmar Catafesta <vcatafesta@gmail.com>
 #
@@ -27,7 +27,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
 
 #system
-_VERSION_='1.22.20221224'
+_VERSION_='1.23.20230121'
 DEPENDENCIES=(curl ping printf bc geoiplookup sed awk tput)
 declare -i quiet=0 typetest=0 auto=0 nping=0 ncurl=0 update=0
 declare -a aHits=()
@@ -667,3 +667,4 @@ case $(( update+nping+ncurl )) in
    [^1]) die 'only one operation may be used at a time' ;;
 esac
 for x in "${appexec[@]}"; do $x; done
+printf "repository=%s\n" "${mirrors[$frepo]}"
