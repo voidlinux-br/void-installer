@@ -35,7 +35,7 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.76.126-20230121'
+readonly _VERSION_='0.76.140-20230121'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz mkfs.jfs)
 declare -A AsUser
@@ -1279,7 +1279,7 @@ sh_choosemirror() {
 	declare -A Alocation
 	declare -A AFlag
 	local exit_status
-	local array=()
+	local array
 	local x
 	local sep="\xe2\x94\x82"
 
@@ -1343,31 +1343,51 @@ sh_choosemirror() {
 	Alocation['NewYork']='New York,USA'
 	Alocation['Italy']='Italy'
 
-	for m in "${Amirror[@]}"; do
-		x="$m"
-		[[ $_MIRROR == $x ]] && Aflag[$x]='on' || Aflag[$x]='off'
-		array+=("$x" "$(printf "$sep%-6s$sep%-13s$sep%-23s$sep%-30s" "${Atier[$x]}" "${Aregion[$x]}" "${Alocation[$x]}" "${Arepository[$x]}")" "${Aflag[$x]}")
+	while true; do
+		array=()
+		for m in "${Amirror[@]}"; do
+			x="$m"
+			[[ $_MIRROR == $x ]] && Aflag[$x]='on' || Aflag[$x]='off'
+			array+=("$x" "$(printf "$sep%-6s$sep%-13s$sep%-23s$sep%-30s" "${Atier[$x]}" "${Aregion[$x]}" "${Alocation[$x]}" "${Arepository[$x]}")" "${Aflag[$x]}")
+		done
+
+		mirror=$(${DIALOG} --title "** MIRROR **"				\
+			--default-item "${_MIRROR}"							\
+			--colors														\
+			--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"		\
+			--ok-label 	"${cmsg_Aceitar[$LC_DEFAULT]}"		\
+			--extra-button	--extra-label  "void-testmirror"	\
+			--radiolist "${cmsg_LABEL[$LC_DEFAULT]}"			\
+			0 0 0 "${array[@]}" 2>&1 >/dev/tty 					)
+
+		exit_status=$?
+		case $exit_status in
+			"$D_ESC"|"$D_CANCEL")
+				return 1
+				;;
+			3)
+				oldgrafico=$grafico; grafico=$true;
+				if [[ -n $(command -v void-testmirror) || -n $(command -v ./void-testmirror) ]]; then
+					msg "** MIRROR ** void-testmirror" "$(log_info_msg "Wait... ${cmsg_Gerando[$LC_DEFAULT]} test with void-mirror ${xurl}")"
+					result=$(void-testmirror --nocolor --ping --quiet);
+				   evaluate_retval "$?" "$err_not_fatal"
+					[[ -z "$result" ]] && result="\n${RED}ERRO DESCONHECIDO: void-testmirror não retornou resultado${RESET}"
+					info "** MIRROR ** void-testmirror" "$result"
+				else
+					msg "INFO" "$(log_info_msg "Wait... ${cmsg_Gerando[$LC_DEFAULT]} test with void-mirror ${xurl}")"
+				   evaluate_retval "1" "$err_not_fatal"
+					info "** MIRROR ** void-testmirror" "\n${RED}void-testmirror não foi localizado no \$PATH${RESET}" \
+																	"${RED}void-testmirror não foi localizado em $PWD!${RESET}"
+				fi
+				grafico=$oldgrafico
+				continue
+				;;
+		esac
+		_MIRROR="$mirror"
+		url_mirror="${Arepository[$mirror]}"
+		LMIRROR=$true
+		return 0
 	done
-
-	mirror=$(${DIALOG} --title "** MIRROR **"				\
-		--default-item "${_MIRROR}"							\
-		--colors														\
-		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"		\
-		--ok-label 	"${cmsg_Aceitar[$LC_DEFAULT]}"		\
-		--extra-button	--extra-label  "void-testmirror"	\
-		--radiolist "${cmsg_LABEL[$LC_DEFAULT]}"			\
-		0 0 0 "${array[@]}" 2>&1 >/dev/tty 					)
-
-	exit_status=$?
-	case $exit_status in
-		"$D_ESC"|"$D_CANCEL")
-			return 1
-			;;
-	esac
-	_MIRROR="$mirror"
-	url_mirror="${Arepository[$mirror]}"
-	LMIRROR=$true
-	return 0
 }
 
 sh_choosedisk() {
@@ -1462,12 +1482,11 @@ display_result() {
 			--colors					   					\
 			--backtitle	"$ccabec"						\
 		   --title		"$2"								\
-			--beep											\
-			--ok-label	"${cmsg_ok[$LC_DEFAULT]}"	\
 			--no-collapse									\
 			--no-cr-wrap									\
+			--ok-label	"${cmsg_ok[$LC_DEFAULT]}"	\
 			--msgbox    "$1"								\
-			00 0
+			0 0
 }
 
 sh_confadduser() {
