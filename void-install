@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/01/20
+#  Altered: 2023/01/21
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -35,9 +35,9 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.75.15-20230120'
+readonly _VERSION_='0.76.125-20230121'
 readonly	distro=$(uname -n)
-readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz)
+readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz mkfs.jfs)
 declare -A AsUser
 declare -A Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -A Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
@@ -361,6 +361,18 @@ sh_logprefix() {
    WAIT_SUFFIX="${BRACKET}[${WARNING} WAIT ${BRACKET}]${NORMAL}"
 }
 
+inkey() {
+	if (( grafico )); then
+		${DIALOG}						\
+			--title     "$2"        \
+			--backtitle "$ccabec"	\
+			--pause     "$2"			\
+      	0 0         "$1"
+	else
+		read -t "$1" -n1 -r -p "" lastkey
+	fi
+}
+
 replicate() {
 	local Var
 	printf -v Var %"$2s" " "
@@ -375,7 +387,7 @@ padr() {
 		COLS=$(tput cols)
 		char='='
 	fi
-	printf "%*s\n" $COLS "$texto" |sed "s/ /$char/g"
+	printf "%*s\n" "$COLS" "$texto" |sed "s/ /$char/g"
 }
 
 padl() {
@@ -386,7 +398,7 @@ padl() {
 		COLS=$(tput cols)
 		char='='
 	fi
-	printf "%-*s\n" $COLS "$texto" |sed "s/ /$char/g"
+	printf "%-*s\n" "$COLS" "$texto" |sed "s/ /$char/g"
 }
 
 padc() {
@@ -397,7 +409,7 @@ padc() {
 		COLS=$(tput cols)
 		char='='
 	fi
-	printf "%*s\n" $(((${#texto} + $COLS) / 2)) "$texto" | sed "s/ /$char/g"
+	printf "%*s\n" $(((${#texto} + COLS) / 2)) "$texto" | sed "s/ /$char/g"
 }
 
 
@@ -543,7 +555,7 @@ info() {
 }
 
 alerta() {
-	log_success_msg "$2"
+	log_success_msg "$@"
 	${DIALOG}               					\
 	--title  	"$1"                 		\
 	--backtitle "$ccabec"            		\
@@ -639,7 +651,7 @@ sh_mkparted() {
 }
 
 sh_update_mirror() {
-	msg "INFO" "$(log_info_msg "${cmsg_Configurando[$LC_DEFAULT]} ${cmsg_Mirror[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
+	msg "INFO" "$(log_info_msg "${cmsg_Configurando[$LC_DEFAULT]} ${cmsg_Mirror[$LC_DEFAULT],,} ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	cat > "$dir_install/etc/xbps.d/00-reposytory-main.conf" <<- EOF
 repository=$url_mirror/current
 repository=$url_mirror/current/nonfree
@@ -656,6 +668,22 @@ HOSTNAME="${_HOSTNAME}"
 HARDWARECLOCK="${_CLOCK}"
 TIMEZONE="${_TIMEZONE}"
 KEYMAP="${_KEYMAP}"
+EOF
+	evaluate_retval "$?"
+}
+
+sh_update_sshd() {
+	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} sshd_config ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
+	cat >> "$dir_install"/etc/ssh/sshd_config <<- EOF
+KbdInteractiveAuthentication Yes
+X11Forwarding Yes
+PermitRootLogin Yes
+PubkeyAuthentication Yes
+PubkeyAcceptedKeyTypes=+ssh-rsa
+AuthorizedKeysFile      .ssh/authorized_keys
+PasswordAuthentication Yes
+ChallengeResponseAuthentication Yes
+UsePAM yes
 EOF
 	evaluate_retval "$?"
 }
@@ -683,6 +711,13 @@ sh_update_hostname() {
 }
 
 sh_update_timezone() {
+	msg "INFO" "$(log_info_msg "${cmsg_Ajustando[$LC_DEFAULT]} timezone ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install/etc/rc.local")"
+	[[ ! -e "$dir_install/etc/rc.conf" ]] && >| "$dir_install/etc/rc.conf"
+	if [[ -e "$dir_install/etc/rc.conf" ]]; then
+		sed -i -e "s|TIMEZONE=.*|TIMEZONE=$_TIMEZONE|g" "$dir_install/etc/rc.conf"
+		sed -i -e "s|#\?TIMEZONE=.*|TIMEZONE=$_TIMEZONE|g" "$dir_install/etc/rc.conf"
+	fi
+	evaluate_retval "$?"
 	sh_chroot_job "${cmsg_Ajustando[$LC_DEFAULT]} timezone ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "ln -sf /usr/share/zoneinfo/${_TIMEZONE} /etc/localtime" "$err_not_fatal"
 }
 
@@ -767,6 +802,10 @@ sh_mkfs() {
 		mkfs.f2fs -f -l "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
    elif [[ "$mkfs" == "xfs" ]]; then
 		mkfs.xfs -f -L "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
+   elif [[ "$mkfs" == "jfs" ]]; then
+		mkfs.jfs -f -L "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
+   elif [[ "$mkfs" == "reiserfs" ]]; then
+		mkfs.reiserfs -f -l "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
 	fi
 	evaluate_retval "$?"
 }
@@ -891,7 +930,7 @@ sh_mkuser() {
 sh_mkfstab() {
 	local fsorder=1
 	if [ "$mkfs" = "f2fs" -o "$mkfs" = "btrfs" -o "$mkfs" = "xfs" ]; then
-	fsorder=0
+		fsorder=0
 	fi
 
 	msg "INFO" "$(log_info_msg "${cmsg_Gerando[$LC_DEFAULT]} fstab ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
@@ -1082,17 +1121,26 @@ sh_disk_info() {
 }
 
 sh_choosegrub() {
-	local cefi='off'
-	local cbios='on'
+	declare -A Ambr
+	declare -A Aflag
 	local cextra
+	local exit_status
+	local array=()
+	local x
 
-	if sh_bootefi; then
-		cefi='on'
-		cbios='off'
-		cextra="${cmsg_ExtraEfi[$LC_DEFAULT]}"
-	else
-		cextra="${cmsg_ExtraNotEfi[$LC_DEFAULT]}"
-	fi
+	Ambr[BIOS]="${cmsg_Bios[$LC_DEFAULT]}"
+	Ambr[EFI]="${cmsg_Efi[$LC_DEFAULT]}"
+	cextra="${cmsg_ExtraNotEfi[$LC_DEFAULT]}"
+
+	for x in "${!Ambr[@]}"; do
+		Aflag[$x]='off'
+		if sh_bootefi; then
+			Aflag[EFI]='on'
+			cextra="${cmsg_ExtraEfi[$LC_DEFAULT]}"
+		fi
+		Aflag[$_BOOTLOADER]='on'
+		array+=("$x" "${Ambr[$x]}" "${Aflag[$x]}")
+	done
 
 	mbr=$(${DIALOG} --title "** BOOTLOADER (GRUB) **"					\
 		--default-item "$_BOOTLOADER"											\
@@ -1100,10 +1148,7 @@ sh_choosegrub() {
 		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"						\
 		--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"					\
 		--radiolist 	"${cmsg_LABEL[$LC_DEFAULT]}\n\n$cextra"		\
-		0 0 0																			\
-		BIOS    "${cmsg_Bios[$LC_DEFAULT]}" 					$cbios	\
-		EFI     "${cmsg_Efi[$LC_DEFAULT]}"  					$cefi		\
-		2>&1 >/dev/tty )
+		11 70 0			"${array[@]}" 2>&1 >/dev/tty 						)
 
 	exit_status=$?
 	case $exit_status in
@@ -1124,8 +1169,26 @@ sh_choosegrub() {
 }
 
 sh_choosefilesystem() {
+	declare -A Afs
+	declare -A Aflag
 	local cextra
 	local exit_status
+	local array=()
+	local x
+
+	Afs[xfs]="SGI's Xfs"
+	Afs[reiserfs]="Linux Reiserfs"
+	Afs[jfs]="Linux Jfs"
+	Afs[f2fs]="Flash-Friendly Filesystem"
+	Afs[ext3]="Linux Ext3"
+	Afs[ext2]="Linux Ext2"
+	Afs[btrfs]="Oracle Btrfs"
+	Afs[ext4]="Linux Ext4"
+
+	for x in "${!Afs[@]}"; do
+		[[ $_FILESYSTEM = $x ]] && Aflag[$x]='on' || Aflag[$x]='off'
+		array+=("$x" "${Afs[$x]}" "${Aflag[$x]}")
+	done
 
 	cextra="${cmsg_mkfs[$LC_DEFAULT]}"
 	mkfs=$(${DIALOG}																\
@@ -1135,24 +1198,17 @@ sh_choosefilesystem() {
 		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"						\
 		--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"					\
 		--radiolist 	"${cmsg_LABEL[$LC_DEFAULT]}\n\n$cextra"		\
-		11 70 0																		\
-		ext4     "Linux Ext4"										"on"		\
-		btrfs    "Oracle Btrfs"										"off"		\
-		ext2     "Linux Ext2"										"off"		\
-		ext3     "Linux Ext3"										"off"		\
-		ext3     "Linux Ext3"										"off"		\
-		f2fs   	"Flash-Friendly Filesystem"					"off"		\
-		xfs      "SGI's Xfs"											"off"		\
-		2>&1 >/dev/tty )
+		11 70 0			"${array[@]}" 2>&1 >/dev/tty 						)
 
 	exit_status=$?
 	case $exit_status in
 		"$D_ESC"|"$D_CANCEL")
-			return
+			return 1
 			;;
 	esac
 	_FILESYSTEM=$mkfs
 	LFS=$true
+	return 0
 }
 
 sh_timedatectl() {
@@ -1216,20 +1272,82 @@ sh_choosetimezone() {
 }
 
 sh_choosemirror() {
-	declare -A AMirror
+	declare -A Amirror
+	declare -A Atier
+	declare -A Arepository
+	declare -A Aregion
+	declare -A Alocation
 	declare -A AFlag
+	local exit_status
+	local array=()
 	local x
+	local sep="\xe2\x94\x82"
 
-	AMirror['OuroPreto']='https://voidlinux.com.br/repo'
-	AMirror['PimentaBueno']='http://void.chililinux.com/voidlinux'
-	AMirror['PimentaBueno2']='http://void.chilios.com.br/voidlinux'
-	AMirror['Chicago']='https://mirrors.servercentral.com/voidlinux'
-	AMirror['KansasCity']='https://repo-us.voidlinux.org'
+	Amirror[0]='OuroPreto'
+	Amirror[1]='PimentaBueno'
+	Amirror[2]='PimentaBueno2'
+	Amirror[3]='Helsinki'
+	Amirror[4]='Frankfurt'
+	Amirror[5]='Italy'
+	Amirror[6]='Chicago'
+	Amirror[7]='KansasCity'
+	Amirror[8]='California'
+	Amirror[9]='Kentucky'
+	Amirror[10]='NewYork'
 
-	for x in "${!AMirror[@]}"; do
-		AFlag[$x]='off'
+	Atier['OuroPreto']='Tier 2'
+	Atier['PimentaBueno']='Tier 2'
+	Atier['PimentaBueno2']='Tier 2'
+	Atier['Helsinki']='Tier 1'
+	Atier['Frankfurt']='Tier 1'
+	Atier['Chicago']='Tier 1'
+	Atier['KansasCity']='Tier 1'
+	Atier['California']='Tier 2'
+	Atier['Kentucky']='Tier 2'
+	Atier['NewYork']='Tier 1'
+	Atier['Italy']='Tier 2'
+
+	Arepository['OuroPreto']='https://voidlinux.com.br/repo'
+	Arepository['PimentaBueno']='http://void.chililinux.com/voidlinux'
+	Arepository['PimentaBueno2']='http://void.chilios.com.br/voidlinux'
+	Arepository['Helsinki']='https://repo-fi.voidlinux.org'
+	Arepository['Frankfurt']='https://repo-de.voidlinux.org'
+	Arepository['Chicago']='https://mirrors.servercentral.com/voidlinux'
+	Arepository['KansasCity']='https://repo-us.voidlinux.org'
+	Arepository['California']='https://mirror.vofr.net/voidlinux'
+	Arepository['Kentucky']='https://mirror2.sandyriver.net/pub/voidlinux'
+	Arepository['NewYork']='https://mirror.clarkson.edu/voidlinux'
+	Arepository['Italy']='https://voidlinux.mirror.garr.it'
+
+	Aregion['OuroPreto']='South America'
+	Aregion['PimentaBueno']='South America'
+	Aregion['PimentaBueno2']='South America'
+	Aregion['Helsinki']='Europe'
+	Aregion['Frankfurt']='Europe'
+	Aregion['Chicago']='North America'
+	Aregion['KansasCity']='North America'
+	Aregion['California']='North America'
+	Aregion['Kentucky']='North America'
+	Aregion['NewYork']='North America'
+	Aregion['Italy']='Europe'
+
+	Alocation['OuroPreto']='Ouro Preto/MG,Brazil'
+	Alocation['PimentaBueno']='Pimenta Bueno/RO,Brazil'
+	Alocation['PimentaBueno2']='Pimenta Bueno/RO,Brazil'
+	Alocation['Helsinki']='Helsinki,Finland'
+	Alocation['Frankfurt']='Frankfurt,Germany'
+	Alocation['Chicago']='Chicago/IL,USA'
+	Alocation['KansasCity']='Kansas City/KS,USA'
+	Alocation['California']='Califonia,USA'
+	Alocation['Kentucky']='Kentucky,USA'
+	Alocation['NewYork']='New York,USA'
+	Alocation['Italy']='Italy'
+
+	for m in "${Amirror[@]}"; do
+		x="$m"
+		[[ $_MIRROR == $x ]] && Aflag[$x]='on' || Aflag[$x]='off'
+		array+=("$x" "$(printf "$sep%-6s$sep%-13s$sep%-23s$sep%-30s" "${Atier[$x]}" "${Aregion[$x]}" "${Alocation[$x]}" "${Arepository[$x]}")" "${Aflag[$x]}")
 	done
-	AFlag[$_MIRROR]='on'
 
 	mirror=$(${DIALOG} --title "** MIRROR **"			\
 		--default-item "${_MIRROR}"						\
@@ -1237,23 +1355,18 @@ sh_choosemirror() {
 		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"	\
 		--ok-label 	"${cmsg_Aceitar[$LC_DEFAULT]}"	\
 		--radiolist "${cmsg_LABEL[$LC_DEFAULT]}"		\
-		0 0 0														\
-		'OuroPreto'			'BR:Ouro Preto/MG    - https://voidlinux.com.br/repo/'					"${AFlag['OuroPreto']}"		\
-		'PimentaBueno'		'BR:Pimenta Bueno/RO - http://void.chililinux.com/voidlinux/'			"${AFlag['PimentaBueno']}"	\
-		'PimentaBueno2'	'BR:Pimenta Bueno/RO - http://void.chilios.com.br/voidlinux/'			"${AFlag['PimentaBueno2']}"\
-		'Chicago'			'USA:Chicago/IL      - https://mirrors.servercentral.com/voidlinux/'	"${AFlag['Chicago']}"		\
-		'KansasCity'		'USA:Kansas City/KS  - https://repo-us.voidlinux.org'						"${AFlag['KansasCity']}"	\
-		2>&1 >/dev/tty )
+		0 0 0 "${array[@]}" 2>&1 >/dev/tty 				)
 
 	exit_status=$?
 	case $exit_status in
 		"$D_ESC"|"$D_CANCEL")
-			return
+			return 1
 			;;
 	esac
 	_MIRROR="$mirror"
 	url_mirror="${AMirror[$mirror]}"
 	LMIRROR=$true
+	return 0
 }
 
 sh_choosedisk() {
@@ -1788,6 +1901,7 @@ sh_install() {
 
 		sh_update_hostname
 		sh_update_rc
+		sh_update_sshd
 		sh_update_timezone
 		sh_update_locale
 		sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-reconfigure -f glibc-locales"
@@ -1812,7 +1926,8 @@ sh_install() {
 				:
 			fi
 		else
-			sh_set_Xkeymap; sh_X11minimal
+			sh_set_Xkeymap
+			sh_X11minimal
 			for x in "${_WINDOWMANAGER[@]}"
 			do
 				case "$x" in
@@ -1855,7 +1970,7 @@ sh_menu() {
 
 		menu=$(${DIALOG}																		\
 			--backtitle "$ccabec"															\
-			--clear																				\
+		   --erase-on-exit 																	\
 			--colors																				\
 			--default-item "$DEFITEM"														\
 			--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"							\
@@ -1893,7 +2008,12 @@ sh_menu() {
         	"${cmsg_Mirror[$LC_DEFAULT]}")	sh_choosemirror "$@" && [ -n "$LMIRROR" ]		&& DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}";;
    		"${cmsg_Instalar[$LC_DEFAULT]}")	sh_install;;
         	"${cmsg_Sair[$LC_DEFAULT]}")		die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}...";;
-	      *) ${DIALOG} --title "$ccabec" --yes-label "${cmsg_yeslabel[$LC_DEFAULT]}" --no-label "${cmsg_nolabel[$LC_DEFAULT]}" --yesno "\n${cmsg_SairSemInstalar[$LC_DEFAULT]}?" 8 70 && die
+	      *) ${DIALOG} --erase-on-exit 											\
+					--title		"$ccabec" 											\
+					--yes-label	"${cmsg_yeslabel[$LC_DEFAULT]}"				\
+					--no-label	"${cmsg_nolabel[$LC_DEFAULT]}" 				\
+					--yesno		"\n${cmsg_SairSemInstalar[$LC_DEFAULT]}?"	\
+					8 70 && die
 		esac
 	done
 }
@@ -1907,6 +2027,7 @@ sh_main() {
 		i18=$(${DIALOG}                                          \
 			--stdout                                              \
 			--default-item "$LC_DEFAULT"									\
+		   --erase-on-exit 													\
 			--backtitle    "$ccabec"                              \
 			--title        "${welcome[$LC_DEFAULT]}"					\
 			--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"			\
@@ -1923,7 +2044,7 @@ sh_main() {
 			exit_status=$?
 			case $exit_status in
 				"$D_ESC"|"$D_CANCEL")
-					clear
+#					clear
 					scrend 0
 					;;
 			esac
