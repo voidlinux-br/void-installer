@@ -1349,13 +1349,14 @@ sh_choosemirror() {
 		array+=("$x" "$(printf "$sep%-6s$sep%-13s$sep%-23s$sep%-30s" "${Atier[$x]}" "${Aregion[$x]}" "${Alocation[$x]}" "${Arepository[$x]}")" "${Aflag[$x]}")
 	done
 
-	mirror=$(${DIALOG} --title "** MIRROR **"			\
-		--default-item "${_MIRROR}"						\
-		--colors													\
-		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"	\
-		--ok-label 	"${cmsg_Aceitar[$LC_DEFAULT]}"	\
-		--radiolist "${cmsg_LABEL[$LC_DEFAULT]}"		\
-		0 0 0 "${array[@]}" 2>&1 >/dev/tty 				)
+	mirror=$(${DIALOG} --title "** MIRROR **"				\
+		--default-item "${_MIRROR}"							\
+		--colors														\
+		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"		\
+		--ok-label 	"${cmsg_Aceitar[$LC_DEFAULT]}"		\
+		--extra-button	--extra-label  "void-testmirror"	\
+		--radiolist "${cmsg_LABEL[$LC_DEFAULT]}"			\
+		0 0 0 "${array[@]}" 2>&1 >/dev/tty 					)
 
 	exit_status=$?
 	case $exit_status in
