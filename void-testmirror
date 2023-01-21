@@ -27,7 +27,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
 
 #system
-_VERSION_='1.250.20230121'
+_VERSION_='1.252.20230121'
 DEPENDENCIES=(curl ping printf bc geoiplookup sed awk tput)
 declare -i quiet=0 typetest=0 auto=0 nping=0 ncurl=0 update=0
 declare -a aHits=()
@@ -143,37 +143,37 @@ maxcol() {
 
 sh_checknet() {
 	xurl="$1"
-	# have internet?
+	#have internet?
 	log_info_msg "Testing internet on ${xurl}"
 	curl --insecure "$xurl" >/dev/null 2>&1 ||
-		{
-			evaluate_retval "$?"
-			log_msg "No route to the server ($xurl) - Check your internet!"
-			return 1
-		}
+	{
+		evaluate_retval "$?"
+		log_msg "No route to the server ($xurl) - Check your internet!"
+		return 1
+	}
 	evaluate_retval "$?"
 	return $?
 }
 
 sh_logprefix() {
-   NORMAL="${reset}"
-   SUCCESS="${green}"
-   WARNING="${yellow}"
-   FAILURE="${red}"
-   INFO="${cyan}"
-   BRACKET="${blue}"
-   BMPREFIX="     "
-   DOTPREFIX="  ${blue}::${reset} "
-   SUCCESS_PREFIX="${SUCCESS}  ↑  ${NORMAL}"
-   SUCCESS_SUFFIX="${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}"
-   FAILURE_PREFIX="${FAILURE}  ↓  ${NORMAL}"
-   FAILURE_SUFFIX="${BRACKET}[${FAILURE} FAIL ${BRACKET}]${NORMAL}"
-   WARNING_PREFIX="${WARNING}  W  ${NORMAL}"
-   WARNING_SUFFIX="${BRACKET}[${WARNING} WARN ${BRACKET}]${NORMAL}"
-   SKIP_PREFIX="${INFO}  S  ${NORMAL}"
-   SKIP_SUFFIX="${BRACKET}[${INFO} SKIP ${BRACKET}]${NORMAL}"
-   WAIT_PREFIX="${WARNING}  R  ${NORMAL}"
-   WAIT_SUFFIX="${BRACKET}[${WARNING} WAIT ${BRACKET}]${NORMAL}"
+	NORMAL="${reset}"
+	SUCCESS="${green}"
+	WARNING="${yellow}"
+	FAILURE="${red}"
+	#INFO="${cyan}"
+	BRACKET="${blue}"
+	BMPREFIX="     "
+	DOTPREFIX="  ${blue}::${reset} "
+	SUCCESS_PREFIX="${SUCCESS}  ↑  ${NORMAL}"
+	SUCCESS_SUFFIX="${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}"
+	FAILURE_PREFIX="${FAILURE}  ↓  ${NORMAL}"
+	FAILURE_SUFFIX="${BRACKET}[${FAILURE} FAIL ${BRACKET}]${NORMAL}"
+	WARNING_PREFIX="${WARNING}  W  ${NORMAL}"
+	WARNING_SUFFIX="${BRACKET}[${WARNING} WARN ${BRACKET}]${NORMAL}"
+	#SKIP_PREFIX="${INFO}  S  ${NORMAL}"
+	#SKIP_SUFFIX="${BRACKET}[${INFO} SKIP ${BRACKET}]${NORMAL}"
+	WAIT_PREFIX="${WARNING}  R  ${NORMAL}"
+	WAIT_SUFFIX="${BRACKET}[${WARNING} WAIT ${BRACKET}]${NORMAL}"
 }
 
 evaluate_retval() {
@@ -225,7 +225,7 @@ msgl() {
       local msg=$1
       shift
 		COLS=$(tput cols)
-      printf "%-*s" $[COLS/2] "${DOT}$msg"
+      printf "%-*s" $((COLS/2)) "${DOT}$msg"
    fi
    return
 }
@@ -332,7 +332,7 @@ padr() {
 		COLS=$(tput cols)
 		char='='
 	fi
-	printf "%*s\n" $COLS "$texto" |sed "s/ /$char/g"
+	printf "%*s\n" "$COLS" "$texto" |sed "s/ /$char/g"
 }
 
 padl() {
@@ -343,7 +343,7 @@ padl() {
 		COLS=$(tput cols)
 		char='='
 	fi
-	printf "%-*s\n" $COLS "$texto" |sed "s/ /$char/g"
+	printf "%-*s\n" "$COLS" "$texto" |sed "s/ /$char/g"
 }
 
 padc() {
@@ -354,13 +354,14 @@ padc() {
 		COLS=$(tput cols)
 		char='='
 	fi
-	printf "%*s\n" $(((${#texto} + $COLS) / 2)) "$texto" | sed "s/ /$char/g"
+	printf "%*s\n" $(((${#texto} + COLS) / 2)) "$texto" | sed "s/ /$char/g"
 }
 
 search_geo() {
 	local oldquiet=$quiet
-	local geo=$(geoiplookup "$frepo" | head -1 | sed 's/^.*: //')
+	local geo
 
+	geo=$(geoiplookup "$frepo" | head -1 | sed 's/^.*: //')
 	if ! (( quiet )); then
 		replicate '=' 100
 	fi
@@ -647,8 +648,6 @@ init() {
 	      -u | -U | --update)
 				update=1
 				appexec+=('sh_selfupdate')
-#				sh_selfupdate
-#	         exit $(($# ? 0 : 1))
 	         ;;
 	      *) die "operação não suportada: $1 (use -h for help)" ;;
       esac
@@ -664,9 +663,9 @@ sh_splitarrayassoc() {
 	local region=${middle##*|}
 	local location=${var##*|}
 	case $part in
-		1) echo $repository;;
-		2) echo $region;;
-		3) echo $location;;
+		1) echo "$repository";;
+		2) echo "$region";;
+		3) echo "$location";;
 	esac
 }
 

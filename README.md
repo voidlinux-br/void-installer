@@ -7,6 +7,9 @@
 
 - 2 - usando wget
 	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/void-install
+	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/void-testmirror
+	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/void-wifi
+	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/void-x86_64-base-minimal-current.tar.xz
 	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/Makefile
 	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/MAINTAINERS
 	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/LICENSE

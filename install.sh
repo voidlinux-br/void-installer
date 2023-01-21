@@ -5,7 +5,7 @@
 
 #  install.sh
 #  Created: 2023/01/10
-#  Altered: 2023/01/13
+#  Altered: 2023/01/21
 #
 #  Copyright (c) 2023-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2023-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -39,7 +39,8 @@ oops() {
 
 umask 0022
 url="https://raw.githubusercontent.com/voidlinux-br/void-installer/master"
-files=('ChangeLog' 'INSTALL' 'LICENSE' 'MAINTAINERS' 'Makefile' 'README' 'README.md' 'void-install')
+files=('ChangeLog' 'INSTALL' 'LICENSE' 'MAINTAINERS' 'Makefile' 'README'
+		 'README.md' 'void-install' 'void-testmirror' 'void-wifi' 'void-x86_64-base-minimal-current.tar.xz')
 tmpDir=~/void-installer
 [[ ! -d "$tmpDir" ]] && { mkdir "$tmpDir" || oops "Não é possível criar diretório temporário para baixar arquivos";}
 

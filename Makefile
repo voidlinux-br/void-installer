@@ -1,3 +1,6 @@
+#sáb 21 jan 2023 18:33:23 -04
+#Vilmar Catafesta <vcatafesta@gmail.com>
+
 SHELL=/bin/bash
 APP=void-install
 DESTDIR=
@@ -18,6 +21,8 @@ install:
 	@mkdir -p ${INFODIR}
 	@install -d -m 1777 ${BINDIR}
 	@install -m 4755 ${APP} ${BINDIR}/${APP}
+	@install -m 4755 void-testmirror ${BINDIR}/void-testmirror
+	@install -m 4755 void-wifi ${BINDIR}/void-wifi
 	@mkdir -p ${INFODIR}
 	@cp Makefile ChangeLog INSTALL LICENSE MAINTAINERS README.md ${DOCDIR}/
 	@cp Makefile ChangeLog INSTALL LICENSE MAINTAINERS README.md ${INFODIR}/
@@ -30,6 +35,8 @@ install:
 	@echo ":: Considere colocar no teu path o ${BINDIR}"
 uninstall:
 	@rm ${BINDIR}/${APP}
+	@rm ${BINDIR}/void-testmirror
+	@rm ${BINDIR}/void-wifi
 	@rm -fd ${BINDIR}
 	@rm -fd ${INFODIR}
 	@echo "${APP} foi removido."
