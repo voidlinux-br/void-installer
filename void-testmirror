@@ -27,7 +27,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
 
 #system
-_VERSION_='1.23.20230121'
+_VERSION_='1.250.20230121'
 DEPENDENCIES=(curl ping printf bc geoiplookup sed awk tput)
 declare -i quiet=0 typetest=0 auto=0 nping=0 ncurl=0 update=0
 declare -a aHits=()
@@ -61,51 +61,51 @@ SET_COL="\\033[${COL}G" # at the $COL char
 CURS_ZERO="\\033[0G"
 
 mirrors_tier1(){
-	mirrors+=(["repo-fi.voidlinux.org"]='https://repo-fi.voidlinux.org/')
-	mirrors+=(["mirrors.servercentral.com"]='https://mirrors.servercentral.com/voidlinux/')
-	mirrors+=(["repo-us.voidlinux.org"]='https://repo-us.voidlinux.org/')
-	mirrors+=(["repo-de.voidlinux.org"]='https://repo-de.voidlinux.org/')
+	mirrors+=(["repo-fi.voidlinux.org"]='https://repo-fi.voidlinux.org/|Europe|Helsinki,Finland')
+	mirrors+=(["repo-de.voidlinux.org"]='https://repo-de.voidlinux.org/|Europe|Frankfurt,Germany')
+	mirrors+=(["mirrors.servercentral.com"]='https://mirrors.servercentral.com/voidlinux/|North America|Chicago,USA')
+	mirrors+=(["repo-us.voidlinux.org"]='https://repo-us.voidlinux.org/|North America|Kansas City,USA')
 }
 
 mirrors_asia(){
-	mirrors+=(['mirror.ps.kz']='https://mirror.ps.kz/voidlinux/')
-	mirrors+=(['mirrors.bfsu.edu.cn']='https://mirrors.bfsu.edu.cn/voidlinux/')
-	mirrors+=(['mirrors.cnnic.cn']='https://mirrors.cnnic.cn/voidlinux/')
-	mirrors+=(['mirrors.tuna.tsinghua.edu.cn']='https://mirrors.tuna.tsinghua.edu.cn/voidlinux/')
-	mirrors+=(['mirror.sjtu.edu.cn']='https://mirror.sjtu.edu.cn/voidlinux/')
-	mirrors+=(['mirror.nju.edu.cn']='https://mirror.nju.edu.cn/voidlinux/')
-	mirrors+=(['void.webconverger.org']='https://void.webconverger.org/')
+	mirrors+=(['mirror.ps.kz']='https://mirror.ps.kz/voidlinux/|Asia|Almaty,Kazakhstan')
+	mirrors+=(['mirror.nju.edu.cn']='https://mirror.nju.edu.cn/voidlinux/|Asia/China')
+	mirrors+=(['mirrors.bfsu.edu.cn']='https://mirrors.bfsu.edu.cn/voidlinux/|Beijing,China')
+	mirrors+=(['mirrors.cnnic.cn']='https://mirrors.cnnic.cn/voidlinux/|Beijing,China')
+	mirrors+=(['mirrors.tuna.tsinghua.edu.cn']='https://mirrors.tuna.tsinghua.edu.cn/voidlinux/|Asia|Beijing,China')
+	mirrors+=(['mirror.sjtu.edu.cn']='https://mirror.sjtu.edu.cn/voidlinux/|Asia|Shangai,China')
+	mirrors+=(['void.webconverger.org']='https://void.webconverger.org/|Asia|Singapore')
 }
 
-mirrors_au(){
-	mirrors+=(['mirror.aarnet.edu.au']='https://mirror.aarnet.edu.au/pub/voidlinux/')
-	mirrors+=(['ftp.swin.edu.au']='https://ftp.swin.edu.au/voidlinux/')
+mirrors_europa(){
+	mirrors+=(['ftp.dk.xemacs.org']='http://ftp.dk.xemacs.org/voidlinux/|Europe|Denmark')
+	mirrors+=(['mirrors.dotsrc.org']='https://mirrors.dotsrc.org/voidlinux/|Europe|Denmark')
+	mirrors+=(['quantum-mirror.hu']='https://quantum-mirror.hu/mirrors/pub/voidlinux/|Europe|Hungary')
+	mirrors+=(['voidlinux.mirror.garr.it']='https://voidlinux.mirror.garr.it/|Europe|Italy')
+	mirrors+=(['void.cijber.net']='https://void.cijber.net/|Europe|Amsterdam,Netherlands')
+	mirrors+=(['void.sakamoto.pl']='https://void.sakamoto.pl/|Warsaw,Poland')
+	mirrors+=(['ftp.debian.ru']='http://ftp.debian.ru/mirrors/voidlinux/|Europe|Russia')
+	mirrors+=(['mirror.yandex.ru']='https://mirror.yandex.ru/mirrors/voidlinux/|Europe|Russia')
+	mirrors+=(['ftp.lysator.liu.se']='https://ftp.lysator.liu.se/pub/voidlinux/|Europe|Sweden')
+	mirrors+=(['mirror.accum.se']='https://mirror.accum.se/mirror/voidlinux/|Europe|Sweden')
+	mirrors+=(['mirror.puzzle.ch']='https://mirror.puzzle.ch/voidlinux/|Europe|Bern,Switzerland')
 }
 
-mirrors_br(){
-	mirrors+=(['voidlinux.com.br']='https://voidlinux.com.br/repo/')
-	mirrors+=(['void.chililinux.com']='http://void.chililinux.com/voidlinux/')
-	mirrors+=(['void.chilios.com.br']='http://void.chilios.com.br/voidlinux/')
+mirrors_northamerica(){
+	mirrors+=(['mirror.vofr.net']='https://mirror.vofr.net/voidlinux/|North America|California,USA')
+	mirrors+=(['mirror2.sandyriver.net']='https://mirror2.sandyriver.net/pub/voidlinux/|North America|Kentucky,USA')
+	mirrors+=(['mirror.puzzle.ch']='https://mirror.puzzle.ch/voidlinux/|North America|New York,USA')
 }
 
-mirrors_eu(){
-	mirrors+=(['void.cijber.net']='https://void.cijber.net/')
-	mirrors+=(['ftp.dk.xemacs.org']='http://ftp.dk.xemacs.org/voidlinux/')
-	mirrors+=(['mirrors.dotsrc.org']='https://mirrors.dotsrc.org/voidlinux/')
-	mirrors+=(['quantum-mirror.hu']='https://quantum-mirror.hu/mirrors/pub/voidlinux/')
-	mirrors+=(['voidlinux.mirror.garr.it']='https://voidlinux.mirror.garr.it/')
-	mirrors+=(['ftp.debian.ru']='http://ftp.debian.ru/mirrors/voidlinux/')
-	mirrors+=(['mirror.yandex.ru']='https://mirror.yandex.ru/mirrors/voidlinux/')
-	mirrors+=(['mirror.accum.se']='https://mirror.accum.se/mirror/voidlinux/')
-	mirrors+=(['ftp.lysator.liu.se']='https://ftp.lysator.liu.se/pub/voidlinux/')
-	mirrors+=(['void.sakamoto.pl']='https://void.sakamoto.pl/')
-	mirrors+=(['mirror.puzzle.ch']='https://mirror.puzzle.ch/voidlinux/')
+mirrors_oceania(){
+	mirrors+=(['mirror.aarnet.edu.au']='https://mirror.aarnet.edu.au/pub/voidlinux/|Oceania|Canberra,Australia')
+	mirrors+=(['ftp.swin.edu.au']='https://ftp.swin.edu.au/voidlinux/|Oceania|Melbourne,Australia')
 }
 
-mirrors_usa(){
-	mirrors+=(['mirror.vofr.net']='https://mirror.vofr.net/voidlinux/')
-	mirrors+=(['mirror2.sandyriver.net']='https://mirror2.sandyriver.net/pub/voidlinux/')
-	mirrors+=(['mirror.puzzle.ch']='https://mirror.puzzle.ch/voidlinux/')
+mirrors_southamerica(){
+	mirrors+=(['voidlinux.com.br']='https://voidlinux.com.br/repo/|South America|Ouro Preto/MG,Brazil')
+	mirrors+=(['void.chililinux.com']='http://void.chililinux.com/voidlinux/|South America|Pimenta Bueno/RO,Brazil')
+	mirrors+=(['void.chilios.com.br']='http://void.chilios.com.br/voidlinux/|South America|Pimenta Bueno/RO,Brazil')
 }
 
 setvarcolors() {
@@ -155,23 +155,25 @@ sh_checknet() {
 	return $?
 }
 
-log_prefix() {
-	NORMAL="${reset}"   # Standard console grey
-	SUCCESS="${green}"  # Success is green
-	WARNING="${yellow}" # Warnings are yellow
-	FAILURE="${red}"    # Failures are red
-	BRACKET="${blue}" # Brackets are blue
-	BMPREFIX="     "
-	DOTPREFIX="  ${blue}::${reset} "
-	SUCCESS_PREFIX="${SUCCESS}  *  ${NORMAL}"
-	FAILURE_PREFIX="${FAILURE}*****${NORMAL}"
-	WARNING_PREFIX="${WARNING}  W  ${NORMAL}"
-	SUCCESS_SUFFIX="${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}"
-	FAILURE_SUFFIX="${BRACKET}[${FAILURE} FAIL ${BRACKET}]${NORMAL}"
-	WARNING_SUFFIX="${BRACKET}[${WARNING} WARN ${BRACKET}]${NORMAL}"
-	WAIT_PREFIX="${WARNING}  R  ${NORMAL}"
-	WAIT_SUFFIX="${BRACKET}[${WARNING} WAIT ${BRACKET}]${NORMAL}"
-	FAILURE_PREFIX="${FAILURE}  X  ${NORMAL}"
+sh_logprefix() {
+   NORMAL="${reset}"
+   SUCCESS="${green}"
+   WARNING="${yellow}"
+   FAILURE="${red}"
+   INFO="${cyan}"
+   BRACKET="${blue}"
+   BMPREFIX="     "
+   DOTPREFIX="  ${blue}::${reset} "
+   SUCCESS_PREFIX="${SUCCESS}  ↑  ${NORMAL}"
+   SUCCESS_SUFFIX="${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}"
+   FAILURE_PREFIX="${FAILURE}  ↓  ${NORMAL}"
+   FAILURE_SUFFIX="${BRACKET}[${FAILURE} FAIL ${BRACKET}]${NORMAL}"
+   WARNING_PREFIX="${WARNING}  W  ${NORMAL}"
+   WARNING_SUFFIX="${BRACKET}[${WARNING} WARN ${BRACKET}]${NORMAL}"
+   SKIP_PREFIX="${INFO}  S  ${NORMAL}"
+   SKIP_SUFFIX="${BRACKET}[${INFO} SKIP ${BRACKET}]${NORMAL}"
+   WAIT_PREFIX="${WARNING}  R  ${NORMAL}"
+   WAIT_SUFFIX="${BRACKET}[${WARNING} WAIT ${BRACKET}]${NORMAL}"
 }
 
 evaluate_retval() {
@@ -195,6 +197,41 @@ log_failure_msg2() {
 		echo -e "${CURS_ZERO}${FAILURE_PREFIX}${SET_COL}${FAILURE_SUFFIX}"
 	fi
 	return 0
+}
+
+msg() {
+   if ! ((quiet)); then
+      local msg=$1
+      shift
+		printf "%-75s\n" "$(DOT)${bold}${green}$msg\n${reset}"
+#		echo -e "$(DOT)${bold}${green}$msg${reset}"
+   fi
+   return
+}
+
+msgr() {
+   if ! ((quiet)); then
+      local msg=$1
+      shift
+		COLS=$(tput cols)
+		#printf "%*s\n" $[COLS/2] "${green} -> $msg${reset}"
+      printf "%s\n" "${green} -> $msg${reset}"
+   fi
+   return
+}
+
+msgl() {
+   if ! ((quiet)); then
+      local msg=$1
+      shift
+		COLS=$(tput cols)
+      printf "%-*s" $[COLS/2] "${DOT}$msg"
+   fi
+   return
+}
+
+DOT() {
+   printf "%s" "${blue}:: ${reset}"
 }
 
 log_success_msg() {
@@ -274,40 +311,6 @@ writeln() {
    return
 }
 
-msg() {
-   if ! ((quiet)); then
-      local msg=$1
-      shift
-      printf "%-75s\n" "$(DOT)${bold}${green}$msg${reset}"
-   fi
-   return
-}
-
-msgr() {
-   if ! ((quiet)); then
-      local msg=$1
-      shift
-		COLS=$(tput cols)
-		#printf "%*s\n" $[COLS/2] "${green} -> $msg${reset}"
-      printf "%s\n" "${green} -> $msg${reset}"
-   fi
-   return
-}
-
-msgl() {
-   if ! ((quiet)); then
-      local msg=$1
-      shift
-		COLS=$(tput cols)
-      printf "%-*s" $[COLS/2] "${DOT}$msg"
-   fi
-   return
-}
-
-DOT() {
-   printf "%s" "${blue}:: ${reset}"
-}
-
 die()
 {
    local msg=$1; shift
@@ -362,8 +365,15 @@ search_geo() {
 		replicate '=' 100
 	fi
 	quiet=0
-	msgl "Recommended repo is: ${orange}$frepo ${reset}($geo)"
-	msgr "${pink}Average time: ${green}$fping${reset}"
+	msg "Recommended repo is : ${orange}$frepo${reset}($geo)"
+	if (( nping )); then
+		msg "Average time (ping) : ${red}$fping${reset}"
+	else
+		msg "Average time (curl) : ${red}$fping${reset}"
+	fi
+	msg "Repository          : $(sh_splitarrayassoc "${mirrors[$frepo]}" 1)"
+	msg "Region              : $(sh_splitarrayassoc "${mirrors[$frepo]}" 2)"
+	msg "Location            : $(sh_splitarrayassoc "${mirrors[$frepo]}" 3)"
 	quiet=$oldquiet
 }
 
@@ -599,7 +609,6 @@ EOF
 }
 
 init() {
-	#while :; do
 	while test $# -gt 0; do
       case $1 in
 	      -h | -H | --help)
@@ -621,23 +630,19 @@ init() {
 				;;
 	      -l | --all)
 				mirrors_asia
-				mirrors_au
-				mirrors_eu
-				mirrors_usa
+				mirrors_oceania
+				mirrors_europa
+				mirrors_northamerica
 	         ;;
 	      -p | -P | --ping)
 				nping=1
 				typetest=0
 				appexec+=('main_test_mirror')
-#				main_test_mirror
-#	         exit $(($# ? 0 : 1))
 	         ;;
 	      -c | -C | --curl)
 				ncurl=1
 				typetest=1
 				appexec+=('main_test_mirror')
-#				main_test_mirror
-#	         exit $(($# ? 0 : 1))
 	         ;;
 	      -u | -U | --update)
 				update=1
@@ -650,15 +655,30 @@ init() {
       shift
    done
 }
+
+sh_splitarrayassoc() {
+	local var=$1
+	local part=$2
+	local repository=${var%%|*}
+	local middle=${var%|*}
+	local region=${middle##*|}
+	local location=${var##*|}
+	case $part in
+		1) echo $repository;;
+		2) echo $region;;
+		3) echo $location;;
+	esac
+}
+
 setvarcolors
-log_prefix
+sh_logprefix
 check_deps
 [[ -z $1 ]] && {
    sh_usage
    exit $(($# ? 0 : 1))
 }
 mirrors_tier1
-mirrors_br
+mirrors_southamerica
 init "$@"
 
 # sanity checks
@@ -667,4 +687,3 @@ case $(( update+nping+ncurl )) in
    [^1]) die 'only one operation may be used at a time' ;;
 esac
 for x in "${appexec[@]}"; do $x; done
-printf "repository=%s\n" "${mirrors[$frepo]}"
