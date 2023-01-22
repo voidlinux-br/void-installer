@@ -3,10 +3,9 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/01/21
+#  Altered: 2023/01/22
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
-#                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -35,9 +34,10 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.76.140-20230121'
+readonly _VERSION_='0.77.221-20230122'
 readonly	distro=$(uname -n)
-readonly DEPENDENCIES=(tar sed cat grep chroot printf blkid fdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat mkfs.f2fs dialog sfdisk lsblk parted efivar curl xz mkfs.jfs)
+readonly DEPENDENCIES=(dialog tar sed cat grep chroot printf blkid fdisk lsblk parted efivar curl xz mkfs.vfat)
+#								 mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
 declare -A AsUser
 declare -A Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -A Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
@@ -48,7 +48,7 @@ declare _PART_BIOS="${_DEVICE}1"
 declare _PART_BOOT="${_DEVICE}2"
 declare _PART_ROOT="${_DEVICE}3"
 declare _FILESYSTEM='ext4'
-declare _BOOTLOADER='bios'
+declare _BOOTLOADER='BIOS'
 declare _USER='void'
 declare _USER_FULLNAME=''
 declare _PASSWD_USER='void'
@@ -652,7 +652,7 @@ sh_mkparted() {
 
 sh_update_mirror() {
 	msg "INFO" "$(log_info_msg "${cmsg_Configurando[$LC_DEFAULT]} ${cmsg_Mirror[$LC_DEFAULT],,} ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
-	cat > "$dir_install/etc/xbps.d/00-reposytory-main.conf" <<- EOF
+	cat > "$dir_install/etc/xbps.d/00-repository-main.conf" <<- EOF
 repository=$url_mirror/current
 repository=$url_mirror/current/nonfree
 repository=$url_mirror/current/multilib
@@ -1138,6 +1138,7 @@ sh_choosegrub() {
 			Aflag[EFI]='on'
 			cextra="${cmsg_ExtraEfi[$LC_DEFAULT]}"
 		fi
+		[[ -n $_BOOTLOADER ]] || [[ -z $_BOOTLOADER ]] && _BOOTLOADER='BIOS'
 		Aflag[$_BOOTLOADER]='on'
 		array+=("$x" "${Ambr[$x]}" "${Aflag[$x]}")
 	done
@@ -1386,6 +1387,27 @@ sh_choosemirror() {
 		_MIRROR="$mirror"
 		url_mirror="${Arepository[$mirror]}"
 		LMIRROR=$true
+
+#		if [[ "$distro" = 'void' ]] ; then
+		if [[ "$distro" = 'chililinux' ]] ; then
+			if conf "** MIRROR **"																\
+						"\n${BOLD}Aparentemente está sendo utilizado o VOID como host.\n"	\
+						"\n${BOLD}${CYAN}Mirror     : $_MIRROR" 												\
+						"\n${BOLD}${CYAN}Url Mirror : $url_mirror" 											\
+						"\n${BOLD}${CYAN}Region     : ${Aregion[$mirror]}"									\
+						"\n${BOLD}${CYAN}Location   : ${Alocation[$mirror]}\n"							\
+						"\n${RED}Deseja definir o mirror do host para o escolhido?${RESET}\n\n"; then
+				msg "INFO" "$(log_info_msg "${cmsg_Configurando[$LC_DEFAULT]} ${cmsg_Mirror[$LC_DEFAULT],,} ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
+			   mkdir -p "/etc/xbps.d/"
+			   cat > "/etc/xbps.d/00-repository-main.conf" <<- EOF
+				repository=$url_mirror/current
+				repository=$url_mirror/current/nonfree
+				repository=$url_mirror/current/multilib
+				repository=$url_mirror/current/multilib/nonfree
+				EOF
+			   evaluate_retval "$?"
+			fi
+		fi
 		return 0
 	done
 }
@@ -1881,6 +1903,16 @@ sh_checkinstall() {
 		return 1
 	fi
 
+	if	[[ -z $(command -v "mkfs.$mkfs") ]]; then
+		result="\n${RED}${cmsg_ERRO[$LC_DEFAULT]}${RESET}: ${cmsg_CommandNotFound[$LC_DEFAULT]} ${BOLD}${CYAN}'mkfs.$mkfs'${RESET}"
+		result+="\n--------------${cmsg_ImpossivelContinuar[$LC_DEFAULT]}-------------"
+		result+="\n${cmsg_ImpossivelContinuar1[$LC_DEFAULT]}"
+		result+="\n${cmsg_ImpossivelContinuar2[$LC_DEFAULT]} \$PATH"
+		result+="\n-----------------------------------------------"
+		display_result "$result" "${cmsg_CommandNotFound[$LC_DEFAULT]}"
+		die "${cmsg_ERRO[$LC_DEFAULT]}: ${cmsg_InstalacaoAbortada[$LC_DEFAULT]}... ${cmsg_CommandNotFound[$LC_DEFAULT]} ${bold}${cyan}'mkfs.$mkfs'${reset}"
+	fi
+
 	display_config
 	if conf "${cmsg_ConfSalva[LC_DEFAULT]}" "$SETUP \n${cmsg_descInstalar[$LC_DEFAULT]}?"; then
 		return 0
@@ -1985,7 +2017,7 @@ sh_menu() {
 	do
 		sh_touchconf
 		if [ -z "$DEFITEM" ]; then
-			DEFITEM="${cmsg_Disco[$LC_DEFAULT]}"
+			DEFITEM="${cmsg_Mirror[$LC_DEFAULT]}"
 		fi
 
 		menu=$(${DIALOG}																		\
@@ -1998,7 +2030,8 @@ sh_menu() {
 			--extra-button --extra-label "${cmsg_Definicoes[$LC_DEFAULT]}"		\
 			--title "$APP - ${cmsg_MenuInstalacao[$LC_DEFAULT]}"					\
 			--menu "${cmsg_LABEL[$LC_DEFAULT]}" 9 100 0								\
-			"${cmsg_Disco[$LC_DEFAULT]}"		"${cmsg_descDisco[$LC_DEFAULT]}"	\
+			"${cmsg_Mirror[$LC_DEFAULT]}"		"${cmsg_descMirror[$LC_DEFAULT]}"					\
+			"${cmsg_Disco[$LC_DEFAULT]}"		"${cmsg_descDisco[$LC_DEFAULT]}"						\
 			"FileSystem"							"${cmsg_descFileSystem[$LC_DEFAULT]}"				\
 			"BootLoader"							"${cmsg_descBootLoader[$LC_DEFAULT]}"				\
 			"${cmsg_Teclado[$LC_DEFAULT]}"	"${cmsg_descTeclado[$LC_DEFAULT]}"					\
@@ -2006,7 +2039,6 @@ sh_menu() {
 			"Wm" 										"${cmsg_descWm[$LC_DEFAULT]}"							\
 			"Wifi" 									"${cmsg_descWifi[$LC_DEFAULT]}"						\
 			"Extra"									"${cmsg_descExtra[$LC_DEFAULT]}"						\
-			"${cmsg_Mirror[$LC_DEFAULT]}"		"${cmsg_descMirror[$LC_DEFAULT]}"					\
 			"${cmsg_Instalar[$LC_DEFAULT]}"	"${cmsg_descInstalar[$LC_DEFAULT]}"					\
 			"${cmsg_Sair[$LC_DEFAULT]}"		"${cmsg_descSair[$LC_DEFAULT]}" 2>&1 >/dev/tty 	)
 
@@ -2017,6 +2049,7 @@ sh_menu() {
 		fi
 
 		case "$menu" in
+        	"${cmsg_Mirror[$LC_DEFAULT]}")	sh_choosemirror "$@" && [ -n "$LMIRROR" ]		&& DEFITEM="${cmsg_Disco[$LC_DEFAULT]}";;
 			"${cmsg_Disco[$LC_DEFAULT]}")		sh_choosedisk        && [ -n "$LDISCO" ]		&& DEFITEM="FileSystem";;
 			"FileSystem")							sh_choosefilesystem  && [ -n "$LFS" ]			&& DEFITEM="BootLoader";;
 			"BootLoader")							sh_choosegrub        && [ -n "$LGRUB" ]		&& DEFITEM="${cmsg_Teclado[$LC_DEFAULT]}";;
@@ -2024,8 +2057,7 @@ sh_menu() {
         	"Timezone") 							sh_choosetimezone    && [ -n "$LTIMEZONE" ]	&& DEFITEM="Wm";;
         	"Wm") 									sh_choosewm          && [ -n "$LWM" ]			&& DEFITEM="Wifi";;
         	"Wifi") 									sh_confwifi "$@"     && [ -n "$LWIFI" ]		&& DEFITEM="Extra";;
-        	"Extra")									sh_confadduser "$@"  && [ -n "$LEXTRA" ]		&& DEFITEM="${cmsg_Mirror[$LC_DEFAULT]}";;
-        	"${cmsg_Mirror[$LC_DEFAULT]}")	sh_choosemirror "$@" && [ -n "$LMIRROR" ]		&& DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}";;
+        	"Extra")									sh_confadduser "$@"  && [ -n "$LEXTRA" ]		&& DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}";;
    		"${cmsg_Instalar[$LC_DEFAULT]}")	sh_install;;
         	"${cmsg_Sair[$LC_DEFAULT]}")		die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}...";;
 	      *) ${DIALOG} --erase-on-exit 											\

@@ -3,7 +3,7 @@
 
 #  void-wifi
 #  Created: 2023/01/16
-#  Altered: 2023/01/16
+#  Altered: 2023/01/21
 #
 #  Copyright (c) 2023-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -34,7 +34,7 @@
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.0.1-20230116'
+readonly _VERSION_='0.20.20230121'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(cat dialog sed printf)
 declare _REDE_WIFI="REDE_WIFI"
@@ -97,11 +97,11 @@ sh_enableprintk() {
 }
 
 sh_ascii_lines() {
-   if [[ "$LANG" =~ 'UTF-8' ]]; then
-      export NCURSES_NO_UTF8_ACS=0
-   else
-      export NCURSES_NO_UTF8_ACS=1
-   fi
+	if [[ "$LANG" =~ 'UTF-8' ]]; then
+		export NCURSES_NO_UTF8_ACS=0
+	else
+		export NCURSES_NO_UTF8_ACS=1
+	fi
 }
 
 sh_checkroot() {
@@ -139,12 +139,12 @@ sh_checkDependencies() {
 }
 
 msg() {
-	${DIALOG}               \
-   --no-collapse           \
-	--title     "$1"        \
-	--backtitle "$ccabec"   \
-	--infobox   "\n$2"      \
-	8 60
+	${DIALOG}               	\
+		--no-collapse           \
+		--title     "$1"        \
+		--backtitle "$ccabec"	\
+		--infobox   "\n$2"      \
+		8 60
 }
 
 die() {
@@ -225,5 +225,5 @@ sh_checkroot
 sh_checkDependencies
 sh_disableprintk
 sh_ascii_lines
-sh_confwifi
+sh_confwifi "$@"
 sh_enableprintk

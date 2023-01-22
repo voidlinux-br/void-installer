@@ -60,14 +60,14 @@ COL=$((COLUMNS - 8))
 SET_COL="\\033[${COL}G" # at the $COL char
 CURS_ZERO="\\033[0G"
 
-mirrors_tier1(){
+mirrors_tier1() {
 	mirrors+=(["repo-fi.voidlinux.org"]='https://repo-fi.voidlinux.org/|Europe|Helsinki,Finland')
 	mirrors+=(["repo-de.voidlinux.org"]='https://repo-de.voidlinux.org/|Europe|Frankfurt,Germany')
 	mirrors+=(["mirrors.servercentral.com"]='https://mirrors.servercentral.com/voidlinux/|North America|Chicago,USA')
 	mirrors+=(["repo-us.voidlinux.org"]='https://repo-us.voidlinux.org/|North America|Kansas City,USA')
 }
 
-mirrors_asia(){
+mirrors_asia() {
 	mirrors+=(['mirror.ps.kz']='https://mirror.ps.kz/voidlinux/|Asia|Almaty,Kazakhstan')
 	mirrors+=(['mirror.nju.edu.cn']='https://mirror.nju.edu.cn/voidlinux/|Asia/China')
 	mirrors+=(['mirrors.bfsu.edu.cn']='https://mirrors.bfsu.edu.cn/voidlinux/|Beijing,China')
@@ -77,7 +77,7 @@ mirrors_asia(){
 	mirrors+=(['void.webconverger.org']='https://void.webconverger.org/|Asia|Singapore')
 }
 
-mirrors_europa(){
+mirrors_europa() {
 	mirrors+=(['ftp.dk.xemacs.org']='http://ftp.dk.xemacs.org/voidlinux/|Europe|Denmark')
 	mirrors+=(['mirrors.dotsrc.org']='https://mirrors.dotsrc.org/voidlinux/|Europe|Denmark')
 	mirrors+=(['quantum-mirror.hu']='https://quantum-mirror.hu/mirrors/pub/voidlinux/|Europe|Hungary')
@@ -91,18 +91,18 @@ mirrors_europa(){
 	mirrors+=(['mirror.puzzle.ch']='https://mirror.puzzle.ch/voidlinux/|Europe|Bern,Switzerland')
 }
 
-mirrors_northamerica(){
+mirrors_northamerica() {
 	mirrors+=(['mirror.vofr.net']='https://mirror.vofr.net/voidlinux/|North America|California,USA')
 	mirrors+=(['mirror2.sandyriver.net']='https://mirror2.sandyriver.net/pub/voidlinux/|North America|Kentucky,USA')
 	mirrors+=(['mirror.puzzle.ch']='https://mirror.puzzle.ch/voidlinux/|North America|New York,USA')
 }
 
-mirrors_oceania(){
+mirrors_oceania() {
 	mirrors+=(['mirror.aarnet.edu.au']='https://mirror.aarnet.edu.au/pub/voidlinux/|Oceania|Canberra,Australia')
 	mirrors+=(['ftp.swin.edu.au']='https://ftp.swin.edu.au/voidlinux/|Oceania|Melbourne,Australia')
 }
 
-mirrors_southamerica(){
+mirrors_southamerica() {
 	mirrors+=(['voidlinux.com.br']='https://voidlinux.com.br/repo/|South America|Ouro Preto/MG,Brazil')
 	mirrors+=(['void.chililinux.com']='http://void.chililinux.com/voidlinux/|South America|Pimenta Bueno/RO,Brazil')
 	mirrors+=(['void.chilios.com.br']='http://void.chilios.com.br/voidlinux/|South America|Pimenta Bueno/RO,Brazil')
@@ -112,15 +112,13 @@ setvarcolors() {
 	reset=$(tput sgr0);			green=$(tput setaf 2);	red=$(tput setaf 124);
 	pink=$(tput setaf 129);		bold=$(tput bold);		blue=$(tput setaf 33);
 	yellow=$(tput setaf 136);	cyan=$(tput setaf 37);	orange=$(tput setaf 166);
-   white=$(tput setaf 15);    violet=$(tput setaf 61);
-#  purple=$(tput setaf 125);
+	white=$(tput setaf 15);    violet=$(tput setaf 61); #  purple=$(tput setaf 125);
 }
 
 unsetvarcolors() {
-	reset=''	green=''	red='' pink='' bold='' blue='' yellow='' cyan='' orange='' white='' violet=''
-	#purple=''
-	NORMAL='' SUCCESS='' WARNING='' FAILURE='' BRACKET='' CURS_ZERO='' SUCCESS_PREFIX=''
-   SET_COL='' SUCCESS_SUFFIX='' WAIT_PREFIX='' WAIT_SUFFIX='' WARNING_PREFIX='' WARNING_SUFFIX=''
+	reset=''	green=''	red='' pink='' bold='' blue='' yellow='' cyan='' orange='' white='' violet=''	#purple=''
+	NORMAL='' SUCCESS='' FAILURE='' BRACKET='' CURS_ZERO='' SUCCESS_PREFIX=''
+	SET_COL='' SUCCESS_SUFFIX=''
 }
 
 sh_val() {
@@ -131,14 +129,6 @@ sh_val() {
 	else
 		echo "U"
 	fi
-}
-
-maxcol() {
-	if [ -z "${COLUMNS}" ]; then
-		COLUMNS=$(stty size)
-		COLUMNS=${COLUMNS##* }
-	fi
-	echo "$COLUMNS"
 }
 
 sh_checknet() {
@@ -158,7 +148,6 @@ sh_checknet() {
 sh_logprefix() {
 	NORMAL="${reset}"
 	SUCCESS="${green}"
-	WARNING="${yellow}"
 	FAILURE="${red}"
 	#INFO="${cyan}"
 	BRACKET="${blue}"
@@ -168,12 +157,6 @@ sh_logprefix() {
 	SUCCESS_SUFFIX="${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}"
 	FAILURE_PREFIX="${FAILURE}  ↓  ${NORMAL}"
 	FAILURE_SUFFIX="${BRACKET}[${FAILURE} FAIL ${BRACKET}]${NORMAL}"
-	WARNING_PREFIX="${WARNING}  W  ${NORMAL}"
-	WARNING_SUFFIX="${BRACKET}[${WARNING} WARN ${BRACKET}]${NORMAL}"
-	#SKIP_PREFIX="${INFO}  S  ${NORMAL}"
-	#SKIP_SUFFIX="${BRACKET}[${INFO} SKIP ${BRACKET}]${NORMAL}"
-	WAIT_PREFIX="${WARNING}  R  ${NORMAL}"
-	WAIT_SUFFIX="${BRACKET}[${WARNING} WAIT ${BRACKET}]${NORMAL}"
 }
 
 evaluate_retval() {
@@ -184,14 +167,14 @@ evaluate_retval() {
 	fi
 
 	if [ "${error_value}" = 0 ]; then
-		log_success_msg2 ""
+		log_success_msg ""
 	else
-		log_failure_msg2 ""
+		log_failure_msg ""
 	fi
 	return "${error_value}"
 }
 
-log_failure_msg2() {
+log_failure_msg() {
 	if ! ((quiet)); then
 		echo -n -e "${BMPREFIX}${*}"
 		echo -e "${CURS_ZERO}${FAILURE_PREFIX}${SET_COL}${FAILURE_SUFFIX}"
@@ -204,64 +187,39 @@ msg() {
       local msg=$1
       shift
 		printf "%-75s\n" "$(DOT)${bold}${green}$msg\n${reset}"
-#		echo -e "$(DOT)${bold}${green}$msg${reset}"
    fi
    return
 }
 
 msgr() {
-   if ! ((quiet)); then
-      local msg=$1
-      shift
+	if ! ((quiet)); then
+		local msg=$1
+		shift
 		COLS=$(tput cols)
-		#printf "%*s\n" $[COLS/2] "${green} -> $msg${reset}"
-      printf "%s\n" "${green} -> $msg${reset}"
-   fi
-   return
+		printf "%s\n" "${green} -> $msg${reset}"
+	fi
+	return
 }
 
 msgl() {
-   if ! ((quiet)); then
-      local msg=$1
-      shift
+	if ! ((quiet)); then
+		local msg=$1
+		shift
 		COLS=$(tput cols)
-      printf "%-*s" $((COLS/2)) "${DOT}$msg"
-   fi
-   return
+		printf "%-*s" $((COLS/2)) "${DOT}$msg"
+	fi
+	return 0
 }
 
 DOT() {
-   printf "%s" "${blue}:: ${reset}"
+	printf "%s" "${blue}:: ${reset}"
+	return 0
 }
 
 log_success_msg() {
 	if ! ((quiet)); then
 		echo -n -e "${BMPREFIX}${*}"
-		echo -e "${CURS_ZERO}${SUCCESS_PREFIX}${SET_COL}${SUCCESS_SUFFIX}"
-	fi
-	return 0
-}
-
-log_success_msg2() {
-	if ! ((quiet)); then
-		echo -n -e "${BMPREFIX}${*}"
 		echo -n -e "${CURS_ZERO}${SUCCESS_PREFIX}${SET_COL}${SUCCESS_SUFFIX}\n"
-	fi
-	return 0
-}
-
-log_warning_msg() {
-	if ! ((quiet)); then
-		echo -n -e "${BMPREFIX}${*}"
-		echo -n -e "${CURS_ZERO}${WARNING_PREFIX}${SET_COL}${WARNING_SUFFIX}"
-	fi
-	return 0
-}
-
-log_wait_msg() {
-	if ! ((quiet)); then
-		echo -n -e "${BMPREFIX}${*}"
-		echo -e "${CURS_ZERO}${WAIT_PREFIX}${SET_COL}${WAIT_SUFFIX}"
 	fi
 	return 0
 }
@@ -278,16 +236,6 @@ log_msg() {
 		echo -e "${DOTPREFIX}${*}"
 	fi
 	return 0
-}
-
-toupper() {
-	declare -u TOUPPER="${*}"
-	echo -e "${TOUPPER}"
-}
-
-tolower() {
-	declare -l TOLOWER="${*}"
-	echo -e "${TOLOWER}"
 }
 
 erro() {
