@@ -34,7 +34,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.77.222-20230122'
+readonly _VERSION_='0.78.245-20230122'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog tar sed cat grep chroot printf blkid fdisk lsblk parted efivar curl xz mkfs.vfat)
 #								 mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -1234,33 +1234,47 @@ sh_timedatectl() {
 sh_choosetimezone() {
 	local _localtime
 	local defaultitem
+	local -A Atimezone
+	local -A Aflag
+	local array=()
+	local x
 
+	Atimezone[Araguaina]="America/Araguaina"
+	Atimezone[Bahia]="America/Bahia"
+	Atimezone[Belem]="America/Belem"
+	Atimezone[Boa_Vista]="America/Boa_Vista"
+	Atimezone[Campo_Grande]="America/Campo_Grande"
+	Atimezone[Cuiaba]="America/Cuiaba"
+	Atimezone[Fortaleza]="America/Forteleza"
+	Atimezone[Maceio]="America/Maceio"
+	Atimezone[Manaus]="America/Manaus"
+	Atimezone[Noronha]="America/Noronha"
+	Atimezone[Porto_Acre]="America/Porto_Acre"
+	Atimezone[Porto_Velho]="America/Porto_Velho"
+	Atimezone[Recife]="America/Recife"
+	Atimezone[Rio_Branco]="America/Rio_Branco"
+	Atimezone[Santarem]="America/Santarem"
+	Atimezone[Sao_Paulo]="America/Sao_Paulo"
+
+	[[ -n $_TIMEZONE ]] || [[ -z $_TIMEZONE ]] && _TIMEZONE="America/Sao_Paulo"
 	_localtime=$(sh_timedatectl) && defaultitem="${_localtime##*/}" || defaultitem="${_TIMEZONE##*/}"
+	if [[ -z "${Atimezone[$defaultitem]}" ]]; then
+		Atimezone["$defaultitem"]="$_localtime"
+	fi
+
+	for x in "${!Atimezone[@]}"; do
+		Aflag[$x]='off'
+		Aflag[$defaultitem]='on'
+		array+=("$x" "${Atimezone[$x]}" "${Aflag[$x]}")
+	done
+
 	timezone=$(${DIALOG} --title "** TIMEZONE **"	\
 		--default-item "$defaultitem"						\
 		--colors													\
 		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"	\
 		--ok-label 	"${cmsg_Aceitar[$LC_DEFAULT]}"	\
 		--radiolist "${cmsg_LABEL[$LC_DEFAULT]}"		\
-		0 70 0													\
-		Araguaina		"America/Araguaina"		"off"	\
-		Bahia				"America/Bahia"			"off"	\
-		Belem				"America/Belem"			"off"	\
-		Boa_Vista		"America/Boa_Vista"		"off"	\
-		Campo_Grande	"America/Campo_Grande"	"off"	\
-		Cuiaba			"America/Cuiaba"			"off"	\
-		Fortaleza		"America/Forteleza"		"off"	\
-		Maceio			"America/Maceio"			"off"	\
-		Manaus			"America/Manaus"			"off"	\
-		Noronha			"America/Noronha"			"off"	\
-		Porto_Acre		"America/Porto_Acre"		"off"	\
-		Porto_Velho		"America/Porto_Velho"	"off"	\
-		Recife			"America/Recife"			"off"	\
-		Rio_Branco		"America/Rio_Branco"		"off"	\
-		Santarem			"America/Santarem"		"off"	\
-		Sao_Paulo		"America/Sao_Paulo"		"off"	\
-		"$defaultitem"	"$_localtime"				"on"	\
-		2>&1 >/dev/tty )
+		0 70 0			"${array[@]}" 2>&1 >/dev/tty 	)
 
 	exit_status=$?
 	case $exit_status in
