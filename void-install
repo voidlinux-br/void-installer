@@ -34,7 +34,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.77.221-20230122'
+readonly _VERSION_='0.77.222-20230122'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog tar sed cat grep chroot printf blkid fdisk lsblk parted efivar curl xz mkfs.vfat)
 #								 mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -1388,15 +1388,14 @@ sh_choosemirror() {
 		url_mirror="${Arepository[$mirror]}"
 		LMIRROR=$true
 
-#		if [[ "$distro" = 'void' ]] ; then
-		if [[ "$distro" = 'chililinux' ]] ; then
+		if [[ "$distro" = 'void' ]] ; then
 			if conf "** MIRROR **"																\
 						"\n${BOLD}Aparentemente está sendo utilizado o VOID como host.\n"	\
 						"\n${BOLD}${CYAN}Mirror     : $_MIRROR" 												\
 						"\n${BOLD}${CYAN}Url Mirror : $url_mirror" 											\
 						"\n${BOLD}${CYAN}Region     : ${Aregion[$mirror]}"									\
 						"\n${BOLD}${CYAN}Location   : ${Alocation[$mirror]}\n"							\
-						"\n${RED}Deseja definir o mirror do host para o escolhido?${RESET}\n\n"; then
+						"\n${RED}Deseja também definir/alterar o mirror do host para o escolhido?${RESET}\n\n"; then
 				msg "INFO" "$(log_info_msg "${cmsg_Configurando[$LC_DEFAULT]} ${cmsg_Mirror[$LC_DEFAULT],,} ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 			   mkdir -p "/etc/xbps.d/"
 			   cat > "/etc/xbps.d/00-repository-main.conf" <<- EOF
