@@ -34,9 +34,9 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.1.246-20230122'
+readonly _VERSION_='0.1.247-20230122'
 readonly	distro=$(uname -n)
-readonly DEPENDENCIES=(dialog cat tar sed grep chroot printf blkid fdisk lsblk parted efivar curl xz)
+readonly DEPENDENCIES=(dialog cat sed grep printf)
 declare -A Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -A Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
 declare -i quiet=0 grafico=0 ncontador=0
@@ -1318,12 +1318,12 @@ sh_language() {
 		"EFI non détecté \n↓ il est recommandé d installer le BIOS ↓"
 		"EFI no detectado \n↓ se recomienda instalar BIOS ↓"
 		"EFI non rilevato \n↓ si consiglia di installare il BIOS ↓")'
-	'welcome=("Bem-vindo ao instalador $APP"
-		"Welcome to the $APP installer"
-		"Willkommen beim $APP Installationsprogramm"
-		"Bienvenue dans le programme d installation de $APP"
-		"Bienvenido al instalador $APP"
-		"Benvenuto nel programma di installazione $APP")'
+	'welcome=("Bem-vindo ao $APP"
+		"Welcome to the $APP"
+		"Willkommen beim $APP"
+		"Bienvenue dans le programme $APP"
+		"Bienvenido al $APP"
+		"Benvenuto nel programma $APP")'
 	'escolhaIdioma=("Escolha o idioma"
 		"Choose language"
 		"Sprache wählen"

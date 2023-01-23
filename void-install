@@ -35,7 +35,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.78.246-20230122'
+readonly _VERSION_='0.78.248-20230122'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog tar sed cat grep chroot printf blkid fdisk lsblk parted efivar curl xz mkfs.vfat)
 #								 mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -1846,7 +1846,7 @@ sh_chmodtmp() {
 }
 
 sh_copiascripts() {
-	local cfiles=(void-install void-wifi void-testmirror)
+	local cfiles=('void-install' 'void-wifi' 'void-testmirror' 'void-mirror')
 	local script
 
 	msg "INFO" "$(log_info_msg "${cmsg_Copiando[$LC_DEFAULT]} scripts ${cmsg_Para[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"

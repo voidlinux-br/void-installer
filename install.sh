@@ -40,7 +40,7 @@ oops() {
 umask 0022
 url="https://raw.githubusercontent.com/voidlinux-br/void-installer/master"
 files=('ChangeLog' 'INSTALL' 'LICENSE' 'MAINTAINERS' 'Makefile' 'README.md'
-		 'void-install' 'void-testmirror' 'void-wifi' 'void-x86_64-base-minimal-current.tar.xz')
+		 'void-install' 'void-testmirror' 'void-wifi' 'void-mirror' 'void-x86_64-base-minimal-current.tar.xz')
 tmpDir=~/void-installer
 [[ ! -d "$tmpDir" ]] && { mkdir "$tmpDir" || oops "Não é possível criar diretório temporário para baixar arquivos";}
 
