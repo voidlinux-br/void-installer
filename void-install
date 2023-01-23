@@ -6,6 +6,7 @@
 #  Altered: 2023/01/22
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
+#                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -34,7 +35,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.78.245-20230122'
+readonly _VERSION_='0.78.246-20230122'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog tar sed cat grep chroot printf blkid fdisk lsblk parted efivar curl xz mkfs.vfat)
 #								 mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -1292,7 +1293,7 @@ sh_choosemirror() {
 	declare -A Arepository
 	declare -A Aregion
 	declare -A Alocation
-	declare -A AFlag
+	declare -A Aflag
 	local exit_status
 	local array
 	local x
@@ -1404,7 +1405,7 @@ sh_choosemirror() {
 
 		if [[ "$distro" = 'void' ]] ; then
 			if conf "** MIRROR **"																\
-						"\n${BOLD}Aparentemente está sendo utilizado o VOID como host.\n"	\
+						"\n${BOLD}Aparentemente está sendo utilizado o VOID Linux como host.\n"	\
 						"\n${BOLD}${CYAN}Mirror     : $_MIRROR" 												\
 						"\n${BOLD}${CYAN}Url Mirror : $url_mirror" 											\
 						"\n${BOLD}${CYAN}Region     : ${Aregion[$mirror]}"									\
