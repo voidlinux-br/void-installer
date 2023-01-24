@@ -3,7 +3,7 @@
 
 #  void-wifi
 #  Created: 2023/01/16
-#  Altered: 2023/01/21
+#  Altered: 2023/01/23
 #
 #  Copyright (c) 2023-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -29,12 +29,12 @@
 #  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #debug
-#export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
+export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.20.20230121'
+readonly _VERSION_='0.25.20230123'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(cat dialog sed printf)
 declare _REDE_WIFI="REDE_WIFI"
@@ -63,6 +63,18 @@ BOLD="\Zb"
 RESET="\Zn"
 LABEL="${BOLD}Use as teclas ${RED}PARA CIMA ${RESET}e ${BOLD}${RED}PARA BAIXO ${RESET}para navegar.\n\
 Use ${BOLD}${RED}TAB ${RESET}para alternar entre os botões e ${BOLD}${RED}ENTER ${RESET}para selecionar."
+trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
+
+info_msg() {
+	printf "\033[1m$@\n\033[m"
+}
+
+cleanup() {
+	info_msg "Removing temporary files..."
+	rm -fv "$BOOTLOG"
+	info_msg "exit 1"
+	exit 1
+}
 
 sh_update_wpa_suplicant() {
 	msg "INFO" "Ajustando wpa_supplicant.conf"
@@ -193,6 +205,7 @@ sh_confwifi() {
 		wifitext=$(${DIALOG}						\
 			--title		"** REDE WIFI **"		\
 			--colors					      	   \
+			--erase-on-exit						\
 			--backtitle	"$ccabec"				\
 			--insecure	"$@"						\
 			--mixedform	"$LABEL"					\

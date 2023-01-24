@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-#shellcheck disable=SC2016,SC2154,SC2155,SC2145,SC2034,SC2001
+#shellcheck disable=SC2016,SC2154,SC2155,SC2145,SC2034,SC2001,SC2317
 
-#  void-install
-#  Created: 2023/01/22
+#  void-services
+#  Created: 2023/01/23
 #  Altered: 2023/01/23
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
@@ -34,14 +34,23 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.1.252-20230123'
+readonly _VERSION_='0.2.333-20230123'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog cat sed grep printf)
 declare -A Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -A Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
 declare -i quiet=0 grafico=0 ncontador=0
-declare _MIRROR="PimentaBueno"
+declare -i STEP_COUNT=10
 trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
+
+strzero() {
+	printf "%0*d" $2 $1
+}
+
+print_step() {
+	CURRENT_STEP=$((CURRENT_STEP+1))
+	info_msg "[${CURRENT_STEP}/${STEP_COUNT}] $@"
+}
 
 info_msg() {
 	printf "\033[1m$@\n\033[m"
@@ -49,17 +58,16 @@ info_msg() {
 
 cleanup() {
 	info_msg "Removing temporary files..."
-	rm -fv "$BOOTLOG"
+	rm -f "$BOOTLOG"
 	exit 1
 }
 
 sh_ambiente() {
-	declare url_mirror='http://void.chililinux.com/voidlinux'
 	readonly true=1
 	readonly false=0
 	readonly err_fatal=$true
 	readonly err_not_fatal=$false
-	readonly BOOTLOG="/tmp/void-mirror-$(sh_diahora).log"
+	readonly BOOTLOG="/tmp/$APP-$(sh_diahora).log"
 	: "${ccabec="$APP v${_VERSION_}"}"
 	: "${DIALOG=${DIALOG:-"dialog"}}"
 
@@ -145,7 +153,7 @@ sh_checkDependencies() {
 		echo "${cmsg_ImpossivelContinuar2[$LC_DEFAULT]} \$PATH" >&2
 		echo "${yellow}-----------------------------------------------${reset}"
 
-		if [[ "$distro" = 'void' ]] ; then
+		if [[ "$distro" = 'void' && "$distro" = 'void-live' ]] ; then
 			echo
 			if readconf "${yellow}${cmsg_InstCommand[$LC_DEFAULT]} '${cyan}${missing[*]}${reset}'?"; then
 				if xbps-install -S "${missing[*]}"; then
@@ -423,143 +431,6 @@ sh_timedatectl() {
       fi
    fi
    return 1
-}
-
-sh_choosemirror() {
-	declare -A Amirror
-	declare -A Atier
-	declare -A Arepository
-	declare -A Aregion
-	declare -A Alocation
-	declare -A Aflag
-	local exit_status
-	local array
-	local x
-	local sep="\xe2\x94\x82"
-
-	Amirror[0]='OuroPreto'
-	Amirror[1]='PimentaBueno'
-	Amirror[2]='PimentaBueno2'
-	Amirror[3]='Helsinki'
-	Amirror[4]='Frankfurt'
-	Amirror[5]='Italy'
-	Amirror[6]='Chicago'
-	Amirror[7]='KansasCity'
-	Amirror[8]='California'
-	Amirror[9]='Kentucky'
-	Amirror[10]='NewYork'
-
-	Atier['OuroPreto']='Tier 2'
-	Atier['PimentaBueno']='Tier 2'
-	Atier['PimentaBueno2']='Tier 2'
-	Atier['Helsinki']='Tier 1'
-	Atier['Frankfurt']='Tier 1'
-	Atier['Chicago']='Tier 1'
-	Atier['KansasCity']='Tier 1'
-	Atier['California']='Tier 2'
-	Atier['Kentucky']='Tier 2'
-	Atier['NewYork']='Tier 1'
-	Atier['Italy']='Tier 2'
-
-	Arepository['OuroPreto']='https://voidlinux.com.br/repo'
-	Arepository['PimentaBueno']='http://void.chililinux.com/voidlinux'
-	Arepository['PimentaBueno2']='http://void.chilios.com.br/voidlinux'
-	Arepository['Helsinki']='https://repo-fi.voidlinux.org'
-	Arepository['Frankfurt']='https://repo-de.voidlinux.org'
-	Arepository['Chicago']='https://mirrors.servercentral.com/voidlinux'
-	Arepository['KansasCity']='https://repo-us.voidlinux.org'
-	Arepository['California']='https://mirror.vofr.net/voidlinux'
-	Arepository['Kentucky']='https://mirror2.sandyriver.net/pub/voidlinux'
-	Arepository['NewYork']='https://mirror.clarkson.edu/voidlinux'
-	Arepository['Italy']='https://voidlinux.mirror.garr.it'
-
-	Aregion['OuroPreto']='South America'
-	Aregion['PimentaBueno']='South America'
-	Aregion['PimentaBueno2']='South America'
-	Aregion['Helsinki']='Europe'
-	Aregion['Frankfurt']='Europe'
-	Aregion['Chicago']='North America'
-	Aregion['KansasCity']='North America'
-	Aregion['California']='North America'
-	Aregion['Kentucky']='North America'
-	Aregion['NewYork']='North America'
-	Aregion['Italy']='Europe'
-
-	Alocation['OuroPreto']='Ouro Preto/MG,Brazil'
-	Alocation['PimentaBueno']='Pimenta Bueno/RO,Brazil'
-	Alocation['PimentaBueno2']='Pimenta Bueno/RO,Brazil'
-	Alocation['Helsinki']='Helsinki,Finland'
-	Alocation['Frankfurt']='Frankfurt,Germany'
-	Alocation['Chicago']='Chicago/IL,USA'
-	Alocation['KansasCity']='Kansas City/KS,USA'
-	Alocation['California']='Califonia,USA'
-	Alocation['Kentucky']='Kentucky,USA'
-	Alocation['NewYork']='New York,USA'
-	Alocation['Italy']='Italy'
-
-	while true; do
-		array=()
-		for m in "${Amirror[@]}"; do
-			x="$m"
-			[[ "$_MIRROR" = "$x" ]] && Aflag["$x"]='on' || Aflag["$x"]='off'
-			array+=("$x" "$(printf "$sep%-6s$sep%-13s$sep%-23s$sep%-30s" "${Atier[$x]}" "${Aregion[$x]}" "${Alocation[$x]}" "${Arepository[$x]}")" "${Aflag[$x]}")
-		done
-
-		mirror=$(${DIALOG} --title "** MIRROR **"				\
-			--backtitle "$ccabec"									\
-			--default-item "${_MIRROR}"							\
-			--colors														\
-			--erase-on-exit											\
-			--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"		\
-			--ok-label 	"${cmsg_Aceitar[$LC_DEFAULT]}"		\
-			--extra-button	--extra-label  "void-testmirror"	\
-			--radiolist "${cmsg_LABEL[$LC_DEFAULT]}"			\
-			0 0 0 "${array[@]}" 2>&1 >/dev/tty 					)
-
-		exit_status=$?
-		case $exit_status in
-			"$D_ESC"|"$D_CANCEL")
-				return 1
-				;;
-			3)
-				oldgrafico=$grafico; grafico=$true;
-				if [[ -n $(command -v void-testmirror) || -n $(command -v ./void-testmirror) ]]; then
-					msg "** MIRROR ** void-testmirror" "$(log_info_msg "Wait... ${cmsg_Gerando[$LC_DEFAULT]} test with void-mirror ${xurl}")"
-					result=$(void-testmirror --nocolor --ping --quiet);
-				   evaluate_retval "$?" "$err_not_fatal"
-					[[ -z "$result" ]] && result="${RED}ERRO DESCONHECIDO: void-testmirror não retornou resultado${RESET}"
-					info "** MIRROR ** void-testmirror" "\n$result"
-				else
-					msg "INFO" "$(log_info_msg "Wait... ${cmsg_Gerando[$LC_DEFAULT]} test with void-mirror ${xurl}")"
-				   evaluate_retval "1" "$err_not_fatal"
-					info "** MIRROR ** void-testmirror" "\n${RED}void-testmirror não foi localizado no \$PATH${RESET}" \
-																	"${RED}void-testmirror não foi localizado em $PWD!${RESET}"
-				fi
-				grafico=$oldgrafico
-				continue
-				;;
-		esac
-		_MIRROR="$mirror"
-		url_mirror="${Arepository[$mirror]}"
-
-		if conf "** MIRROR **"																\
-					"\n${BOLD}${CYAN}Mirror     : $_MIRROR" 												\
-					"\n${BOLD}${CYAN}Url Mirror : $url_mirror" 											\
-					"\n${BOLD}${CYAN}Region     : ${Aregion[$mirror]}"									\
-					"\n${BOLD}${CYAN}Location   : ${Alocation[$mirror]}\n"							\
-					"\n${RED}Deseja definir/alterar o mirror deste host para o escolhido?${RESET}\n\n"; then
-			msg "INFO" "$(log_info_msg "${cmsg_Configurando[$LC_DEFAULT]} ${cmsg_Mirror[$LC_DEFAULT],,} ${cmsg_Em[$LC_DEFAULT]}: /etc/xbps.d/00-repository-main.conf")"
-		   mkdir -p "/etc/xbps.d/"
-		   cat > "/etc/xbps.d/00-repository-main.conf" <<- EOF
-			repository=$url_mirror/current
-			repository=$url_mirror/current/nonfree
-			repository=$url_mirror/current/multilib
-			repository=$url_mirror/current/multilib/nonfree
-			EOF
-		   evaluate_retval "$?"
-		fi
-		return 0
-	done
 }
 
 sh_version() {
@@ -1006,6 +877,12 @@ sh_language() {
 		"Service d activation"
 		"Servicio de activación"
 		"Servizio di attivazione")'
+	'cmsg_IniciandoServico=("Iniciando serviço"
+		"Starting service"
+		"Startdienst"
+		"Service de démarrage"
+		"Servicio de inicio"
+		"Avvio del servizio")'
 	'cmsg_Permissoes=("permissões"
 		"permissions"
 		"Berechtigungen"
@@ -1180,6 +1057,12 @@ sh_language() {
 		"gestionnaire de fenêtres (wm)"
 		"gestor de ventanas (wm)"
 		"gestore di finestre (wm)")'
+	'cmsg_Services=("gerenciador de serviços"
+		"service manager"
+		"service manager"
+		"gestionnaire de services"
+		"supervisor"
+		"responsabile del servizio")'
 	'cmsg_NotConfDisco=("O disco não foi configurado, faça isso antes de iniciar a instalação."
 		"The disk has not been configured, please do this before starting the installation."
 		"Die Festplatte wurde noch nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
@@ -1408,6 +1291,106 @@ sh_getlocale() {
 	fi
 }
 
+sh_cmd_job() {
+	local cmsg="$1"
+	local cjob="$2"
+	local erro_fatal="$3"
+	local lretval=0
+
+	msg "INFO" "$cmsg"
+	$cjob >>"$BOOTLOG" 2>&1
+	return "$?"
+}
+
+sh_mkservices() {
+	local service
+
+	for service in "${_SERVICES[@]}"
+	do
+		sh_cmd_job "${cmsg_AtivandoServico[$LC_DEFAULT]} $service" "ln -sf /etc/sv/$service /etc/runit/runsvdir/current/" "$err_not_fatal"
+		evaluate_retval "$@"
+		sh_cmd_job "${cmsg_IniciandoServico[$LC_DEFAULT]} $service" "sv start $service" "$err_not_fatal"
+		evaluate_retval "$@"
+	done
+}
+
+sh_chooseservices() {
+   declare -A Aflag
+   declare -a aservices
+   declare -A Asv
+	local array
+	local x
+	local sep="\xe2\x94\x82"
+	local nconta=0
+	local nc=0
+
+	msg "** SERVICES **" "$(log_info_msg "Wait... Verificando serviços instalados")"
+	if pushd '/etc/sv/' >>"$BOOTLOG" 2>&-; then
+		evaluate_retval "$?" "$err_not_fatal"
+		aservices=($(ls))
+	else
+		evaluate_retval "$?" "$err_not_fatal"
+		popd >>"$BOOTLOG" 2>&1
+	fi
+
+	nconta="${#aservices[@]}"
+	if ! (( nconta )); then
+		info "** SERVICES **" "\n${RED}Nenhum serviço foi encontrado em /etc/sv/${RESET}"
+		info_msg "${red}${cmsg_InstalacaoAbortada[$LC_DEFAULT]}...${reset}"
+		cleanup
+	fi
+
+	nc=0
+	msg "** SERVICES **" "$(log_info_msg "Wait... Verificando serviços ativos")"
+	for x in "${aservices[@]}"; do
+		if sv status /etc/runit/runsvdir/current/$x >> "$BOOTLOG"; then
+			status=$(sv status /etc/runit/runsvdir/current/$x | cut -d: -f1,3)
+			Asv+=([$nc]="$x|Active|$status")
+		else
+			Asv+=([$nc]="$x|Disabled|")
+		fi
+		((++nc))
+	done
+	evaluate_retval "$?" "$err_not_fatal"
+
+	array=()
+	((--nconta))
+	for x in $(seq 0 $nconta); do
+		array+=("$(sh_splitarrayassoc "${Asv[$x]}" 1)" "$(printf "$sep%-8s$sep%-40s" "$(sh_splitarrayassoc "${Asv[$x]}" 2)" "$(sh_splitarrayassoc "${Asv[$x]}" 3)")" "${Aflag[$x]}")
+	done
+
+   service=$(${DIALOG} --title "** ${cmsg_Services[$LC_DEFAULT]^^} **"	\
+		--backtitle    "$ccabec"                              		\
+      --colors                                                    \
+      --cancel-label "${cmsg_Sair[$LC_DEFAULT]}"                  \
+      --ok-label     "Ativar"               								\
+      --checklist    "${cmsg_LABEL[$LC_DEFAULT]}"                 \
+      25 0 25	"${array[@]}" 2>&1 >/dev/tty 								)
+
+   exit_status=$?
+   case $exit_status in
+      "$D_ESC"|"$D_CANCEL")
+         return
+         ;;
+   esac
+   _SERVICES=($(strtoarray "$service"))
+	sh_mkservices "$@"
+}
+
+sh_splitarrayassoc() {
+   local var=$1
+   local pos=$2
+   local pos1=${var%%|*}
+   local middle=${var%|*}
+   local pos2=${middle##*|}
+   local pos3=${var##*|}
+   case $pos in
+      1) echo "$pos1";;
+      2) echo "$pos2";;
+      3) echo "$pos3";;
+   esac
+}
+
 sh_ambiente
 sh_getlocale
 sh_language
@@ -1419,5 +1402,11 @@ sh_disableprintk
 [[ "$1" = @(-V|-v|version|-version|--version) ]] && { sh_version; exit $(( $# ? 0 : 1 ));}
 sh_main "$@"
 sh_checkroot
-sh_choosemirror "$@"
+if [[ "$distro" != 'void' && "$distro" != 'void-live' ]] ; then
+	if ! readconf "${bold}** AVISO ** ${red}Aparentemente este host não é ${yellow}VOID Linux${reset}. Deseja continuar?"; then
+		info_msg "${red}${cmsg_InstalacaoAbortada[$LC_DEFAULT]}...${reset}"
+		cleanup
+	fi
+fi
+sh_chooseservices "$@"
 sh_enableprintk

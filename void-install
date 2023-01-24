@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/01/22
+#  Altered: 2023/01/23
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -35,7 +35,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.78.248-20230122'
+readonly _VERSION_='0.78.252-20230123'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog tar sed cat grep chroot printf blkid fdisk lsblk parted efivar curl xz mkfs.vfat)
 #								 mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -74,6 +74,17 @@ declare aPerfumaria=('setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notific
 declare aNetwork=('NetworkManager' 'network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda')
 declare aMicrode=('intel-ucode' 'linux-firmware-amd')
 declare aArchiver=('xarchiver' 'unrar' 'zip' 'p7zip' 'unzip' 'bzip2')
+trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
+
+info_msg() {
+	printf "\033[1m$@\n\033[m"
+}
+
+cleanup() {
+	info_msg "Removing temporary files..."
+	rm -fv "$BOOTLOG"
+	exit 1
+}
 
 sh_ambiente() {
 	readonly cnickefi='void'
@@ -2513,6 +2524,12 @@ sh_language() {
 		"Service d activation"
 		"Servicio de activación"
 		"Servizio di attivazione")'
+	'cmsg_IniciandoServico=("Iniciando serviço"
+		"Starting service"
+		"Startdienst"
+		"Service de démarrage"
+		"Servicio de inicio"
+		"Avvio del servizio")'
 	'cmsg_Permissoes=("permissões"
 		"permissions"
 		"Berechtigungen"

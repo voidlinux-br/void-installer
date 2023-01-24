@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # void-testmirror
-# Require: xbps-install -S curl bc geoip geoip-data geoipupdate iptutils
+# Require: xbps-install -S curl bc geoip geoip-data geoipupdate iputils
 
 #  Created: 2022/11/05
-#  Altered: 2022/02/21
+#  Altered: 2023/01/23
 #
 #  Copyright (c) 2022-2022, Vilmar Catafesta <vcatafesta@gmail.com>
 #
@@ -27,7 +27,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
 
 #system
-_VERSION_='1.252.20230121'
+_VERSION_='1.256.20230123'
 DEPENDENCIES=(curl ping printf bc geoiplookup sed awk tput)
 declare -i quiet=0 typetest=0 auto=0 nping=0 ncurl=0 update=0
 declare -a aHits=()
@@ -59,6 +59,18 @@ fi
 COL=$((COLUMNS - 8))
 SET_COL="\\033[${COL}G" # at the $COL char
 CURS_ZERO="\\033[0G"
+
+trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
+
+info_msg() {
+	printf "\033[1m$@\n\033[m"
+}
+
+cleanup() {
+	info_msg "Removing temporary files..."
+	rm -fv "$BOOTLOG"
+	exit 1
+}
 
 mirrors_tier1() {
 	mirrors+=(["repo-fi.voidlinux.org"]='https://repo-fi.voidlinux.org/|Europe|Helsinki,Finland')
