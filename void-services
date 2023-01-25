@@ -3,7 +3,7 @@
 
 #  void-services
 #  Created: 2023/01/23
-#  Altered: 2023/01/23
+#  Altered: 2023/01/25
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -34,7 +34,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.2.333-20230123'
+readonly _VERSION_='0.3.352-20230125'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog cat sed grep printf)
 declare -A Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
@@ -76,6 +76,8 @@ sh_ambiente() {
 	: "${EN_US=1}"
 	: "${DE_DE=2}"
 	: "${FR_FR=3}"
+	: "${ES_ES=4}"
+	: "${IT_IT=5}"
 	: "${LC_DEFAULT=$(sh_getlocale)}"
 
 	# flag dialog exit status codes
@@ -347,13 +349,27 @@ die() {
 }
 
 readconf() {
-	if [[ $LC_DEFAULT -eq 0 ]]; then
-		read -r -p "$1 [S/n]"
-	else
-		read -r -p "$1 [Y/n]"
+	local pNo="${cmsg_nolabel[$LC_DEFAULT]:0:1}"
+	local pYes="${cmsg_yeslabel[$LC_DEFAULT]:0:1}"
+	local prompt="[$pYes/${pNo,,}]"
+	local ctype='S'
+	local lEmpty=$false
+	local lNo=$true
+	local lYes=$false
+
+	if test $# -ge 2; then
+		ctype="$2"
+		[[ "$ctype" = 'N' ]] && { prompt="[$pNo/${pYes,,}]"; lEmpty=$true; lNo=$true; lYes=$false; }
 	fi
-	[[ ${REPLY^} == "" ]] && return "$false"
-	[[ ${REPLY^} == N ]]  && return "$true" || return "$false"
+
+	read -r -p "$1 $prompt"
+	[[ ${REPLY^} == ""      ]] && return "$lEmpty"
+	[[ ${REPLY^} == "$pNo"  ]] && return "$lNo"
+	[[ ${REPLY^} == "$pYes" ]] && return "$lYes" || return "$lNo"
+}
+
+readnotconf() {
+	readconf "$1" 'N'
 }
 
 info() {
@@ -877,6 +893,12 @@ sh_language() {
 		"Service d activation"
 		"Servicio de activación"
 		"Servizio di attivazione")'
+	'cmsg_ParandoServico=("Parando serviço"
+		"Stopping service"
+		"Dienst stoppen"
+		"Arrêt du service"
+		"Detener el servicio"
+		"Sospendere il servizio")'
 	'cmsg_IniciandoServico=("Iniciando serviço"
 		"Starting service"
 		"Startdienst"
@@ -1273,6 +1295,30 @@ sh_language() {
 		"↓ ext4 est recommandé ↓"
 		"↓ Se recomienda ext4 ↓"
 		"↓ Si consiglia ext4 ↓")'
+	'cmsg_notvoid=("** AVISO ** Aparentemente este host não é VOID Linux. Deseja continuar?"
+		"** WARNING ** Apparently this host is not VOID Linux. Do you wish to continue?"
+		"** WARNUNG ** Anscheinend ist dieser Host nicht VOID Linux. Möchten Sie fortfahren?"
+		"** AVERTISSEMENT ** Apparemment cet hôte n est pas VOID Linux. Souhaitez-vous continuer?"
+		"** ADVERTENCIA ** Aparentemente, este host no es VOID Linux. ¿Desea continuar?"
+		"** ATTENZIONE ** A quanto pare questo host non è VOID Linux. Vuoi continuare?")'
+	'cmsg_servicosInstalados=("Aguarde... Verificando serviços instalados"
+		"Please wait... Checking installed services"
+		"Bitte warten... Installierte Dienste werden überprüft"
+		"Veuillez patienter... Vérification des services installés"
+		"Espere... Comprobando los servicios instalados"
+		"Attendere... Controllo dei servizi installati in corso?")'
+	'cmsg_servicosAtivos=("Aguarde... Verificando serviços ativos"
+		"Please wait... Checking for active services"
+		"Bitte warten... Suche nach aktiven Diensten"
+		"Veuillez patienter... Vérification des services actifs"
+		"Espere... Verificando servicios activos"
+		"Attendere... Controllo dei servizi attivi in ​​corso")'
+	'cmsg_servicosnotfound=("Nenhum serviço foi encontrado em"
+		"No services were found in"
+		"Es wurden keine Dienste gefunden in"
+		"Aucun service n a été trouvé dans"
+		"No se encontraron servicios en"
+		"Non sono stati trovati servizi in")'
 
 	)
 	for xmsg in "${langmsg[@]}"; do eval "$xmsg"; done
@@ -1307,10 +1353,12 @@ sh_mkservices() {
 
 	for service in "${_SERVICES[@]}"
 	do
-		sh_cmd_job "${cmsg_AtivandoServico[$LC_DEFAULT]} $service" "ln -sf /etc/sv/$service /etc/runit/runsvdir/current/" "$err_not_fatal"
-		evaluate_retval "$@"
+		sh_cmd_job "${cmsg_ParandoServico[$LC_DEFAULT]} $service" "sv stop $service" "$err_not_fatal"
+		evaluate_retval "$@" "$err_not_fatal"
+		sh_cmd_job "${cmsg_AtivandoServico[$LC_DEFAULT]} $service" "ln -sf /etc/sv/$service /var/service/" "$err_not_fatal"
+		evaluate_retval "$@" "$err_not_fatal"
 		sh_cmd_job "${cmsg_IniciandoServico[$LC_DEFAULT]} $service" "sv start $service" "$err_not_fatal"
-		evaluate_retval "$@"
+		evaluate_retval "$@" "$err_not_fatal"
 	done
 }
 
@@ -1324,7 +1372,7 @@ sh_chooseservices() {
 	local nconta=0
 	local nc=0
 
-	msg "** SERVICES **" "$(log_info_msg "Wait... Verificando serviços instalados")"
+	msg "** SERVICES **" "$(log_info_msg "${cmsg_servicosInstalados[$LC_DEFAULT]}")"
 	if pushd '/etc/sv/' >>"$BOOTLOG" 2>&-; then
 		evaluate_retval "$?" "$err_not_fatal"
 		aservices=($(ls))
@@ -1335,13 +1383,13 @@ sh_chooseservices() {
 
 	nconta="${#aservices[@]}"
 	if ! (( nconta )); then
-		info "** SERVICES **" "\n${RED}Nenhum serviço foi encontrado em /etc/sv/${RESET}"
+		info "** SERVICES **" "\n${RED}${cmsg_servicosnotfound[$LC_DEFAULT]} /etc/sv/${RESET}"
 		info_msg "${red}${cmsg_InstalacaoAbortada[$LC_DEFAULT]}...${reset}"
 		cleanup
 	fi
 
 	nc=0
-	msg "** SERVICES **" "$(log_info_msg "Wait... Verificando serviços ativos")"
+	msg "** SERVICES **" "$(log_info_msg "${cmsg_servicosAtivos[$LC_DEFAULT]}")"
 	for x in "${aservices[@]}"; do
 		if sv status /etc/runit/runsvdir/current/$x >> "$BOOTLOG"; then
 			status=$(sv status /etc/runit/runsvdir/current/$x | cut -d: -f1,3)
@@ -1403,7 +1451,7 @@ sh_disableprintk
 sh_main "$@"
 sh_checkroot
 if [[ "$distro" != 'void' && "$distro" != 'void-live' ]] ; then
-	if ! readconf "${bold}** AVISO ** ${red}Aparentemente este host não é ${yellow}VOID Linux${reset}. Deseja continuar?"; then
+	if ! readconf "${red}${cmsg_notvoid[$LC_DEFAULT]}${reset}"; then
 		info_msg "${red}${cmsg_InstalacaoAbortada[$LC_DEFAULT]}...${reset}"
 		cleanup
 	fi
