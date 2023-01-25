@@ -24,6 +24,7 @@ install:
 	@install -m 4755 void-testmirror ${BINDIR}/void-testmirror
 	@install -m 4755 void-wifi ${BINDIR}/void-wifi
 	@install -m 4755 void-mirror ${BINDIR}/void-mirror
+	@install -m 4755 void-services ${BINDIR}/void-services
 	@mkdir -p ${INFODIR}
 	@cp Makefile ChangeLog INSTALL LICENSE MAINTAINERS README.md ${DOCDIR}/
 	@cp Makefile ChangeLog INSTALL LICENSE MAINTAINERS README.md ${INFODIR}/
@@ -39,6 +40,7 @@ uninstall:
 	@rm ${BINDIR}/void-testmirror
 	@rm ${BINDIR}/void-wifi
 	@rm ${BINDIR}/void-mirror
+	@rm ${BINDIR}/void-services
 	@rm -fd ${BINDIR}
 	@rm -fd ${INFODIR}
 	@echo "${APP} foi removido."

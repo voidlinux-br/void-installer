@@ -1,29 +1,22 @@
-# void-install - instalador para o Void Linux
+# void-install - instalador para o VOID Linux
 
 ## Download:
 
 - 1 - usando git
 	- git clone https://github.com/voidlinux-br/void-installer
 
-- 2 - usando wget
-	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/void-install
-	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/install.sh
-	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/void-testmirror
-	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/void-mirror
-	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/void-wifi
-	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/void-x86_64-base-minimal-current.tar.xz
-	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/Makefile
-	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/MAINTAINERS
-	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/LICENSE
-	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/INSTALL
-	- wget https://raw.githubusercontent.com/voidlinux-br/void-install/master/ChangeLog
-
-- 3 - usando bash e curl
+- 2 - usando sh/bash e curl
 	- sh <(curl -L https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
+	- bash <(curl -L https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
 
-## Instalação:
+- 3 - usando sh/bash e wget
+	- wget https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh
+	- chmod +x install.sh
+	- ./install.sh
+
+## Instalação (após download):
 - 1 - usando make
 	- sudo make install
 
-- 2 - rodando no repo local (após download)
+- 2 - rodando no repo local
 	- ./void-install
