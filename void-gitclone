@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+#shellcheck disable=SC2016,SC2154,SC2155,SC2145,SC2034,SC2001,SC2317,SC2059
+
+#  void-gitclone
+#  Created: 2023/01/27
+#  Altered: 2023/01/27
+#
+#  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+#  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+#  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+#  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+#  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+#  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+#  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#debug
+export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
+#set -x
+
+#system
+readonly APP="${0##*/}"
+readonly _VERSION_='0.0.1-20230127'
+readonly	distro=$(uname -n)
+readonly DEPENDENCIES=(git sed printf)
+trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
+
+sh_ambiente() {
+	readonly true=1
+	readonly false=0
+	readonly BOOTLOG="/tmp/$APP-$(sh_diahora).log"
+}
+
+info_msg() {
+	printf "\033[1m$@\n\033[m"
+}
+
+cleanup() {
+	info_msg "Removing temporary files..."
+	rm -f "$BOOTLOG"
+	exit 1
+}
+
+sh_diahora() {
+	DIAHORA=$(date +"%d%m%Y-%T" | sed 's/://g')
+	printf "%s\n" "$DIAHORA"
+}
+
+sh_checkroot() {
+	if [ "$(id -u)" != "0" ]; then
+		die "${red} ${cmsg_operRoot[$LC_DEFAULT]}"
+	fi
+}
+
+sh_checkDependencies() {
+	local d
+	local errorFound=0
+	declare -a missing
+
+	for d in "${DEPENDENCIES[@]}"; do
+		[[ -z $(command -v "$d") ]] && missing+=("$d") && errorFound=1 && printf '%s\n' "${red}ERROR: I couldn't find the command ${cyan}'$d'${reset}"
+	done
+	if (( errorFound )); then
+		echo "${yellow}-------------IMPOSSIBLE TO CONTINUE-----------------${reset}"
+		echo "This script needs the commands listed above" >&2
+		echo "Install them and/or make sure they are on your \$PATH" >&2
+		echo "${yellow}----------------------------------------------------${reset}"
+		die "${APP} aborted..."
+	fi
+}
+
+sh_setvarcolors() {
+	# does the terminal support true-color?
+	if [[ -n $(command -v "tput") ]]; then
+		#tput setaf 127 | cat -v  #capturar saida
+		tput sgr0 # reset colors
+		bold=$(tput bold)
+		reset=$(tput sgr0)
+		black=$(tput setaf 0);
+		red=$(tput setaf 1)
+		green=$(tput setaf 2)
+		yellow=$(tput bold)$(tput setaf 3)
+		blue=$(tput setaf 4)
+		pink=$(tput setaf 5)
+		cyan=$(tput setaf 6)
+		white=$(tput setaf 7)
+		orange=$(tput setaf 3)
+		purple=$(tput setaf 125);
+		violet=$(tput setaf 61);
+	else
+		reset=''
+		green=''
+		red=''
+		bold=''
+		blue=''
+		cyan=''
+		orange=''
+		pink=''
+		white=''
+		yellow=''
+		#violet=''
+		#purple=''
+	fi
+}
+
+DOT() {
+	printf "%s" "${blue}:: ${reset}"
+}
+
+die() {
+	local msg=$1; shift
+	printf "%-75s\n" "$(DOT)${bold}${red}$msg${reset}" >&2
+	exit 1
+}
+
+sh_version() {
+	printf "%s\n" "${bold}${cyan}${0##*/} v${_VERSION_}${reset}"
+}
+
+sh_gitclone(){
+	while read -r -p "Insert a git repository, enter to exit: "
+	do
+		[[ "${REPLY^}" == "" ]] && return 1
+		echo "${REPLY}" >> "$BOOTLOG"
+		git clone "${REPLY}"
+		echo
+	done
+}
+
+sh_ambiente
+sh_setvarcolors
+sh_checkDependencies
+[[ "$1" = @(-V|-v|version|-version|--version) ]] && { sh_version; exit $(( $# ? 0 : 1 ));}
+sh_gitclone "$@"
