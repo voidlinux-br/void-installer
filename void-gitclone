@@ -34,7 +34,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.0.1-20230127'
+readonly _VERSION_='0.0.4-20230127'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(git sed printf)
 trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
@@ -62,7 +62,7 @@ sh_diahora() {
 
 sh_checkroot() {
 	if [ "$(id -u)" != "0" ]; then
-		die "${red} ${cmsg_operRoot[$LC_DEFAULT]}"
+		die "${red}error: you cannot perform this operation unless you are root.${reset}"
 	fi
 }
 
