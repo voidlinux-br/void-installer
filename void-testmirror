@@ -4,7 +4,7 @@
 # Require: xbps-install -S curl bc geoip geoip-data geoipupdate iputils
 
 #  Created: 2022/11/05
-#  Altered: 2023/01/23
+#  Altered: 2023/01/28
 #
 #  Copyright (c) 2022-2022, Vilmar Catafesta <vcatafesta@gmail.com>
 #
@@ -27,40 +27,49 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
 
 #system
-_VERSION_='1.256.20230123'
-DEPENDENCIES=(curl ping printf bc geoiplookup sed awk tput)
+readonly APP="${0##*/}"
+readonly _VERSION_='0.1.256-20230128'
+readonly DEPENDENCIES=(curl ping printf bc geoiplookup sed awk tput)
 declare -i quiet=0 typetest=0 auto=0 nping=0 ncurl=0 update=0
 declare -a aHits=()
 declare -A mirrors=()
-
-#paths/files/urls
-APP_LOCAL="${0##*/}"
-APP_REMOTE="void-testmirror"
-URL_GOOGLE='https://google.com'
-URL_GITHUB="https://raw.githubusercontent.com/vcatafesta/chili/master/${APP_REMOTE}"
-
-#conf adicionais
-IFS=$' \t\n'
-#SAVEIFS=$IFS
-#sep='\xe2\x94\x82'
-
-# flag boolean
-true=1
-false=0
-
-if [ -z "${COLUMNS}" ]; then
-	COLUMNS=$(stty size)
-	COLUMNS=${COLUMNS##* }
-fi
-if [ "${COLUMNS}" = "0" ]; then
-	COLUMNS=80
-fi
-
-COL=$((COLUMNS - 8))
-SET_COL="\\033[${COL}G" # at the $COL char
-CURS_ZERO="\\033[0G"
-
 trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
+
+sh_ambiente() {
+   readonly true=1
+   readonly false=0
+   readonly BOOTLOG="/tmp/$APP-$(sh_diahora).log"
+
+	#paths/files/urls
+	APP_LOCAL="${0##*/}"
+	APP_REMOTE="void-testmirror"
+	URL_GOOGLE='https://google.com'
+	URL_GITHUB="https://raw.githubusercontent.com/vcatafesta/chili/master/${APP_REMOTE}"
+
+	#conf adicionais
+	IFS=$' \t\n'
+	#SAVEIFS=$IFS
+	#sep='\xe2\x94\x82'
+
+	if [ -z "${COLUMNS}" ]; then
+		COLUMNS=$(stty size)
+		COLUMNS=${COLUMNS##* }
+	fi
+	if [ "${COLUMNS}" = "0" ]; then
+		COLUMNS=80
+	fi
+
+	COL=$((COLUMNS - 8))
+	SET_COL="\\033[${COL}G" # at the $COL char
+	CURS_ZERO="\\033[0G"
+}
+
+sh_diahora() {
+	DIAHORA=$(date +"%d%m%Y-%T")
+	DIAHORA="${DIAHORA//:/}"
+	printf "%s\n" "$DIAHORA"
+	return "$true"
+}
 
 info_msg() {
 	printf "\033[1m$@\n\033[m"
@@ -144,7 +153,8 @@ sh_val() {
 }
 
 sh_checknet() {
-	xurl="$1"
+	local xurl="$1"
+
 	#have internet?
 	log_info_msg "Testing internet on ${xurl}"
 	curl --insecure "$xurl" >/dev/null 2>&1 ||
@@ -268,14 +278,13 @@ writeln() {
 	local msg=$1
 	shift
 	printf "%s\n" "$msg"
-   return
+	  return
 }
 
-die()
-{
-   local msg=$1; shift
-   msg "${red}$msg" "$@" >&2
-   exit 1
+die() {
+	local msg=$1; shift
+	msg "${red}$msg" "$@" >&2
+	exit 1
 }
 
 replicate() {
@@ -442,11 +451,16 @@ print_top_mirror() {
 }
 
 main_test_mirror() {
+	local cresult
 	fping=10000
 	frepo=0
 	contador=1
 
-	sh_checknet "${URL_GOOGLE}" || return 1
+	if ! sh_checknet "${URL_GOOGLE}"; then
+		printf "↓ No route to the server ($URL_GOOGLE) - Check your internet! ↓"
+		return 1
+	fi
+
 	for repo in "${!mirrors[@]}"
 	do
 		filerepo=${mirrors[$repo]}
@@ -479,10 +493,10 @@ main_test_mirror() {
 }
 
 sh_version() {
-   printf "%s\n" "${bold}${cyan}${0##*/} v${_VERSION_}${reset}"
+	printf "%s\n" "${bold}${cyan}${0##*/} v${_VERSION_}${reset}"
 }
 
-sh_sorted_array(){
+sh_sorted_array() {
 	readarray -t Sorted < <(sort -n < <(printf "%s\n" "${aHits[@]}"))
 }
 
@@ -630,12 +644,14 @@ sh_splitarrayassoc() {
 }
 
 setvarcolors
+sh_ambiente
 sh_logprefix
-check_deps
+[[ "$1" = @(-V|-v|version|-version|--version) ]] && { sh_version; exit $(( $# ? 0 : 1 ));}
 [[ -z $1 ]] && {
    sh_usage
    exit $(($# ? 0 : 1))
 }
+check_deps
 mirrors_tier1
 mirrors_southamerica
 init "$@"
