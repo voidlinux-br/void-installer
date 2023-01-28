@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#shellcheck disable=SC2016,SC2154,SC2155,SC2145,SC2034,SC2001,SC2317,SC2059
+#shellcheck disable=SC2034,SC2059,SC2145,SC2155
 
 #  void-gitclone
 #  Created: 2023/01/27
@@ -29,42 +29,44 @@
 #  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #debug
-export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
-#set -x
+export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
+set -x
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.0.5-20230127'
-readonly	distro=$(uname -n)
+readonly _VERSION_='0.0.16-20230127'
 readonly DEPENDENCIES=(git)
 trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
 
 sh_ambiente() {
-	readonly true=1
-	readonly false=0
+	readonly true=0
+	readonly false=1
 	readonly BOOTLOG="/tmp/$APP-$(sh_diahora).log"
 }
 
 info_msg() {
 	printf "\033[1m$@\n\033[m"
+	return "$true"
 }
 
 cleanup() {
-	info_msg "Removing temporary files..."
+	info_msg "Removing temporary files"
 	rm -f "$BOOTLOG"
-	exit 1
+	exit "$false"
 }
 
 sh_diahora() {
 	DIAHORA=$(date +"%d%m%Y-%T")
 	DIAHORA="${DIAHORA//:/}"
 	printf "%s\n" "$DIAHORA"
+	return "$true"
 }
 
 sh_checkroot() {
 	if [ "$(id -u)" != "0" ]; then
 		die "${red}error: you cannot perform this operation unless you are root.${reset}"
 	fi
+	return "$true"
 }
 
 sh_checkDependencies() {
@@ -73,15 +75,16 @@ sh_checkDependencies() {
 	declare -a missing
 
 	for d in "${DEPENDENCIES[@]}"; do
-		[[ -z $(command -v "$d") ]] && missing+=("$d") && errorFound=1 && printf '%s\n' "${red}ERROR: I couldn't find the command ${cyan}'$d'${reset}"
+		[[ -z $(command -v "$d") ]] && missing+=("$d") && errorFound=1 && printf "${red}ERROR: I couldn't find the command ${cyan}'$d'${reset}\n"
 	done
 	if (( errorFound )); then
-		echo "${yellow}-------------IMPOSSIBLE TO CONTINUE-----------------${reset}"
-		echo "This script needs the commands listed above" >&2
-		echo "Install them and/or make sure they are on your \$PATH" >&2
-		echo "${yellow}----------------------------------------------------${reset}"
+		echo -e "${yellow}-------------IMPOSSIBLE TO CONTINUE-----------------${reset}"
+		echo -e "This script needs the commands listed above" >&2
+		echo -e "Install them and/or make sure they are on your \$PATH" >&2
+		echo -e "${yellow}----------------------------------------------------${reset}"
 		die "${APP} aborted..."
 	fi
+	return "$true"
 }
 
 sh_setvarcolors() {
@@ -91,59 +94,58 @@ sh_setvarcolors() {
 		tput sgr0 # reset colors
 		bold=$(tput bold)
 		reset=$(tput sgr0)
-		black=$(tput setaf 0);
 		red=$(tput setaf 1)
 		green=$(tput setaf 2)
 		yellow=$(tput bold)$(tput setaf 3)
 		blue=$(tput setaf 4)
 		pink=$(tput setaf 5)
 		cyan=$(tput setaf 6)
-		white=$(tput setaf 7)
-		orange=$(tput setaf 3)
-		purple=$(tput setaf 125);
-		violet=$(tput setaf 61);
 	else
-		reset=''
-		green=''
-		red=''
-		bold=''
-		blue=''
-		cyan=''
-		orange=''
-		pink=''
-		white=''
-		yellow=''
-		#violet=''
-		#purple=''
+		red="\e[31m"
+		reset="\e[0m"
+		bold="\e[1m"
+		italic="\e[3m"
+		underline="\e[4m"
+		green="\e[32m"
+		yellow="\e[33m"
+		blue="\e[34m"
+		pink="\e[35m"
+		cyan="\e[36m"
+		gray="\e[90m"
+		white="\e[97m"
 	fi
+	return 0
 }
 
 DOT() {
-	printf "%s" "${blue}:: ${reset}"
+	printf "${blue}:: ${reset}"
+	return "$true"
 }
 
 die() {
 	local msg=$1; shift
-	printf "%-75s\n" "$(DOT)${bold}${red}$msg${reset}" >&2
-	exit 1
+	printf "$(DOT)${bold}${red}$msg${reset}\n" >&2
+	exit "$false"
 }
 
 sh_version() {
-	printf "%s\n" "${bold}${cyan}${0##*/} v${_VERSION_}${reset}"
+	printf "${bold}${cyan}${0##*/} v${_VERSION_}${reset}"
+	return "$true"
 }
 
 sh_gitclone(){
 	while read -r -p "Insert a git repository, enter to exit: "
 	do
-		[[ "${REPLY^}" == "" ]] && return 1
+		[ "${REPLY^}" == "" ] && return $false
 		echo "${REPLY}" >> "$BOOTLOG"
 		git clone "${REPLY}"
 		echo
 	done
+	return "$true"
 }
 
-sh_ambiente
 sh_setvarcolors
+sh_ambiente
 sh_checkDependencies
 [[ "$1" = @(-V|-v|version|-version|--version) ]] && { sh_version; exit $(( $# ? 0 : 1 ));}
 sh_gitclone "$@"
