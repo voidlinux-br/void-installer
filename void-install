@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/01/23
+#  Altered: 2023/01/28
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -35,7 +35,7 @@ export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.78.252-20230123'
+readonly _VERSION_='0.79.333-20230128'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog tar sed cat grep chroot printf blkid fdisk lsblk parted efivar curl xz mkfs.vfat)
 #								 mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -2065,6 +2065,7 @@ sh_menu() {
 			"Wifi" 									"${cmsg_descWifi[$LC_DEFAULT]}"						\
 			"Extra"									"${cmsg_descExtra[$LC_DEFAULT]}"						\
 			"${cmsg_Instalar[$LC_DEFAULT]}"	"${cmsg_descInstalar[$LC_DEFAULT]}"					\
+			"Services"								"Util void-services (opcional)"			   		\
 			"${cmsg_Sair[$LC_DEFAULT]}"		"${cmsg_descSair[$LC_DEFAULT]}" 2>&1 >/dev/tty 	)
 
 		if [ $? -eq 3 ]; then
@@ -2084,6 +2085,7 @@ sh_menu() {
         	"Wifi") 									sh_confwifi "$@"     && [ -n "$LWIFI" ]		&& DEFITEM="Extra";;
         	"Extra")									sh_confadduser "$@"  && [ -n "$LEXTRA" ]		&& DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}";;
    		"${cmsg_Instalar[$LC_DEFAULT]}")	sh_install;;
+   		"Services")								void-services "$LC_DEFAULT";;
         	"${cmsg_Sair[$LC_DEFAULT]}")		die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}...";;
 	      *) ${DIALOG} --erase-on-exit 											\
 					--title		"$ccabec" 											\
@@ -2332,12 +2334,12 @@ sh_language() {
 			"Définir le gestionnaire de fenêtres"
 			"Definir administrador de ventanas"
 			"Definisci gestore di finestre")'
-		'cmsg_descWifi=("Definir rede e senha wifi"
-			"Set wifi network and password"
-			"Stellen Sie das WLAN-Netzwerk und das Passwort ein"
-			"Définir le réseau wifi et le mot de passe"
-			"Establecer red wifi y contraseña"
-			"Imposta la rete wifi e la password")'
+		'cmsg_descWifi=("Definir rede e senha wifi (opcional)"
+			"Set wifi network and password (optional)"
+			"Stellen Sie das WLAN-Netzwerk und das Passwort ein (optional)"
+			"Définir le réseau wifi et le mot de passe (optionnel)"
+			"Establecer red wifi y contraseña (opcional)"
+			"Imposta la rete wifi e la password (opzionale)")'
 		'cmsg_descExtra=("Definir usuário,senha,hostname"
 			"Set user,password,hostname"
 			"Legen Sie Benutzer,Passwort und Hostname fest"

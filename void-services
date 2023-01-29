@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-#shellcheck disable=SC2016,SC2154,SC2155,SC2145,SC2034,SC2001,SC2317
+#shellcheck disable=SC2016,SC2154,SC2155,SC2145,SC2034,SC2001,SC2317,SC2207,SC2164,SC2059
 
 #  void-services
 #  Created: 2023/01/23
-#  Altered: 2023/01/25
+#  Altered: 2023/01/28
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -34,7 +34,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.3.352-20230125'
+readonly _VERSION_='0.4.555-20230128'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog cat sed grep printf)
 declare -A Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
@@ -44,7 +44,7 @@ declare -i STEP_COUNT=10
 trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
 
 strzero() {
-	printf "%0*d" $2 $1
+	printf "%0*d" "$2" "$1"
 }
 
 print_step() {
@@ -59,6 +59,7 @@ info_msg() {
 cleanup() {
 	info_msg "Removing temporary files..."
 	rm -f "$BOOTLOG"
+	sh_enableprintk
 	exit 1
 }
 
@@ -1391,8 +1392,8 @@ sh_chooseservices() {
 	nc=0
 	msg "** SERVICES **" "$(log_info_msg "${cmsg_servicosAtivos[$LC_DEFAULT]}")"
 	for x in "${aservices[@]}"; do
-		if sv status /etc/runit/runsvdir/current/$x >> "$BOOTLOG"; then
-			status=$(sv status /etc/runit/runsvdir/current/$x | cut -d: -f1,3)
+		if sv status /etc/runit/runsvdir/current/"$x" >> "$BOOTLOG"; then
+			status=$(sv status /etc/runit/runsvdir/current/"$x" | cut -d: -f1,3)
 			Asv+=([$nc]="$x|Active|$status")
 		else
 			Asv+=([$nc]="$x|Disabled|")
@@ -1448,8 +1449,13 @@ sh_logprefix
 sh_checkDependencies
 sh_disableprintk
 [[ "$1" = @(-V|-v|version|-version|--version) ]] && { sh_version; exit $(( $# ? 0 : 1 ));}
-sh_main "$@"
-sh_checkroot
+if [[ -n "$1" ]] && [[ "$1" -ge 0 ]]; then
+	LC_DEFAULT="$1"
+	LOCALE="${Alocale[$1]}"
+else
+	sh_main "$@"
+	sh_checkroot
+fi
 if [[ "$distro" != 'void' && "$distro" != 'void-live' ]] ; then
 	if ! readconf "${red}${cmsg_notvoid[$LC_DEFAULT]}${reset}"; then
 		info_msg "${red}${cmsg_InstalacaoAbortada[$LC_DEFAULT]}...${reset}"
