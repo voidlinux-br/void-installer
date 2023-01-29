@@ -35,7 +35,7 @@ export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.79.340-20230129'
+readonly _VERSION_='0.79.355-20230129'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog tar sed cat grep chroot printf blkid fdisk lsblk parted efivar curl xz mkfs.vfat)
 #								 mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -62,12 +62,12 @@ declare _CLOCK='UTC'
 declare _REDE_WIFI="REDE_WIFI"
 declare _SENHA_WIFI="SENHA_WIFI"
 declare _MIRROR="PimentaBueno"
-declare _PKGS='vim neofetch pfetch openssh zstd wget curl dialog bash-completion git unzip zip'
+declare _PKGS='vim neofetch pfetch'
 declare aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11')
 declare aDisplaymanager=('lxdm' 'lxappearance' 'lxinput' 'lxrandr' 'lxtask')
-declare aMedia=('pulseaudio' 'pavucontrol' 'vlc' 'ffmpeg' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
+declare aMedia=('pulseaudio' 'pavucontrol' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
 declare aTerminal=('lxterminal' 'rxvt-unicode' 'xfce4-terminal')
-declare aFilemanager=('Thunar' 'pcmanfm' 'xfce4-terminal')
+declare aFilemanager=('Thunar' 'pcmanfm')
 declare aFont=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf')
 declare aBrowser=('firefox' 'firefox-i18n-pt-BR' 'lynx')
 declare aPerfumaria=('setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notification-daemon')
@@ -989,7 +989,7 @@ sh_mountfs() {
 	mount "${_PART_ROOT}" "$dir_install"
 	evaluate_retval "$?"
 
-	msg "INFO" "$(log_info_msg "${cmsg_MontandoParticao[$LC_DEFAULT]} $_PART_ROOT (EFI) ${cmsg_Em[$LC_DEFAULT]} $dir_install/boot/efi")"
+	msg "INFO" "$(log_info_msg "${cmsg_MontandoParticao[$LC_DEFAULT]} $_PART_BOOT (EFI) ${cmsg_Em[$LC_DEFAULT]} $dir_install/boot/efi")"
 	mkdir -p "$dir_install/boot/efi"
 	mount "${_PART_BOOT}" "$dir_install/boot/efi"
 	evaluate_retval "$?"
@@ -1006,7 +1006,7 @@ sh_X11minimal(){
 	apkgs+=("${aNetwork[@]}")
 	apkgs+=("${aMedia[@]}")
 	apkgs+=("${aPerfumaria[@]}")
-	apkgs+=("${aMicrocode[@]}")
+#	apkgs+=("${aMicrocode[@]}")
 	apkgs+=("${aArchiver[@]}")
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
@@ -1857,7 +1857,7 @@ sh_chmodtmp() {
 }
 
 sh_copiascripts() {
-	local cfiles=('void-install' 'void-wifi' 'void-testmirror' 'void-mirror')
+	local cfiles=('void-install' 'void-wifi' 'void-mirror' 'void-testmirror' 'void-services' 'void-gitclone')
 	local script
 
 	msg "INFO" "$(log_info_msg "${cmsg_Copiando[$LC_DEFAULT]} scripts ${cmsg_Para[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
@@ -1939,15 +1939,16 @@ sh_checkinstall() {
 	fi
 
 	display_config
-	if conf "${cmsg_ConfSalva[LC_DEFAULT]}" "$SETUP \n${cmsg_descInstalar[$LC_DEFAULT]}?"; then
+	if conf "${cmsg_ConfSalva[LC_DEFAULT]}" "$SETUP \nAcompanhe a evolução da instalação com:\n${RED}sudo tail -f $BOOTLOG${RESET}\n\n${cmsg_descInstalar[$LC_DEFAULT]}?"; then
 		return 0
 	fi
 	return 1
 }
 
 sh_install() {
-	local abase=('base-system' 'dbus' 'lvm2' 'wireless_tools' 'nano' 'grub' 'grub-x86_64-efi' 'efivar'
-					 'efibootmgr' 'os-prober' 'intel-ucode' 'linux-firmware-amd' 'parted' 'ncurses' 'xz')
+	local abase=(base-system dbus lvm2 wireless_tools nano grub os-prober parted xz
+				    grub-x86_64-efi efivar efibootmgr zstd wget curl dialog bash-completion git
+					 bc geoip geoip-data geoipupdate iputils)
 
 	sh_checkinstall || return 1
 	sh_umountfs
@@ -1973,21 +1974,9 @@ sh_install() {
 		sh_update_mirror
 		sh_chroot_job "${cmsg_AtualizandoRepositorio[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -Suy xbps"
 #		sh_chroot_job "${cmsg_Atualizando[$LC_DEFAULT]} sistema em $_PART_ROOT:$dir_install" "xbps-install -uy"
-		sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${abase[*]}"
+		sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${abase[*]}"
 		sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y $_PKGS"
-
-		sh_update_hostname
-		sh_update_rc
-		sh_update_sshd
-		sh_update_timezone
-		sh_update_locale
-		sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-reconfigure -f glibc-locales"
 		sh_mkuser
-		sh_mkfstab
-		sh_set_keymap
-		sh_update_bashrc
-		sh_update_wpa_suplicant
-
 		case "$mbr" in
 			"BIOS") 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} GRUB i386-pc ${cmsg_Em[$LC_DEFAULT]} $_DEVICE" "grub-install --target=i386-pc $_DEVICE --recheck"
 						;;
@@ -1997,43 +1986,60 @@ sh_install() {
 						;;
 		esac
 		sh_chroot_job "${cmsg_Gerando[$LC_DEFAULT]} grub.cfg ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "grub-mkconfig -o /boot/grub/grub.cfg"
+		sh_update_hostname
+		sh_update_rc
+		sh_update_sshd
+		sh_update_timezone
+		sh_update_locale
+		sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-reconfigure -f glibc-locales"
+		sh_mkfstab
+		sh_set_keymap
+		sh_update_bashrc
+		sh_update_wpa_suplicant
 
 		if [[ "${#_WINDOWMANAGER[@]}" -eq 1 ]]; then
 			if [[ "${_WINDOWMANAGER}" = 'tty' ]]; then
 				:
+			else
+				sh_set_Xkeymap
+				sh_X11minimal
 			fi
 		else
 			sh_set_Xkeymap
 			sh_X11minimal
-			for x in "${_WINDOWMANAGER[@]}"
-			do
-				case "$x" in
-				"awesome") 	sh_awesomeminimal;;
-				"dwm") 		sh_dwmminimal;;
-				"fluxbox") 	sh_fluxboxminimal;;
-				"openbox")	sh_openboxminimal;;
-				"gnome")		sh_gnomeminimal;;
-				"plasma")	sh_plasmaminimal;;
-				"xfce4")		sh_xfce4minimal;;
-				"i3wm")		sh_i3minimal;;
-				"sway")		sh_swayminimal;;
-				"twm")		sh_twmminimal;;
-				"mate")		sh_mateminimal;;
-				esac
-			done
 		fi
+
+		for x in "${_WINDOWMANAGER[@]}"
+		do
+			case "$x" in
+			"tty") 		:;;
+			"awesome") 	sh_awesomeminimal;;
+			"dwm") 		sh_dwmminimal;;
+			"fluxbox") 	sh_fluxboxminimal;;
+			"openbox")	sh_openboxminimal;;
+			"gnome")		sh_gnomeminimal;;
+			"plasma")	sh_plasmaminimal;;
+			"xfce4")		sh_xfce4minimal;;
+			"i3wm")		sh_i3minimal;;
+			"sway")		sh_swayminimal;;
+			"twm")		sh_twmminimal;;
+			"mate")		sh_mateminimal;;
+			esac
+		done
+
 		sh_mkservice
 #		sh_chroot_job "Certificando que todos pacotes estejam configurados corretamente em $_PART_ROOT:$dir_install" "xbps-reconfigure -fa"
 #		sh_chroot_job "Removendo pacote bootstrap em $_PART_ROOT:$dir_install" "xbps-remove -y base-voidstrap" "$err_not_fatal"
 		sh_chmodtmp
 		sh_copiascripts
+		sh_umountfs
 		quiet=$false
 		alerta "$ccabec" "${cmsg_FinalizadaComSucesso[LC_DEFAULT]}"
 	else
 		evaluate_retval "$?" "$err_not_fatal"
+		sh_umountfs
 		die "${cmsg_ERRO[LC_DEFAULT]} tar #$?. ${cmsg_ErroTar[LC_DEFAULT]} $_TARBALL_ROOTFS ${cmsg_Em[LC_DEFAULT]} $dir_install"
 	fi
-	sh_umountfs
 	exit 0
 }
 
@@ -2580,12 +2586,12 @@ sh_language() {
 		"Installation du métapaquet X dans"
 		"Instalación del metapaquete X en"
 		"Installazione del metapacchetto X in")'
-	'cmsg_AtualizandoPacotesBase=("Atualizando pacotes base em"
-		"Updating base packages in"
-		"Aktualisieren von Basispaketen in"
-		"Mise à jour des packages de base dans"
-		"Actualización de paquetes base en"
-		"Aggiornamento dei pacchetti base in")'
+	'cmsg_AtualizandoPacotesBase=("Atualizando pacotes base"
+		"Updating base packages"
+		"Aktualisieren von Basispaketen"
+		"Mise à jour des packages de base"
+		"Actualización de paquetes base"
+		"Aggiornamento dei pacchetti base")'
 	'cmsg_AtualizandoPacotesAdicionais=("Atualizando pacotes adicionais em"
 		"Updating additional packages in"
 		"Aktualisieren zusätzlicher Pakete in"
