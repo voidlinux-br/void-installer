@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-#shellcheck disable=SC2145,SC2001,SC2188,SC2015,SC2155,SC2317,SC2320,SC2291,SC2034,SC2016,SC2154,SC2207,SC2166,SC2128
+#shellcheck disable=SC2145,SC2001,SC2188,SC2015,SC2155,SC2317,SC2320,SC2291,SC2034,SC2016,SC2154,SC2207,SC2166,SC2128,SC2059
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/01/29
+#  Altered: 2023/01/30
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -35,7 +35,7 @@ export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.79.355-20230129'
+readonly _VERSION_='0.81.620-20230130'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog tar sed cat grep chroot printf blkid fdisk lsblk parted efivar curl xz mkfs.vfat)
 #								 mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -83,6 +83,7 @@ info_msg() {
 cleanup() {
 	info_msg "Removing temporary files..."
 	rm -fv "$BOOTLOG"
+	sh_umountfs
 	exit 1
 }
 
@@ -99,7 +100,7 @@ sh_ambiente() {
 	readonly err_not_fatal=$false
 	readonly shell='/bin/sh'
 	readonly BOOTLOG="/tmp/void-install-$(sh_diahora).log"
-	readonly LOGGER=/dev/tty8
+	readonly LOGGER='/dev/tty8'
 	: "${ccabec="$APP v${_VERSION_}"}"
 	: "${DIALOG=${DIALOG:-"dialog"}}"
 
@@ -133,11 +134,11 @@ sh_ambiente() {
 	: "${BLACK="\Z0"}"
 	: "${GREEN="\Z2"}"
 	: "${YELLOW="\Z3"}"
-	: "${BLUE="\Z4"}"
 	: "${MAGENTA="\Z5"}"
-	: "${WHITE="\Z7"}"
 	: "${REVERSE="\Zr"}"
 	: "${UNDERLINE="\Zu"}"
+	WHITE="\Z7"
+	BLUE="\Z4"
 	CYAN="\Z6"
 	RED="\Z1"
 	BOLD="\Zb"
@@ -251,19 +252,20 @@ sh_checknet() {
 sh_downloadtarball() {
 	msg "INFO" "$(log_info_msg "${cmsg_IniciandoDownload[$LC_DEFAULT]} $url_tarball/live/current/$_TARBALL_ROOTFS")"
 	#curl --insecure --silent --remote-name "$url_tarball/live/current/$_TARBALL_ROOTFS" >>"$BOOTLOG" 2>&1 ||
-	curl -L -C - --insecure --silent --remote-name "$url_tarball/$_TARBALL_ROOTFS" >>"$BOOTLOG" 2>&1 ||
-	{
-		evaluate_retval "$?"
+	curl -L -C - --insecure --silent --remote-name "$url_tarball/$_TARBALL_ROOTFS" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	if [[ "${PIPESTATUS[0]}" -eq 1 ]]; then
+		evaluate_retval "1"
 		die "${cmsg_SemRota[$LC_DEFAULT]} ($url_mirror) - ${cmsg_CheckNet[$LC_DEFAULT]}"
 		return 1
-	}
-	evaluate_retval 0
+	fi
+	evaluate_retval "0"
 	return 0
 }
 
 sh_checktarball() {
 	msg "INFO" "$(log_info_msg "${cmsg_ChecandoTarball[$LC_DEFAULT]} rootfs $_TARBALL_ROOTFS")"
-	if ! tar -tf "$_TARBALL_ROOTFS" >>"$BOOTLOG" 2>&1; then
+	tar -tf "$_TARBALL_ROOTFS" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	if [[ "${PIPESTATUS[0]}" -eq 1 ]]; then
 	   evaluate_retval "1" "$err_not_fatal"
 		rm -f void-x86_64-base-minimal-current.tar.xz
 		sh_downloadtarball
@@ -271,7 +273,7 @@ sh_checktarball() {
 	   evaluate_retval "0"
 		return 0
 	fi
-	return "$?"
+	return "${PIPESTATUS[0]}"
 }
 
 sh_checkDependencies() {
@@ -432,7 +434,7 @@ DOT() {
 msg() {
 	((ncontador++))
 	logmessage=$(sed 's/\\\033[^a-zA-Z]*.//g' <<< "$last_msg")
-	printf "%s\n" "$(timespec) [ INFO ]${2}" >> "$BOOTLOG"
+	printf "%s\n" "$(timespec) [ INFO ]${2}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 
    if (( grafico )); then
       ${DIALOG}               \
@@ -467,7 +469,7 @@ log_skip_msg() {
 		echo -n     "${CURS_ZERO}${SKIP_PREFIX}${SET_COL}${SKIP_SUFFIX}"
 	fi
 	logmessage=$(sed 's/\\\033[^a-zA-Z]*.//g' <<< "$last_msg")
-	printf "%s\n" "$(timespec) [ SKIP ]${logmessage}" >> "$BOOTLOG"
+	printf "%s\n" "$(timespec) [ SKIP ]${logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	return 0
 }
 
@@ -479,7 +481,7 @@ log_wait_msg() {
 		echo -e    "${CURS_ZERO}${WAIT_PREFIX}${SET_COL}${WAIT_SUFFIX}"
 	fi
 	logmessage=$(sed 's/\\\033[^a-zA-Z]*.//g' <<< "$last_msg")
-	printf "%s\n" "$(timespec) [ WAIT ]${logmessage}" >> "$BOOTLOG"
+	printf "%s\n" "$(timespec) [ WAIT ]${logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	return 0
 }
 
@@ -514,8 +516,8 @@ log_failure_msg() {
 	   echo    -e  "${CURS_ZERO}${FAILURE_PREFIX}${SET_COL}${FAILURE_SUFFIX}"
 	fi
 	logmessage=$(sed 's/\\\033[^a-zA-Z]*.//g' <<< "$last_msg")
-	printf "%s\n" "$(timespec) [ FAIL ]${logmessage}" >> "$BOOTLOG"
-	replicate "#" "100" >> "$BOOTLOG"
+	printf "%s\n" "$(timespec) [ FAIL ]${logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	replicate "#" "100" | tee -i -a "$BOOTLOG" >$LOGGER
 	return 0
 }
 
@@ -525,8 +527,8 @@ log_success_msg() {
 		echo    -e "${CURS_ZERO}${SUCCESS_PREFIX}${SET_COL}${SUCCESS_SUFFIX}"
 	fi
 	logmessage=$(sed 's/\\\033[^a-zA-Z]*.//g' <<< "$last_msg")
-	printf "%s\n" "$(timespec) [  OK  ]${logmessage}" >> "$BOOTLOG"
-	replicate "#" "100" >> "$BOOTLOG"
+	printf "%s\n" "$(timespec) [  OK  ]${logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	replicate "#" "100" | tee -i -a "$BOOTLOG" >$LOGGER
 	return 0
 }
 
@@ -557,6 +559,9 @@ readconf() {
 }
 
 info() {
+	msg "${fmt} $@"
+	evaluate_retval "0"
+
 	${DIALOG}               					\
 	--colors											\
 	--title  "$1"                    		\
@@ -567,13 +572,16 @@ info() {
 }
 
 alerta() {
-	log_success_msg "$@"
+	msg "${fmt} $@"
+	evaluate_retval "0"
+
 	${DIALOG}               					\
-	--title  	"$1"                 		\
+	--colors											\
+	--title  "$1"                    		\
 	--backtitle "$ccabec"            		\
 	--ok-label	"${cmsg_ok[$LC_DEFAULT]}"	\
-	--msgbox    "$2\n$3\n$4\n$5\n$6" 		\
-	10 60
+	--msgbox    "\n$2\n$3\n$4\n$5\n$6" 		\
+	8 60
 }
 
 conf() {
@@ -608,8 +616,8 @@ notconf() {
 sh_testdisk() {
 	local result=0
 
-	fdisk -l "$_DEVICE" >>"$BOOTLOG" 2>&1
-	result="$?"
+	fdisk -l "$_DEVICE" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	result="${PIPESTATUS[0]}"
 	if ! (( quiet )); then
 		evaluate_retval "$result"
 	fi
@@ -654,9 +662,9 @@ sh_mkparted() {
 			mkpart primary fat32      1MiB 3MiB   set 1 bios on name 1 BIOS   \
 			mkpart primary fat32      3MiB 128MiB set 2 esp  on name 2 EFI    \
 			mkpart primary ext4       128MiB 100%               name 3 ROOT   \
-			align-check optimal 1 >>"$BOOTLOG" 2>&1
-		evaluate_retval "$?"
-		parted --script "$_DEVICE" -- print >>"$BOOTLOG" 2>&1
+			align-check optimal 1 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+		evaluate_retval "${PIPESTATUS[0]}"
+		parted --script "$_DEVICE" -- print 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	else
 		die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..."
 	fi
@@ -794,46 +802,46 @@ EOF
 
 sh_mkfs() {
 	#msg "INFO" "$(log_info_msg "${cmsg_FormatandoParticao[$LC_DEFAULT]} BIOS: ${_PART_BIOS} FS ext2")"
-	#mkfs.ext2 -F -L "EFI" "${_PART_BIOS}" >>"$BOOTLOG" 2>&1
-	#evaluate_retval "$?"
+	#mkfs.ext2 -F -L "EFI" "${_PART_BIOS}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	#evaluate_retval ""${PIPESTATUS[0]}"
 
 	msg "INFO" "$(log_info_msg "${cmsg_FormatandoParticao[$LC_DEFAULT]} EFI: ${_PART_BOOT} FS vfat32")"
-	mkfs.vfat -n "EFI" -F32 "${_PART_BOOT}" >>"$BOOTLOG" 2>&1
-	evaluate_retval
+	mkfs.vfat -n "EFI" -F32 "${_PART_BOOT}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	evaluate_retval "${PIPESTATUS[0]}"
 
 	msg "INFO" "$(log_info_msg "${cmsg_FormatandoParticao[$LC_DEFAULT]} ROOT: ${_PART_ROOT} FS ${mkfs,,}")"
    if [[ "$mkfs" == "ext2" ]]; then
-		mkfs.ext2 -F -L "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
+		mkfs.ext2 -F -L "VOID" "${_PART_ROOT}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
    elif [[ "$mkfs" == "ext3" ]]; then
-		mkfs.ext3 -F -L "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
+		mkfs.ext3 -F -L "VOID" "${_PART_ROOT}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
    elif [[ "$mkfs" == "ext4" ]]; then
-		mkfs.ext4 -F -L "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
+		mkfs.ext4 -F -L "VOID" "${_PART_ROOT}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
    elif [[ "$mkfs" == "btrfs" ]]; then
-		mkfs.btrfs -f -L "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
+		mkfs.btrfs -f -L "VOID" "${_PART_ROOT}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
    elif [[ "$mkfs" == "f2fs" ]]; then
-		mkfs.f2fs -f -l "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
+		mkfs.f2fs -f -l "VOID" "${_PART_ROOT}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
    elif [[ "$mkfs" == "xfs" ]]; then
-		mkfs.xfs -f -L "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
+		mkfs.xfs -f -L "VOID" "${_PART_ROOT}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
    elif [[ "$mkfs" == "jfs" ]]; then
-		mkfs.jfs -f -L "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
+		mkfs.jfs -f -L "VOID" "${_PART_ROOT}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
    elif [[ "$mkfs" == "reiserfs" ]]; then
-		mkfs.reiserfs -f -l "VOID" "${_PART_ROOT}" >>"$BOOTLOG" 2>&1
+		mkfs.reiserfs -f -l "VOID" "${_PART_ROOT}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	fi
-	evaluate_retval "$?"
+	evaluate_retval "${PIPESTATUS[0]}"
 }
 
 sh_umountfs() {
 	msg "INFO" "$(log_info_msg "${cmsg_DismountFileSystem[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install")"
-	umount -frl "$dir_install" >>"$BOOTLOG" 2>&1
+	umount -frl "$dir_install" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	LBIND=$false
-	evaluate_retval "$?" "$err_not_fatal"
+	evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
 }
 
 sh_stopmount() {
 	local nchoice
 	msg "INFO" "$(log_info_msg "${cmsg_umount_partition[$LC_DEFAULT]}")"
-	umount -rl "$dir_install" >>"$BOOTLOG" 2>&1
-	nchoice=$?
+	umount -rl "$dir_install" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	nchoice="${PIPESTATUS[0]}"
 	evaluate_retval 0
 	[[ $nchoice -eq 0  || $nchoice -eq 32 ]] && LMOUNT=$false
 	[[ $LMOUNT -eq $false ]] && return 0 || return 1
@@ -852,7 +860,7 @@ chroot_maybe_add_mount() {
 }
 
 bindmount() {
-	mount "$@" >>"$BOOTLOG" 2>&1
+	mount "$@" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 }
 
 sh_initbind() {
@@ -861,7 +869,7 @@ sh_initbind() {
 	if ! (( LBIND )); then
 		msg "INFO" "$(log_info_msg "${cmsg_MontandoAmbiente[$LC_DEFAULT]} chroot")"
 		for i in /proc /sys /dev /dev/pts /dev/shm /run /tmp; do
-			mkdir -p "$dir_install$i" >>"$BOOTLOG" 2>&1
+			mkdir -p "$dir_install$i" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 		done
 
 		bindmount proc "${dir_install}/proc" -t proc -o nosuid,noexec,nodev &&
@@ -893,8 +901,8 @@ sh_stopbind() {
 		umount -r "${dir_install}/dev"
 		umount -r "${dir_install}/run"
 		umount -r "${dir_install}/tmp"
-	} >>"$BOOTLOG" 2>&1
-	nchoice=$?
+	} 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	nchoice="${PIPESTATUS[0]}"
 	evaluate_retval 0
 
 	[[ $nchoice -eq 0 ]] && LBIND=$false
@@ -908,8 +916,8 @@ sh_chroot_job() {
 	local lretval=0
 
 	msg "INFO" "$(log_info_msg "$cmsg")"
-	chroot "$dir_install" "$shell" -c "$cjob" >>"$BOOTLOG" 2>&1
-	lretval="$?"
+	chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	lretval="${PIPESTATUS[0]}"
 	evaluate_retval "$lretval" "$erro_fatal"
 	return "$lretval"
 }
@@ -1019,9 +1027,9 @@ sh_fluxboxminimal() {
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Fluxbox ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 #	sh_chroot_job "${cmsg_Gerando[$LC_DEFAULT]} menu customizado do fluxbox em $_PART_ROOT:$dir_install" "fbmenugen -i -o /home/${AsUser[cuser]}/.fluxbox/menu" "$err_not_fatal"
 	if [[ -f "$dir_install/home/${AsUser[cuser]}/.fluxbox/startup" ]]; then
-		sed -e "/xmodmap/s//# xmodmap/" -i "$dir_install/home/${AsUser[cuser]}/.fluxbox/startup" >>"$BOOTLOG" 2>&1
-		if [[ $_KEYMAP = 'br-abnt2' ]]; then
-	 		sed -e '/\# xmodmap/a setxkbmap br -variant abnt2' -i "$dir_install/home/${AsUser[cuser]}/.fluxbox/startup" >>"$BOOTLOG" 2>&1
+		sed -e "/xmodmap/s//# xmodmap/" -i "$dir_install/home/${AsUser[cuser]}/.fluxbox/startup" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+		if [[ "$_KEYMAP" = 'br-abnt2' ]]; then
+	 		sed -e '/\# xmodmap/a setxkbmap br -variant abnt2' -i "$dir_install/home/${AsUser[cuser]}/.fluxbox/startup" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 		fi
 	fi
 }
@@ -1096,9 +1104,9 @@ sh_backup_partitions() {
 
 		cdatetime=$(sh_diahora)
 		filetmp="$tmpdir/${device}.$cdatetime.dump"
-		mkdir -p "$tmpdir" >>"$BOOTLOG" 2>&1
+		mkdir -p "$tmpdir" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 		sfdisk -d "$disk" > "$filetmp" 2> /dev/null
-		#  alerta "BACKUP DA TABELA DE PARTICOES"    \
+		#  info "BACKUP DA TABELA DE PARTICOES"    \
 		#         "Dispositivo : $disk"              \
 		#         "  Backup on : ${filetmp}"         \
 		#        "$(replicate "=" 80)"               \
@@ -1199,7 +1207,7 @@ sh_choosefilesystem() {
 	Afs[ext4]="Linux Ext4"
 
 	for x in "${!Afs[@]}"; do
-		[[ $_FILESYSTEM = $x ]] && Aflag[$x]='on' || Aflag[$x]='off'
+		[[ "$_FILESYSTEM" = "$x" ]] && Aflag[$x]='on' || Aflag[$x]='off'
 		array+=("$x" "${Afs[$x]}" "${Aflag[$x]}")
 	done
 
@@ -1374,7 +1382,7 @@ sh_choosemirror() {
 		array=()
 		for m in "${Amirror[@]}"; do
 			x="$m"
-			[[ $_MIRROR == $x ]] && Aflag[$x]='on' || Aflag[$x]='off'
+			[[ "$_MIRROR" == "$x" ]] && Aflag[$x]='on' || Aflag[$x]='off'
 			array+=("$x" "$(printf "$sep%-6s$sep%-13s$sep%-23s$sep%-30s" "${Atier[$x]}" "${Aregion[$x]}" "${Alocation[$x]}" "${Arepository[$x]}")" "${Aflag[$x]}")
 		done
 
@@ -1720,20 +1728,17 @@ init() {
 sh_mkefiroaming() {
 	#Caminho de inicialização padrão/reserva
 	msg "INFO" "$(log_info_msg "${cmsg_CriandoDiretorios[$LC_DEFAULT]}: $dir_install/boot/efi/EFI/BOOT")"
-	mkdir -p "$dir_install/boot/efi/EFI/BOOT" >>"$BOOTLOG" 2>&1
-	evaluate_retval "$?" "$err_not_fatal"
+	mkdir -p "$dir_install/boot/efi/EFI/BOOT" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
 
 	msg "INFO" "$(log_info_msg "${cmsg_CopiandoCaminhoReserva[$LC_DEFAULT]}: $dir_install/boot/efi/BOOT")"
-	cp "$dir_install/boot/efi/EFI/$cnickefi/grubx64.efi" "$dir_install/boot/efi/EFI/BOOT/BOOTX64.EFI" >>"$BOOTLOG" 2>&1
-	evaluate_retval "$?" "$err_not_fatal"
+	cp "$dir_install/boot/efi/EFI/$cnickefi/grubx64.efi" "$dir_install/boot/efi/EFI/BOOT/BOOTX64.EFI" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
 }
 
 sh_bootefi() {
-	LEFI=$false
-	if efivar --list >>"$BOOTLOG" 2>&1; then
-		LEFI=$true
-	  fi
-	[[ $LEFI -eq $true ]] && return 0 || return 1
+	efivar --list 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	return "${PIPESTATUS[0]}"
 }
 
 sh_choosewm() {
@@ -1810,7 +1815,8 @@ sh_choosekeymap() {
 		LTECLADO=$true
 		return 0
 	fi
-	if localectl >>"$BOOTLOG" 2>&1; then
+	localectl 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	if [[ "${PIPESTATUS[0]}" -eq 0 ]]; then
 		items=$(localectl list-keymaps | sort -V)
 	else
 		items=$(find /usr/share/kbd/keymaps/ -iname "*.gz" -type f -printf "%f\n" | sort -V)
@@ -1863,10 +1869,10 @@ sh_copiascripts() {
 	msg "INFO" "$(log_info_msg "${cmsg_Copiando[$LC_DEFAULT]} scripts ${cmsg_Para[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
 	for script in "${cfiles[@]}"; do
 		if [[ -e "$script" ]]; then
-			cp "$script" "$dir_install/usr/bin/" >>"$BOOTLOG" 2>&1
+			cp "$script" "$dir_install/usr/bin/" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 		fi
 	done
-	evaluate_retval "$?" "$err_not_fatal"
+	evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
 }
 
 display_config() {
@@ -1878,7 +1884,7 @@ display_config() {
 	[[ -z "$LEXTRA"    ]] && local _hostname="${cmsg_naodefinido[LC_DEFAULT]}"		|| local _hostname=${_HOSTNAME}
 	[[ -z "$LTIMEZONE" ]] && local _timezone="${cmsg_naodefinido[LC_DEFAULT]}"		|| local _timezone=${_TIMEZONE}
 	SETUP="\
-                            			\n\n$(padr "${cmsg_Extra1[$LC_DEFAULT]} :" 30 ' ') \Zb\Z1${_fullname}${RESET}\
+                            			  \n$(padr "${cmsg_Extra1[$LC_DEFAULT]} :" 30 ' ') \Zb\Z1${_fullname}${RESET}\
                             			  \n$(padr "${cmsg_Extra2[$LC_DEFAULT]} :" 30 ' ') \Zb\Z1${_USER}${RESET}\
                                       \n$(padr "${cmsg_Extra3[$LC_DEFAULT]} :" 30 ' ') \Zb\Z1${_PASSWD_USER}${RESET}\
                                       \n$(padr "${cmsg_Extra4[$LC_DEFAULT]} :" 30 ' ') \Zb\Z1${_PASSWD_ROOT}${RESET}\
@@ -1939,7 +1945,10 @@ sh_checkinstall() {
 	fi
 
 	display_config
-	if conf "${cmsg_ConfSalva[LC_DEFAULT]}" "$SETUP \nAcompanhe a evolução da instalação com:\n${RED}sudo tail -f $BOOTLOG${RESET}\n\n${cmsg_descInstalar[$LC_DEFAULT]}?"; then
+	if conf "${cmsg_ConfSalva[LC_DEFAULT]}" "$SETUP " 													\
+				"\nAcompanhe a evolução da instalação: ${BLUE}sudo tail -f $BOOTLOG${RESET}"	\
+				"\ne/ou pelo terminal tty8           : ${BLUE}(ctrl+alt+f8)${RESET}"				\
+				"\n\n${BOLD}${WHITE}${cmsg_descInstalar[$LC_DEFAULT]}?"; then
 		return 0
 	fi
 	return 1
@@ -1963,13 +1972,14 @@ sh_install() {
 	sh_mkdir
 
 	msg "INFO" "$(log_info_msg "${cmsg_Descompactando[$LC_DEFAULT]} rootfs ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
-	if tar xpf "$_TARBALL_ROOTFS" --xattrs-include='*.*' --numeric-owner -C $dir_install >>"$BOOTLOG" 2>&1; then
-		evaluate_retval "$?"
+	tar xpf "$_TARBALL_ROOTFS" --xattrs-include='*.*' --numeric-owner -C $dir_install 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	if [[ "${PIPESTATUS[0]}" -eq 0 ]]; then
+		evaluate_retval "${PIPESTATUS[0]}"
 		sh_initbind
 
 		msg "INFO" "$(log_info_msg "${cmsg_Copiando[$LC_DEFAULT]} /etc/resolv.conf ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install")"
-		cp /etc/resolv.conf "$dir_install/etc/" >>"$BOOTLOG" 2>&1
-		evaluate_retval "$?"
+		cp /etc/resolv.conf "$dir_install/etc/" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+		evaluate_retval "${PIPESTATUS[0]}"
 
 		sh_update_mirror
 		sh_chroot_job "${cmsg_AtualizandoRepositorio[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -Suy xbps"
@@ -2033,7 +2043,6 @@ sh_install() {
 		sh_chmodtmp
 		sh_copiascripts
 		sh_umountfs
-		quiet=$false
 		alerta "$ccabec" "${cmsg_FinalizadaComSucesso[LC_DEFAULT]}"
 	else
 		evaluate_retval "$?" "$err_not_fatal"
@@ -2946,6 +2955,14 @@ sh_getlocale() {
 	fi
 }
 
+sh_mknodtty() {
+	if [[ -c "$LOGGER" ]]; then
+		return 0
+	fi
+	mknod -m 0620 /dev/tty8 c 4 8
+	chown --reference=/dev/tty0 /dev/tty8
+}
+
 sh_ambiente
 sh_getlocale
 sh_language
@@ -2969,5 +2986,6 @@ case $(( LINSTALL+LCHROOT )) in
 	[^1])	clear; die "${cmsg_OneOperacao[$LC_DEFAULT]}";;
 esac
 sh_checkroot
+sh_mknodtty
 for x in "${appexec[@]}"; do $x; done
 sh_enableprintk
