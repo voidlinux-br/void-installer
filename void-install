@@ -805,8 +805,8 @@ sh_update_bashrc() {
    [[ ! -e $dir_install/etc/bash/bashrc.d/bashrc.sh ]] && >| $dir_install/etc/bash/bashrc.d/bashrc.sh
 	if [[ -f $dir_install/etc/bash/bashrc.d/bashrc.sh ]]; then
 		#echo -e "PS1='\e[32;1m\u \e[33;1m→ \e[36;1m\h \e[37;0m\w\n\e[35;1m�# \e[m'" >> "$dir_install/etc/bash/bashrc.d/bashrc.sh"
-		[[ -e bashrc.sh  ]] && cp bashrc.sh $dir_install/etc/bash/bashrc.d/bashrc.sh
-		[[ .e .dircolors ]] && cp .dircolors $dir_install/root/.dircolors
+		[ -e bashrc.sh  ] && cp bashrc.sh $dir_install/etc/bash/bashrc.d/bashrc.sh
+		[ .e .dircolors ] && cp .dircolors $dir_install/root/.dircolors
 	fi
 	evaluate_retval "$?"
 }
