@@ -147,11 +147,11 @@ sh_ambiente() {
 	: echo "$LAUTO"
 	: echo "$url_google"
 
-	if [ -z "${COLUMNS}" ]; then
+	if [[ -z "${COLUMNS}" ]]; then
    	COLUMNS=$(stty size)
 	   COLUMNS=${COLUMNS##* }
 	fi
-	if [ "${COLUMNS}" = "0" ]; then
+	if [[ "${COLUMNS}" = "0" ]]; then
    	COLUMNS=80
 	fi
 	COL=$((COLUMNS - 8))
@@ -190,13 +190,13 @@ EOF
 }
 
 sh_disableprintk() {
-	if [ -w /proc/sys/kernel/printk ]; then
+	if [[ -w /proc/sys/kernel/printk ]]; then
 		echo 0 >/proc/sys/kernel/printk
 	fi
 }
 
 sh_enableprintk() {
-	if [ -w /proc/sys/kernel/printk ]; then
+	if [[ -w /proc/sys/kernel/printk ]]; then
 		echo 4 >/proc/sys/kernel/printk
 	fi
 }
@@ -230,7 +230,7 @@ sh_ascii_lines() {
 }
 
 sh_checkroot() {
-	if [ "$(id -u)" != "0" ]; then
+	if [[ "$(id -u)" != "0" ]]; then
 		die "${red} ${cmsg_operRoot[$LC_DEFAULT]}"
 	fi
 }
@@ -241,7 +241,7 @@ sh_checknet() {
 	last_msg="${cmsg_ChecandoRota[$LC_DEFAULT]} ${xurl}"
 	msg "INFO" "$last_msg" "$(log_info_msg $last_msg)"
 	response=$(curl --compressed -s -w "%{http_code}\n" -o /dev/null -k --url "${xurl}")
-	if [ "$response" -eq 000 ] && [ "$response" -eq 404 ]
+	if [[ "$response" -eq 000 ]] && [[ "$response" -eq 404 ]]
 	then
 		evaluate_retval "1"
 		die "${cmsg_SemRota[$LC_DEFAULT]} ($xurl) - ${cmsg_CheckNet[$LC_DEFAULT]}"
@@ -268,7 +268,7 @@ sh_checktarball() {
 	last_msg="${cmsg_ChecandoTarball[$LC_DEFAULT]} rootfs $_TARBALL_ROOTFS"
 	msg "INFO" "$last_msg" "$(log_info_msg $last_msg)"
 	tar -tf "$_TARBALL_ROOTFS" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-	if [[ "${PIPESTATUS[0]}" -eq 1 ]]; then
+	if ! [[ "${PIPESTATUS[0]}" -eq 0 ]]; then
 	   evaluate_retval "1" "$err_not_fatal"
 		rm -f void-x86_64-base-minimal-current.tar.xz
 		sh_downloadtarball
@@ -309,7 +309,7 @@ sh_checkDependencies() {
 
 sh_setvarcolors() {
 	# does the terminal support true-color?
-	if [[ -n $(command -v "tput") ]]; then
+	if [ -n $(command -v "tput") ]; then
 		#tput setaf 127 | cat -v  #capturar saida
 		tput sgr0 # reset colors
 		bold=$(tput bold)
@@ -508,11 +508,11 @@ evaluate_retval() {
 
 	[[ -z "$error_fatal" ]] && error_fatal=$true
 
-   if [ $# -gt 0 ]; then
+   if [[ $# -gt 0 ]]; then
       error_value="$1"
    fi
 
-	if [ "${error_value}" = 0 ]; then
+	if [[ "${error_value}" = 0 ]]; then
    	log_success_msg ''
 	else
 	  	log_failure_msg ''
@@ -571,7 +571,7 @@ readconf() {
 		read -r -p "$1 [Y/n]"
 	fi
 	[[ ${REPLY^} == "" ]] && return $false
-	[[ ${REPLY^} == N ]]  && return $true || return $false
+	[[ ${REPLY^} == N  ]]  && return $true || return $false
 }
 
 info() {
@@ -805,8 +805,8 @@ sh_update_bashrc() {
    [[ ! -e $dir_install/etc/bash/bashrc.d/bashrc.sh ]] && >| $dir_install/etc/bash/bashrc.d/bashrc.sh
 	if [[ -f $dir_install/etc/bash/bashrc.d/bashrc.sh ]]; then
 		#echo -e "PS1='\e[32;1m\u \e[33;1m→ \e[36;1m\h \e[37;0m\w\n\e[35;1m�# \e[m'" >> "$dir_install/etc/bash/bashrc.d/bashrc.sh"
-		[ -e bashrc.sh  ] && cp bashrc.sh $dir_install/etc/bash/bashrc.d/bashrc.sh
-		[ .e .dircolors ] && cp .dircolors $dir_install/root/.dircolors
+		[[ -e bashrc.sh  ]] && cp bashrc.sh $dir_install/etc/bash/bashrc.d/bashrc.sh
+		[[ -e .dircolors ]] && cp .dircolors $dir_install/root/.dircolors
 	fi
 	evaluate_retval "$?"
 }
@@ -1867,7 +1867,7 @@ sh_choosekeymap() {
 		return 0
 	fi
 	localectl 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-	if [[ "${PIPESTATUS[0]}" -eq 0 ]]; then
+	if [ "${PIPESTATUS[0]}" -eq 0 ]; then
 		items=$(localectl list-keymaps | sort -V)
 	else
 		items=$(find /usr/share/kbd/keymaps/ -iname "*.gz" -type f -printf "%f\n" | sort -V)
@@ -2026,7 +2026,7 @@ sh_install() {
 	last_msg="${cmsg_Descompactando[$LC_DEFAULT]} rootfs ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install"
 	msg "INFO" "$last_msg" "$(log_info_msg $last_msg)"
 	tar xpf "$_TARBALL_ROOTFS" --xattrs-include='*.*' --numeric-owner -C $dir_install 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-	if [[ "${PIPESTATUS[0]}" -eq 0 ]]; then
+	if [ "${PIPESTATUS[0]}" -eq 0 ]; then
 		evaluate_retval "${PIPESTATUS[0]}"
 		sh_initbind
 
