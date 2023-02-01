@@ -441,7 +441,7 @@ msg() {
 	ufmt=$(unfmt "$cfmt")
 	last_msg="$2"
 	logmessage="$ufmt $last_msg"
-	logmessage=${last_msg/INFO /}
+	logmessage=${logmessage/INFO /}
 	printf "%s\n" "$(timespec) [ $cinfo ]$ufmt ${logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 
    if (( grafico )); then
@@ -450,7 +450,7 @@ msg() {
       --colors								\
       --title     "$cinfo"				\
       --backtitle "$ccabec"			\
-      --infobox   "\nPass:${BOLD}${YELLOW}${ufmt} ${RESET}${BOLD}$logmessage"	\
+      --infobox   "\nStep:${BOLD}${YELLOW}${ufmt} ${RESET}${BOLD}$logmessage"	\
       8 100
    else
 		log_info_msg "$(fmt) ${last_msg}"
@@ -733,8 +733,9 @@ sh_update_locale() {
 	local lc="${LOCALE}.UTF-8"
 	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install"
 	msg "INFO" "$last_msg" "$(log_info_msg $last_msg)"
-	sed -e "/en_US.UTF-8 UTF-8/s/^\#//" -i "$dir_install/etc/default/libc-locales"
-	sed -e "/$lc UTF-8/s/^\#//"         -i "$dir_install/etc/default/libc-locales"
+	#sed -e "/en_US.UTF-8 UTF-8/s/^\#//" -i "$dir_install/etc/default/libc-locales"
+	sed -e "s|#\?en_US.UTF-8 UTF-8|#en_US.UTF-8 UTF-8|g" -i "$dir_install/etc/default/libc-locales"
+	sed -e "/$lc UTF-8/s/^\#//"                          -i "$dir_install/etc/default/libc-locales"
 	evaluate_retval "$?" "$err_not_fatal"
 
 	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} locale.conf ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install"
@@ -803,7 +804,9 @@ sh_update_bashrc() {
 	msg "INFO" "$last_msg" "$(log_info_msg $last_msg)"
    [[ ! -e $dir_install/etc/bash/bashrc.d/bashrc.sh ]] && >| $dir_install/etc/bash/bashrc.d/bashrc.sh
 	if [[ -f $dir_install/etc/bash/bashrc.d/bashrc.sh ]]; then
-		echo -e "PS1='\e[32;1m\u \e[33;1m→ \e[36;1m\h \e[37;0m\w\n\e[35;1m�# \e[m'" >> "$dir_install/etc/bash/bashrc.d/bashrc.sh"
+		#echo -e "PS1='\e[32;1m\u \e[33;1m→ \e[36;1m\h \e[37;0m\w\n\e[35;1m�# \e[m'" >> "$dir_install/etc/bash/bashrc.d/bashrc.sh"
+		[[ -e bashrc.sh  ]] && cp bashrc.sh $dir_install/etc/bash/bashrc.d/bashrc.sh
+		[[ .e .dircolors ]] && cp .dircolors $dir_install/root/.dircolors
 	fi
 	evaluate_retval "$?"
 }
@@ -973,6 +976,7 @@ sh_mkuser() {
 
 	if [[ -n "${AsUser[cpassroot]}" ]]; then
 		sh_chroot_job "${cmsg_AjustandoSenhaUsuario[$LC_DEFAULT]}: root" "(echo root:${AsUser[cpassroot]}) | chpasswd -m > /dev/null 2>&1"
+		sh_chroot_job "${cmsg_AjustandoSenhaUsuario[$LC_DEFAULT]}: root" "chsh -s /bin/bash root"
 	fi
 
 	if [ -d $dir_install/etc/sudoers.d ]; then
