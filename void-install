@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/01/31
+#  Altered: 2023/02/02
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -35,7 +35,7 @@ export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.82.693-20230131'
+readonly _VERSION_='0.83.693-20230202'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog tar sed cat grep chroot printf blkid fdisk lsblk parted efivar curl xz mkfs.vfat tee)
 #								 mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -583,7 +583,7 @@ info() {
 	--title  "$1"                    		\
 	--backtitle "$ccabec"            		\
 	--ok-label	"${cmsg_ok[$LC_DEFAULT]}"	\
-	--msgbox    "$2\n$3\n$4\n$5\n$6" 		\
+	--msgbox    "$2\n$3\n$4\n$5\n$6\n$7"	\
 	0 0
 }
 
@@ -1678,6 +1678,71 @@ sh_confadduser() {
 	done
 }
 
+sh_choosewifi() {
+	while true
+	do
+		local array=()
+		local i
+		local n=0
+		local nc=0
+		local result
+		local sep="\xe2\x94\x82"
+
+		last_msg="Escaneando redes wifi"
+		msg "INFO" "$last_msg" "$(log_info_msg $last_msg)"
+		wpa_cli scan_results 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+		if [[ "${PIPESTATUS[0]}" -gt 0 ]] ; then
+		   evaluate_retval "1" "$err_not_fatal"
+			info "WIFI" "${RED}O escaneamento não retornou nenhum resultado."			\
+							"Aparentemente o serviço wpa_supplicant não está rodando."	\
+							"" \
+							"Tente o seguinte:" \
+							"${BOLD}1-Use a opção Services no menu para ativar."					\
+							"2-Confira se existe um dispositivo wifi conectado na máquina"
+			return 1
+		fi
+		evaluate_retval "0"
+		scan_results=$(wpa_cli scan_results)
+		lines=$(wc -l <<< $scan_results)
+		lines=$((lines-2))
+
+		unset ARRAY_{SSID,BSID,SIGNAL,FREQUENCY,FLAGS}
+		while read -r line
+		do
+			ARRAY_SSID+=( "$(awk '{print $5" "$6" "$7}' <<< "$line")" )
+			ARRAY_BSID+=( $(cut -f1 <<< "$line") )
+			ARRAY_SIGNAL+=( $(cut -f2 <<< "$line") )
+			ARRAY_FREQUENCY+=( $(cut -f3 <<< "$line") )
+			ARRAY_FLAGS+=( $(cut -f4 <<< "$line") )
+		done < <(tail -$lines <<< "$scan_results" )
+
+		for i in "${ARRAY_SSID[@]}"
+		do
+			array[n++]="$i"
+         array[n++]=$(printf "$sep%-6s$sep%-4s$sep%3s$sep%-30s" "${ARRAY_BSID[$nc]}" "${ARRAY_SIGNAL[$nc]}" "${ARRAY_FREQUENCY[$nc]}" "${ARRAY_FLAGS[$nc]}")
+			((nc++))
+		done
+
+    	wifi=$(${DIALOG}  																			\
+					--default-item "$_DEVICE"														\
+    				--backtitle	 	"$ccabec"														\
+    				--title 			"WIFI"															\
+		   		--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"							\
+ 					--cancel-label "${cmsg_ButtonBack[$LC_DEFAULT]}"						\
+    				--colors																				\
+    				--menu 			"${cmsg_LABEL[$LC_DEFAULT]}" 0 0 10 "${array[@]}" 2>&1 >/dev/tty 	)
+
+    	exit_status=$?
+		case $exit_status in
+		"$D_ESC"|"$D_CANCEL")
+			return
+	  		;;
+		esac
+		_REDE_WIFI=$wifi
+		break
+	done
+}
+
 sh_confwifi() {
 	while true
 	do
@@ -1689,6 +1754,7 @@ sh_confwifi() {
 			--cancel-label	"${cmsg_ButtonBack[$LC_DEFAULT]}"	\
 			--backtitle		"$ccabec"									\
 			--insecure		"$@"											\
+			--extra-button	--extra-label  "Escanear wifi"		\
 			--mixedform		"${cmsg_LABEL[$LC_DEFAULT]}"			\
 			0 0 0																\
 			"${cmsg_redewifi[$LC_DEFAULT]}: "	1 1 "$_REDE_WIFI"		1 20 40 0 0		\
@@ -1706,7 +1772,11 @@ sh_confwifi() {
 					_SENHA_WIFI="${aWifi[1]}"
 					LWIFI=$true
 					;;
-			esac
+				3)
+					sh_choosewifi
+					continue
+				;;
+		esac
 		exec 3>&-
 		return 0
 	done
