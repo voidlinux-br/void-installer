@@ -1134,6 +1134,11 @@ sh_awesomeminimal() {
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Awesome ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
+sh_bspwmminimal() {
+	local apkgs=('bspwm')
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Bspwm ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+}
+
 sh_dwmminimal() {
 	local apkgs=('dwm')
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Dwm ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
@@ -1869,6 +1874,7 @@ sh_choosewm() {
 
 	aWm[tty]="${cmsg_tty[LC_DEFAULT]}"
 	aWm[awesome]="Awesome"
+	aWm[bspwm]="Bspwm"
 	aWm[dwm]="Dwm"
 	aWm[fluxbox]="Fluxbox"
 	aWm[i3wm]="i3wm"
@@ -1897,6 +1903,7 @@ sh_choosewm() {
 		0 70 0																		\
 		tty     			"${aWm[tty]}"				"${aFlag[tty]}"		\
 		awesome			"${aWm[awesome]}"			"${aFlag[awesome]}"	\
+		bspwm				"${aWm[bspwm]}"			"${aFlag[bspwm]}"		\
 		dwm				"${aWm[dwm]}"				"${aFlag[dwm]}"   	\
 		fluxbox			"${aWm[fluxbox]}"			"${aFlag[fluxbox]}"	\
 		i3wm				"${aWm[i3wm]}"				"${aFlag[i3wm]}"   	\
@@ -2148,6 +2155,7 @@ sh_install() {
 			case "$x" in
 			"tty") 		:;;
 			"awesome") 	sh_awesomeminimal;;
+			"bspwm") 	sh_bspwmminimal;;
 			"dwm") 		sh_dwmminimal;;
 			"fluxbox") 	sh_fluxboxminimal;;
 			"openbox")	sh_openboxminimal;;

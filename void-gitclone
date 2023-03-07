@@ -101,11 +101,11 @@ sh_setvarcolors() {
 		pink=$(tput setaf 5)
 		cyan=$(tput setaf 6)
 	else
-		red="\e[31m"
 		reset="\e[0m"
 		bold="\e[1m"
 		italic="\e[3m"
 		underline="\e[4m"
+		red="\e[31m"
 		green="\e[32m"
 		yellow="\e[33m"
 		blue="\e[34m"
