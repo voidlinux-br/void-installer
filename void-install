@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/02/02
+#  Altered: 2023/03/08
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -35,7 +35,7 @@ export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.83.693-20230202'
+readonly _VERSION_='0.84.699-20230307'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog tar sed cat grep chroot printf blkid fdisk lsblk parted efivar curl xz mkfs.vfat tee)
 #								 mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -68,7 +68,7 @@ declare aDisplaymanager=('lxdm' 'lxappearance' 'lxinput' 'lxrandr' 'lxtask')
 declare aMedia=('pulseaudio' 'pavucontrol' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
 declare aTerminal=('lxterminal' 'rxvt-unicode' 'xfce4-terminal')
 declare aFilemanager=('Thunar' 'pcmanfm')
-declare aFont=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf')
+declare aFont=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font')
 declare aBrowser=('firefox' 'firefox-i18n-pt-BR' 'lynx')
 declare aPerfumaria=('setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notification-daemon')
 declare aNetwork=('NetworkManager' 'network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda')
@@ -98,7 +98,7 @@ sh_ambiente() {
 	readonly false=0
 	readonly err_fatal=$true
 	readonly err_not_fatal=$false
-	readonly shell='/bin/sh'
+	readonly shell='/bin/bash'
 	readonly BOOTLOG="/tmp/void-install-$(sh_diahora).log"
 	readonly LOGGER='/dev/tty8'
 	: "${ccabec="$APP v${_VERSION_}"}"
@@ -800,13 +800,14 @@ EOF
 }
 
 sh_update_bashrc() {
+	local user="${AsUser[cuser]}"
 	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} bashrc ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install"
 	msg "INFO" "$last_msg" "$(log_info_msg $last_msg)"
    [[ ! -e $dir_install/etc/bash/bashrc.d/bashrc.sh ]] && >| $dir_install/etc/bash/bashrc.d/bashrc.sh
 	if [[ -f $dir_install/etc/bash/bashrc.d/bashrc.sh ]]; then
-		#echo -e "PS1='\e[32;1m\u \e[33;1m→ \e[36;1m\h \e[37;0m\w\n\e[35;1m�# \e[m'" >> "$dir_install/etc/bash/bashrc.d/bashrc.sh"
 		[[ -e bashrc.sh  ]] && cp bashrc.sh $dir_install/etc/bash/bashrc.d/bashrc.sh
 		[[ -e .dircolors ]] && cp .dircolors $dir_install/root/.dircolors
+		[[ -e .dircolors ]] && cp .dircolors $dir_install/etc/skel/.dircolors
 	fi
 	evaluate_retval "$?"
 }
@@ -972,6 +973,7 @@ sh_mkuser() {
 			sh_chroot_job "${cmsg_CriandoUsuario[$LC_DEFAULT]}: ${AsUser[cuser]} - ${AsUser[cfullname]}" "useradd -m ${AsUser[cuser]} -G ${AsUser[cgroups]} -p ${AsUser[cpass]}"
 		fi
 		sh_chroot_job "${cmsg_AjustandoSenhaUsuario[$LC_DEFAULT]}: ${AsUser[cuser]}" "(echo ${AsUser[cuser]}:${AsUser[cpass]}) | chpasswd -m > /dev/null 2>&1"
+		sh_chroot_job "${cmsg_AjustandoSenhaUsuario[$LC_DEFAULT]}: ${AsUser[cuser]}" "echo 'source /etc/bash/bashrc.d/bashrc.sh' >> /home/$user/.bashrc"
 	fi
 
 	if [[ -n "${AsUser[cpassroot]}" ]]; then
@@ -1136,12 +1138,29 @@ sh_awesomeminimal() {
 
 sh_bspwmminimal() {
 	local apkgs=('bspwm')
+			apkgs+=(polybar picom feh dmenu lua sxhkd wmctrl compton mpd)
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Bspwm ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_dwmminimal() {
 	local apkgs=('dwm')
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Dwm ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install" "xbps-install -y ${apkgs[*]}"
+}
+
+sh_make_bspwm_conf() {
+	local user="${AsUser[cuser]}"
+	sh_chroot_job	"${cmsg_Instalando[$LC_DEFAULT]} Bspwm ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install"	\
+						"mkdir -p /home/$user/.config/{bspwm,polybar,sxhkd} ;													\
+						cp -R /usr/share/doc/bspwm/examples/* /home/$user/.config/bspwm/;									\
+						cp /usr/share/examples/polybar/config.ini /home/$user/.config/polybar/;							\
+						cp /usr/share/doc/bspwm/examples/sxhkdrc /home/$user/.config/sxhkd/;								\
+						echo '#!/usr/bin/env bash'  >> /home/$user/.config/polybar/launch.sh ; 							\
+						echo 'polybar-msg cmd quit' >> /home/$user/.config/polybar/launch.sh ; 							\
+						echo 'echo "---" | tee -a /tmp/polybar1.log /tmp/polybar2.log' >> /home/$user/.config/polybar/launch.sh ; \
+						echo 'polybar example 2>&1 | tee -a /tmp/polybar1.log & disown' >> /home/$user/.config/polybar/launch.sh ; \
+						echo '~/.config/polybar/launch.sh' >> /home/$user/.config/bspwm/bspwmrc ; \
+						chmod +x $user:$user /home/$user/.config/polybar/launch.sh ; \
+						chown $user:$user /home/$user/.config -R"
 }
 
 sh_backup_partitions() {
@@ -1791,6 +1810,7 @@ sh_dryrun() {
 	sh_umountfs
 	sh_mountfs
 	sh_initbind
+#	sh_make_bspwm_conf
 	chroot "$dir_install" "$shell"
 	sh_umountfs
 }
@@ -2155,7 +2175,7 @@ sh_install() {
 			case "$x" in
 			"tty") 		:;;
 			"awesome") 	sh_awesomeminimal;;
-			"bspwm") 	sh_bspwmminimal;;
+			"bspwm") 	sh_bspwmminimal;sh_make_bspwm_conf;;
 			"dwm") 		sh_dwmminimal;;
 			"fluxbox") 	sh_fluxboxminimal;;
 			"openbox")	sh_openboxminimal;;
