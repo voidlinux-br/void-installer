@@ -98,9 +98,9 @@ sh_ambiente() {
 	readonly false=0
 	readonly err_fatal=$true
 	readonly err_not_fatal=$false
-	readonly shell='/bin/bash'
 	readonly BOOTLOG="/tmp/void-install-$(sh_diahora).log"
 	readonly LOGGER='/dev/tty8'
+	shell='/bin/sh'
 	: "${ccabec="$APP v${_VERSION_}"}"
 	: "${DIALOG=${DIALOG:-"dialog"}}"
 
@@ -960,6 +960,7 @@ sh_chroot_job() {
 	chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	lretval="${PIPESTATUS[0]}"
 	evaluate_retval "$lretval" "$erro_fatal"
+	shell='/bin/sh'
 	return "$lretval"
 }
 
@@ -1149,6 +1150,7 @@ sh_dwmminimal() {
 
 sh_make_bspwm_conf() {
 	local user="${AsUser[cuser]}"
+	shell='/bin/bash'
 	sh_chroot_job	"${cmsg_Instalando[$LC_DEFAULT]} Bspwm ${cmsg_Em[$LC_DEFAULT]} $_PART_ROOT:$dir_install"	\
 						"mkdir -p /home/$user/.config/{bspwm,polybar,sxhkd} ;													\
 						cp -R /usr/share/doc/bspwm/examples/* /home/$user/.config/bspwm/;									\
@@ -1398,6 +1400,7 @@ sh_choosemirror() {
 	Amirror[8]='California'
 	Amirror[9]='Kentucky'
 	Amirror[10]='NewYork'
+	Amirror[11]='World'
 
 	Atier['OuroPreto']='Tier 2'
 	Atier['PimentaBueno']='Tier 2'
@@ -1410,6 +1413,7 @@ sh_choosemirror() {
 	Atier['Kentucky']='Tier 2'
 	Atier['NewYork']='Tier 1'
 	Atier['Italy']='Tier 2'
+	Atier['World']='Tier 1'
 
 	Arepository['OuroPreto']='https://voidlinux.com.br/repo'
 	Arepository['PimentaBueno']='http://void.chililinux.com/voidlinux'
@@ -1422,6 +1426,7 @@ sh_choosemirror() {
 	Arepository['Kentucky']='https://mirror2.sandyriver.net/pub/voidlinux'
 	Arepository['NewYork']='https://mirror.clarkson.edu/voidlinux'
 	Arepository['Italy']='https://voidlinux.mirror.garr.it'
+	Arepository['World']='https://repo-fastly.voidlinux.org'
 
 	Aregion['OuroPreto']='South America'
 	Aregion['PimentaBueno']='South America'
@@ -1434,6 +1439,7 @@ sh_choosemirror() {
 	Aregion['Kentucky']='North America'
 	Aregion['NewYork']='North America'
 	Aregion['Italy']='Europe'
+	Aregion['World']='World'
 
 	Alocation['OuroPreto']='Ouro Preto/MG,Brazil'
 	Alocation['PimentaBueno']='Pimenta Bueno/RO,Brazil'
@@ -1446,6 +1452,7 @@ sh_choosemirror() {
 	Alocation['Kentucky']='Kentucky,USA'
 	Alocation['NewYork']='New York,USA'
 	Alocation['Italy']='Italy'
+	Alocation['World']='Fastly CDN'
 
 	while true; do
 		array=()
@@ -1810,7 +1817,6 @@ sh_dryrun() {
 	sh_umountfs
 	sh_mountfs
 	sh_initbind
-#	sh_make_bspwm_conf
 	chroot "$dir_install" "$shell"
 	sh_umountfs
 }
