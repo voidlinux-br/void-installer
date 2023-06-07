@@ -1,0 +1,14 @@
+Para Instalar estes softwares
+Apenas siga estes passos:
+
+Lembrando que aceita variáveis ​​de diretório de instalação:
+https://www.gnu.org/prep/standards/html_node/Directory-Variables.html
+
+Para instalar usando make:
+#make install
+
+Para desinstalar usando make:
+#make uninstall
+
+Para instalar usando bash:
+#sh install.sh

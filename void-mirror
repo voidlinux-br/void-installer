@@ -1,0 +1,1456 @@
+#!/usr/bin/env bash
+#shellcheck disable=SC2016,SC2154,SC2155,SC2145,SC2034,SC2001
+
+#  void-install
+#  Created: 2023/01/22
+#  Altered: 2023/05/13
+#
+#  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+#  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+#  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+#  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+#  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+#  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+#  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#debug
+export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
+#set -x
+
+#system
+readonly APP="${0##*/}"
+readonly _VERSION_='0.4.30-20230513'
+readonly	distro=$(uname -n)
+readonly DEPENDENCIES=(wget dialog cat sed grep printf)
+declare -A Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
+declare -A Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
+declare -A Amirrors
+declare -i quiet=0 grafico=1 ncontador=0
+declare _MIRROR="repo-fastly.voidlinux.org"
+trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
+
+function debug() {
+   whiptail                   \
+      --fb                    \
+      --clear                 \
+      --backtitle "[debug]$0" \
+      --title     "[debug]$0" \
+      --yesno     "${*}\n" \
+   0 40
+   result=$?
+   if (( result )); then
+      exit
+   fi
+   return $result
+}
+
+info_msg() {
+	printf "%s" "\033[1m$@\n\033[m"
+}
+
+cleanup() {
+	info_msg "Removing temporary files..."
+	rm -fv "$BOOTLOG"
+	exit 1
+}
+
+sh_ambiente() {
+	declare url_mirror='http://void.chililinux.com/voidlinux/'
+	readonly true=1
+	readonly false=0
+	readonly err_fatal=$true
+	readonly err_not_fatal=$false
+	readonly BOOTLOG="/tmp/void-mirror-$(sh_diahora).log"
+	: "${ccabec="$APP v${_VERSION_}"}"
+	: "${DIALOG=${DIALOG:-"dialog"}}"
+	: "${MIRRORPATH:=/usr/share/xmirror/}"
+	: "${MIRRORFILE:=mirrors.lst}"
+	: "${MIRRORURL:=https://xmirror.voidlinux.org/raw/$MIRRORFILE}"
+	: "${MIRRORLIST:=$MIRRORPATH$MIRRORFILE}"
+
+   # flag languages
+	: "${PT_BR=0}"
+	: "${EN_US=1}"
+	: "${DE_DE=2}"
+	: "${FR_FR=3}"
+	: "${LC_DEFAULT=$(sh_getlocale)}"
+
+	# flag dialog exit status codes
+	: "${D_OK=0}"
+	: "${D_CANCEL=1}"
+	: "${D_HELP=2}"
+	: "${D_EXTRA=3}"x
+	: "${D_ITEM_HELP=4}"
+	: "${D_ESC=255}"
+
+	# dialog colors
+	: "${BLACK="\Z0"}"
+	: "${GREEN="\Z2"}"
+	: "${YELLOW="\Z3"}"
+	: "${MAGENTA="\Z5"}"
+	: "${REVERSE="\Zr"}"
+	: "${UNDERLINE="\Zu"}"
+	WHITE="\Z7"
+	BLUE="\Z4"
+	CYAN="\Z6"
+	RED="\Z1"
+	BOLD="\Zb"
+	RESET="\Zn"
+	: echo "$err_fatal"
+
+	if [ -z "${COLUMNS}" ]; then
+   	COLUMNS=$(stty size)
+	   COLUMNS=${COLUMNS##* }
+	fi
+	if [ "${COLUMNS}" = "0" ]; then
+   	COLUMNS=80
+	fi
+	COL=$((COLUMNS - 8))
+	SET_COL="\\033[${COL}G" # at the $COL char
+	CURS_ZERO="\\033[0G"
+	sh_check_mirror_path
+}
+
+sh_check_mirror_path() {
+	msg "MIRROR PATH" "checking path $MIRRORPATH"
+	[[ ! -d "${MIRRORPATH}" ]] && mkdir -p "${MIRRORPATH}" >> "$BOOTLOG"
+}
+
+
+sh_disableprintk() {
+	if [ -w /proc/sys/kernel/printk ]; then
+		echo 0 >/proc/sys/kernel/printk
+	fi
+}
+
+sh_enableprintk() {
+	if [ -w /proc/sys/kernel/printk ]; then
+		echo 4 >/proc/sys/kernel/printk
+	fi
+}
+
+sh_ascii_lines() {
+	if [[ "$LANG" =~ 'UTF-8' ]]; then
+		export NCURSES_NO_UTF8_ACS=0
+	else
+		export NCURSES_NO_UTF8_ACS=1
+	fi
+}
+
+sh_checkroot() {
+	if [ "$(id -u)" != "0" ]; then
+		die "${red} ${cmsg_operRoot[$LC_DEFAULT]}"
+	fi
+}
+
+sh_checkDependencies() {
+	local d
+	local errorFound=0
+	declare -a missing
+
+	for d in "${DEPENDENCIES[@]}"; do
+		[[ -z $(command -v "$d") ]] && missing+=("$d") && errorFound=1 && printf '%s\n' "${red}${cmsg_ERRO[$LC_DEFAULT]}${reset}: ${cmsg_CommandNotFound[$LC_DEFAULT]} ${cyan}'$d'${reset}"
+	done
+	if (( errorFound )); then
+		echo "${yellow}--------------${cmsg_ImpossivelContinuar[$LC_DEFAULT]}-------------${reset}"
+		echo "${cmsg_ImpossivelContinuar1[$LC_DEFAULT]}" >&2
+		echo "${cmsg_ImpossivelContinuar2[$LC_DEFAULT]} \$PATH" >&2
+		echo "${yellow}-----------------------------------------------${reset}"
+
+		if [[ "$distro" = 'void' ]] ; then
+			echo
+			if readconf "${yellow}${cmsg_InstCommand[$LC_DEFAULT]} '${cyan}${missing[*]}${reset}'?"; then
+				if xbps-install -S "${missing[*]}"; then
+					die "${cmsg_RunNew[$LC_DEFAULT]}"
+				else
+					die "${cmsg_RunNewErro[$LC_DEFAULT]}"
+				fi
+			fi
+		fi
+		die "${cmsg_ERRO[$LC_DEFAULT]}: ${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..."
+	fi
+}
+
+sh_setvarcolors() {
+	# does the terminal support true-color?
+	if [[ -n $(command -v "tput") ]]; then
+		#tput setaf 127 | cat -v  #capturar saida
+		tput sgr0 # reset colors
+		reset=$(tput sgr0)
+		bold=$(tput bold)
+		black=$(tput setaf 0);
+		red=$(tput setaf 1)
+		green=$(tput setaf 2)
+		yellow=$(tput bold)$(tput setaf 3)
+		blue=$(tput setaf 4)
+		pink=$(tput setaf 5)
+		cyan=$(tput setaf 6)
+		white=$(tput setaf 7)
+		orange=$(tput setaf 3)
+		purple=$(tput setaf 125);
+		violet=$(tput setaf 61);
+	else
+		reset="\e[0m"
+		bold="\e[1m"
+		italic="\e[3m"
+		underline="\e[4m"
+		red="\e[31m"
+		green="\e[32m"
+		yellow="\e[33m"
+		blue="\e[34m"
+		pink="\e[35m"
+		cyan="\e[36m"
+		gray="\e[90m"
+		white="\e[97m"
+	fi
+}
+
+sh_unsetvarcolors() {
+	unset reset green red bold blue cyan
+	unset orange pink white yellow purple violeta
+	sh_logprefix
+}
+
+sh_logprefix() {
+   NORMAL="${reset}"
+   SUCCESS="${green}"
+   WARNING="${yellow}"
+   FAILURE="${red}"
+   INFO="${cyan}"
+   BRACKET="${blue}"
+   BMPREFIX=""
+   DOTPREFIX="  ${blue}::${reset} "
+   SUCCESS_PREFIX="${SUCCESS}  ↑  ${NORMAL}"
+   SUCCESS_SUFFIX="${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}"
+   FAILURE_PREFIX="${FAILURE}  ↓  ${NORMAL}"
+   FAILURE_SUFFIX="${BRACKET}[${FAILURE} FAIL ${BRACKET}]${NORMAL}"
+   WARNING_PREFIX="${WARNING}  W  ${NORMAL}"
+   WARNING_SUFFIX="${BRACKET}[${WARNING} WARN ${BRACKET}]${NORMAL}"
+   SKIP_PREFIX="${INFO}  S  ${NORMAL}"
+   SKIP_SUFFIX="${BRACKET}[${INFO} SKIP ${BRACKET}]${NORMAL}"
+   WAIT_PREFIX="${WARNING}  R  ${NORMAL}"
+   WAIT_SUFFIX="${BRACKET}[${WARNING} WAIT ${BRACKET}]${NORMAL}"
+}
+
+replicate() {
+	local Var
+	printf -v Var %"$2s" " "
+	echo "${Var// /$1}"
+}
+
+DOT() {
+	printf "%s" "${blue}:: ${reset}"
+}
+
+msg() {
+	((ncontador++))
+	logmessage=$(sed 's/\\\033[^a-zA-Z]*.//g' <<< "$last_msg")
+	printf "%s\n" "$(timespec) [ INFO ]${2}" >> "$BOOTLOG"
+
+   if (( grafico )); then
+      ${DIALOG}               \
+      --colors						\
+      --no-collapse           \
+      --title     "$1"        \
+      --backtitle "$ccabec"   \
+      --infobox   "\n$2"      \
+      8 60
+   else
+      log_info_msg "$(fmt) $2"
+   fi
+}
+
+fmt() {
+	printf "${bold}${yellow}%03d/%03d${reset}" "$ncontador" "$ncontador"
+	return $?
+}
+
+log_info_msg() {
+	last_msg="$*"
+
+	if ! (( quiet )); then
+		echo -n -e "${BMPREFIX}${@}"
+	fi
+	return 0
+}
+
+evaluate_retval() {
+   local error_value="$?"
+	local	error_fatal="$2"
+	local	cmsgdie="$3"
+
+	[[ -z "$error_fatal" ]] && error_fatal=$true
+
+   if [ $# -gt 0 ]; then
+      error_value="$1"
+   fi
+
+	if [ "${error_value}" = 0 ]; then
+   	log_success_msg ''
+	else
+   	log_failure_msg ''
+   fi
+
+	if (( error_value )) ; then
+		if (( error_fatal )) ; then
+			if [[ -z "$cmsgdie" ]]; then
+				die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..."
+			else
+				die "$cmsgdie"
+			fi
+		fi
+	fi
+	return "${error_value}"
+}
+
+log_failure_msg() {
+	if ! (( quiet )); then
+	   echo -n -e "${BMPREFIX}${@}"
+	   echo    -e  "${CURS_ZERO}${FAILURE_PREFIX}${SET_COL}${FAILURE_SUFFIX}"
+	fi
+	logmessage=$(sed 's/\\\033[^a-zA-Z]*.//g' <<< "$last_msg")
+	printf "%s\n" "$(timespec) [ FAIL ]${logmessage}" >> "$BOOTLOG"
+	replicate "#" "100" >> "$BOOTLOG"
+	return 0
+}
+
+log_success_msg() {
+	if ! (( quiet )); then
+		echo -n -e "${BMPREFIX}${@}"
+		echo    -e "${CURS_ZERO}${SUCCESS_PREFIX}${SET_COL}${SUCCESS_SUFFIX}"
+	fi
+	logmessage=$(sed 's/\\\033[^a-zA-Z]*.//g' <<< "$last_msg")
+	printf "%s\n" "$(timespec) [  OK  ]${logmessage}" >> "$BOOTLOG"
+	replicate "#" "100" >> "$BOOTLOG"
+	return 0
+}
+
+timespec() {
+	STAMP="$(date +"%b %d %T %:z") $(hostname)"
+	echo "$STAMP"
+	return 0
+}
+
+die() {
+	if test $# -ge 2; then
+		evaluate_retval 1
+	fi
+	local msg=$1; shift
+	printf "%-75s\n" "$(DOT)${bold}${red}$msg${reset}" >&2
+	sh_enableprintk
+	exit 1
+}
+
+readconf() {
+	if [[ $LC_DEFAULT -eq 0 ]]; then
+		read -r -p "$1 [S/n]"
+	else
+		read -r -p "$1 [Y/n]"
+	fi
+	[[ ${REPLY^} == "" ]] && return "$false"
+	[[ ${REPLY^} == N ]]  && return "$true" || return "$false"
+}
+
+info() {
+	${DIALOG}               					\
+	--colors											\
+	--title  	"$1"                   		\
+	--backtitle "$ccabec"            		\
+	--ok-label	"${cmsg_ok[$LC_DEFAULT]}"	\
+	--msgbox    "$2\n$3\n$4\n$5\n$6" 		\
+	10 75
+}
+
+alerta() {
+	log_success_msg "$@"
+	${DIALOG}               					\
+	--colors				                 		\
+	--title  	"$1"                 		\
+	--backtitle "$ccabec"            		\
+	--ok-label	"${cmsg_ok[$LC_DEFAULT]}"	\
+	--msgbox    "$2\n$3\n$4\n$5\n$6" 		\
+	10 75
+}
+
+conf() {
+	xtitle="$1"
+	shift
+	${DIALOG}                        						\
+			--colors					      						\
+			--title     "$xtitle"      						\
+			--backtitle "$ccabec"      						\
+			--yes-label "${cmsg_yeslabel[$LC_DEFAULT]}"	\
+			--no-label  "${cmsg_nolabel[$LC_DEFAULT]}"	\
+			--yesno     "$*"           						\
+			0 0
+	nchoice=$?
+	return "$nchoice"
+}
+
+notconf() {
+	xtitle="$1"
+	shift
+	${DIALOG}													\
+		--colors													\
+		--title     "$xtitle"								\
+		--backtitle "$ccabec"								\
+		--yes-label "${cmsg_nolabel[$LC_DEFAULT]}"	\
+		--no-label  "${cmsg_yeslabel[$LC_DEFAULT]}"	\
+		--yesno     "$*"										\
+		10 100
+		return $?
+}
+
+sh_diahora() {
+	DIAHORA=$(date +"%d%m%Y-%T" | sed 's/://g')
+	printf "%s\n" "$DIAHORA"
+}
+
+now() {
+	printf "%(%m-%d-%Y %H:%M:%S)T\n" "$(date +%s)"
+}
+
+sh_timedatectl() {
+   local _localtime
+
+	if [[ -n $(command -v timedatectl) ]]; then
+	   _localtime=$(awk '{print $3}' <(grep 'Time zone' <(timedatectl)))
+	   if [[ -n "$_localtime" ]]; then
+   	   echo "$_localtime"
+	      return 0
+		fi
+   else
+      _localtime=$(cut -d'"' -f2 <(grep TIMEZONE /etc/rc.conf))
+      if [[ -n "$_localtime" ]]; then
+         echo "$_localtime"
+         return 0
+      fi
+   fi
+   return 1
+}
+
+sh_version() {
+	printf "%s\n" "${bold}${cyan}${0##*/} v${_VERSION_}${reset}"
+}
+
+strtoarray() {
+	local anew
+	IFS=' ' read -r -a anew <<< "$1"
+	echo "${anew[@]}"
+}
+
+lenarraystr() {
+   local new=$1
+   read -ra ADDR <<< "$new"
+   echo "${#ADDR[@]}"
+}
+
+scrend() {
+	exit "$1"
+}
+
+sh_main() {
+	while true; do
+		i18=$(${DIALOG}                                          \
+			--stdout                                              \
+			--default-item "$LC_DEFAULT"									\
+		   --clear			 													\
+			--backtitle    "$ccabec"                              \
+			--title        "${welcome[$LC_DEFAULT]}"					\
+			--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"			\
+			--cancel-label "${cmsg_Exit[$LC_DEFAULT]}"            \
+			--menu         "\n${escolhaIdioma[$LC_DEFAULT]}:"		\
+			0 80 0                                                \
+			0 'Português'                                         \
+			1 'English'                                           \
+			2 'Deustch'                                           \
+			3 'Français'                                          \
+			4 'Español'                                           \
+			5 'Italiano'                                          )
+
+			exit_status=$?
+			case $exit_status in
+				"$D_ESC"|"$D_CANCEL")
+					scrend 0
+					;;
+			esac
+			LC_DEFAULT="$i18"
+			LOCALE="${Alocale[$i18]}"
+# 			sh_choosemirror "$@"
+			break
+	done
+}
+
+sh_language() {
+	langmsg=(
+		'lang=("pt_BR"
+			"en_US"
+			"de_DE"
+			"fr_FR"
+			"es_ES"
+			"it_IT")'
+		'cmsg_LABEL=("Use as teclas ${RED}PARA CIMA ${RESET}e ${RED}PARA BAIXO ${RESET}para navegar.\nUse ${RED}TAB ${RESET}para alternar entre os botões e ${RED}ENTER ${RESET}para selecionar."
+			"Use the ${RED}UP ${RESET}and ${RED}DOWN ${RESET}keys to navigate.\nUse ${RED}TAB ${RESET}to toggle between buttons and ${RED}ENTER ${RESET}to select."
+			"Verwenden Sie die Tasten ${RED}UP ${RESET}und ${RED}DOWN${RESET}, um zu navigieren.\nVerwenden Sie ${RED}TAB${RESET}, um zwischen den Schaltflächen zu wechseln, und ${RED}ENTER ${RESET}auswählen."
+			"Utilisez les touches ${RED}HAUT ${RESET}et ${RED}BAS ${RESET}pour naviguer.\nUtilisez ${RED}TAB ${RESET}pour basculer entre les boutons et ${RED}ENTRÉE ${RESET}pour sélectionner"
+			"Use las teclas ${RED}ARRIBA ${RESET}y ${RED}ABAJO ${RESET}para navegar.\nUse ${RED}TAB ${RESET}para cambiar entre botones y ${RED}ENTER ${RESET}para seleccionar."
+			"Usa i tasti ${RED}SU ${RESET}e ${RED}GIÙ ${RESET}per navigare.\nUsa ${RED}TAB ${RESET}per spostarti tra i pulsanti e ${RED}ENTER ${RESET}selezionare.")'
+		'cmsg_Definicoes=("Definições"
+			"Definitions"
+			"Definitionen"
+			"Définitions"
+			"Definiciones"
+			"Definizioni")'
+		'cmsg_naodefinido=("não definido"
+			"undefined"
+			"nicht definiert"
+			"indéfini"
+			"no definido"
+			"non definito")'
+		'cmsg_AjustandoSenhaUsuario=("Ajustando senha usuário"
+			"Setting user password"
+			"Benutzerpasswort setzen"
+			"Définition du mot de passe utilisateur"
+			"Configuración de contraseña de usuario"
+			"Impostazione password utente")'
+		'cmsg_CriandoUsuario=("Criando usuário"
+			"Creating user"
+			"Benutzer erstellen"
+			"Création d un utilisateur"
+			"Creando usuario"
+			"Creazione dell utente")'
+		'cmsg_MenuInstalacao=("MENU DE INSTALAÇÃO"
+			"INSTALLATION MENU"
+			"INSTALLATIONSMENÜ"
+			"MENU D INSTALLATION"
+			"MENÚ DE INSTALACIÓN"
+			"MENÙ INSTALLAZIONE")'
+		'cmsg_DesMontandoAmbiente=("Desmontando ambiente"
+			"Dismantling environment"
+			"Abbauumgebung"
+			"Environnement de démantèlement"
+			"Ambiente de desmantelamiento"
+			"Ambiente di smantellamento")'
+		'cmsg_MontandoAmbiente=("Montando ambiente"
+			"Setting up environment"
+			"Umgebung einrichten"
+			"Mise en place de l environnement"
+			"Configurando el entorno"
+			"Impostazione dell ambiente")'
+		'cmsg_MontandoParticao=("Montando partição"
+			"Mounting partition"
+			"Montagepartition"
+			"Cloison de montage"
+			"Tabique de montaje"
+			"Partizione di montaggio")'
+		'cmsg_Gerando=("Gerando"
+			"Generating"
+			"Erstellen"
+			"Générateur"
+			"Generando"
+			"Generando")'
+		'cmsg_Ajustando=("Ajustando"
+			"Adjusting"
+			"Anpassen"
+			"Réglage"
+			"Ajustando"
+			"Regolazione")'
+		'cmsg_Copiando=("Copiando"
+			"Copying"
+			"Kopieren"
+			"Copier"
+			"Proceso de copiar"
+			"Copiando")'
+		'cmsg_Descompactando=("Descompactando"
+			"Unpacking"
+			"Auspacken"
+			"Déballage"
+			"Desempacar"
+			"Disimbalaggio")'
+		'cmsg_Atualizando=("Atualizando"
+			"Updating"
+			"Aktualisierung"
+			"Mise à jour"
+			"Actualizando"
+			"In aggiornamento")'
+		'cmsg_Instalando=("Instalando"
+			"Installing"
+			"Installieren"
+			"Installation"
+			"Instalando"
+			"Installazione")'
+		'cmsg_Configurando=("Configurando"
+			"Setting"
+			"Einstellung"
+			"Paramètre"
+			"Paramètre"
+			"Entorno")'
+		'cmsg_Em=("em"
+			"in"
+			"in"
+			"dans"
+			"en"
+			"in")'
+		'cmsg_ERRO=("ERRO"
+			"ERROR"
+			"ERROR"
+			"ERREUR"
+			"ERROR"
+			"ERRORE")'
+		'cmsg_Aceitar=("Aceitar"
+			"Accept"
+			"Akzeptieren"
+			"Accepter"
+			"Aceptar"
+			"Accettare")'
+		'cmsg_Sair=("Sair"
+			"Exit"
+			"Verlassene"
+			"Partir"
+			"Vete"
+			"Partire")'
+		'cmsg_Instalar=("Instalar"
+			"Install"
+			"Installieren"
+			"Installer"
+			"Instalar"
+			"Installare")'
+		'cmsg_Mirror=("Mirror"
+			"Mirror"
+			"Spiegel"
+			"Miroiter"
+			"Espejo"
+			"Specchio")'
+		'cmsg_Disco=("Disco"
+			"Disk"
+			"Disko"
+			"Disco"
+			"Disco"
+			"Disco")'
+		'cmsg_Teclado=("Teclado"
+			"Keyboard"
+			"Klaviatur"
+			"Clavier"
+			"Teclado"
+			"Tastiera")'
+		'cmsg_SairSemInstalar=("Sair sem instalar"
+			"Exit without installing"
+			"Beenden ohne zu installieren"
+			"Quitter sans installer"
+			"Salir sin instalar"
+			"Uscire senza installare")'
+		'cmsg_tty=("Somente terminal, sem interface gráfica"
+			"Terminal only, no GUI"
+			"Nur Terminal, keine GUI"
+			"Terminal uniquement, pas d interface graphique"
+			"Solo terminal, sin GUI"
+			"Solo terminale, nessuna GUI")'
+		'cmsg_descDisco=("Definir disco destino"
+			"Set destination disk"
+			"Zielfestplatte festlegen"
+			"Définir le disque de destination"
+			"Establecer disco de destino"
+			"impostare il disco di destinazione")'
+		'cmsg_descFileSystem=("Definir sistema de arquivos"
+			"Set file system"
+			"Dateisystem definieren"
+			"Définir le système de fichiers"
+			"Definir sistema de archivos"
+			"Definire il file system")'
+		'cmsg_descBootLoader=("Definir bootloader"
+			"Set bootloader"
+			"Bootloader einstellen"
+			"Définir le chargeur de démarrage"
+			"Configurar el gestor de arranque"
+			"Imposta il bootloader")'
+		'cmsg_descTeclado=("Definir teclado do sistema"
+			"Set system keyboard"
+			"Systemtastatur einstellen"
+			"Définir le clavier système"
+			"Configurar el teclado del sistema"
+			"Imposta la tastiera di sistema")'
+		'cmsg_descTimezone=("Definir fuso horário"
+			"Set time zone"
+			"Zeitzone einstellen"
+			"Régler le fuseau horaire"
+			"Establecer zona horaria"
+			"Impostare il fuso orario")'
+		'cmsg_descWm=("Definir gerenciador de janelas"
+			"Set window manager"
+			"Fenstermanager definieren"
+			"Définir le gestionnaire de fenêtres"
+			"Definir administrador de ventanas"
+			"Definisci gestore di finestre")'
+		'cmsg_descWifi=("Definir rede e senha wifi"
+			"Set wifi network and password"
+			"Stellen Sie das WLAN-Netzwerk und das Passwort ein"
+			"Définir le réseau wifi et le mot de passe"
+			"Establecer red wifi y contraseña"
+			"Imposta la rete wifi e la password")'
+		'cmsg_descExtra=("Definir usuário,senha,hostname"
+			"Set user,password,hostname"
+			"Legen Sie Benutzer,Passwort und Hostname fest"
+			"Définir l utilisateur,le mot de passe,le nom d hôte"
+			"Establecer usuario,contraseña,nombre de host"
+			"Imposta utente,password,nome host")'
+		'cmsg_descMirror=("Escolher espelho"
+			"Choose mirror"
+			"Spiegel wählen"
+			"Choisir miroir"
+			"Elegir espejo"
+			"Scegli lo specchio")'
+		'cmsg_descInstalar=("Iniciar instalação"
+			"Start installation"
+			"Installation starten"
+			"Lancer l installation"
+			"Comenzar la instalación"
+			"Avviare l installazione")'
+		'cmsg_descSair=("Encerrar instalação"
+			"Close installation"
+			"Installation schließen"
+			"Fermer l installation"
+			"Cerrar instalación"
+			"Chiudere l installazione")'
+		'cmsg_InstalacaoAbortada=("Instalação abortada"
+			"Installation aborted"
+			"Installation abgebrochen"
+			"Installation interrompue"
+			"Instalación abortada"
+			"Installazione interrotta")'
+		'cmsg_ChecandoRota=("Checando rota de internet para o servidor"
+			"Checking internet route to server"
+			"Überprüfung der Internetroute zum Server"
+			"Vérification de la route Internet vers le serveur"
+			"Comprobación de la ruta de Internet al servidor"
+			"Verifica del percorso Internet verso il server")'
+		'cmsg_falhaAbertura=("ERRO: falha de abertura de"
+			"ERROR: Failed to open"
+			"FEHLER: Öffnen fehlgeschlagen"
+			"ERREUR : Échec de l ouverture"
+			"ERROR: No se pudo abrir"
+			"ERRORE: Impossibile aprire")'
+		'cmsg_operRoot=("erro: você não pode realizar esta operação a menos que seja root."
+			"error: you cannot perform this operation unless you are root."
+			"Fehler: Sie können diesen Vorgang nur ausführen, wenn Sie root sind."
+			"erreur: vous ne pouvez pas effectuer cette opération si vous n êtes pas root."
+			"error: no puede realizar esta operación a menos que sea root."
+			"errore: non puoi eseguire questa operazione se non sei root.")'
+		'cmsg_ButtonBack=("Voltar"
+			"Back"
+			"Zurückkehren"
+			"Retourner"
+			"Vuelve"
+			"Ritorno")'
+		'cmsg_info_disco=("Info disco"
+			"Disk info"
+			"Festplatteninfo"
+			"Disque va"
+			"Información del disco"
+			"Informazioni sul disco")'
+		'cmsg_ok=("Ok"
+			"Ok"
+			"Ok"
+			"D_Accord"
+			"Ok"
+			"Ok")'
+		'cmsg_Exit=("Sair"
+			"Exit"
+			"Ausgehen"
+			"Sortir"
+			"Vete"
+			"Partire")'
+		'cmsg_Select=("Selecionar"
+			"Select"
+			"Auswählen"
+			"Sélectionner"
+			"Seleccione"
+			"Selezionare")'
+		'cmsg_disco_origem=("DISCO DE ORIGEM"
+			"SOURCE DISK"
+			"QUELLDISK"
+			"DISQUE SOURCE"
+			"DISCO FONTE"
+			"DISCO SORGENTE")'
+		'cmsg_disco_destino=("DISCO DE DESTINO"
+			"DESTINATION DISK"
+			"ZIELDISKETTE"
+			"DISQUE DE DESTINATION"
+			"DISCO DE DESTINO"
+			"DISCO DI DESTINAZIONE")'
+		'cmsg_dest=("Escolha o disco de DESTINO:"
+			"Choose destination DISK:"
+			"Wahl der DESTINATION-Festplatte"
+			"Choisissez le disque DESTINATION"
+			"Elija el disco de DESTINO"
+			"Scegli il disco DESTINAZIONE")'
+		'cmsg_yeslabel=("Sim"
+			"Yes"
+			"Ja"
+			"Oui"
+			"Sí"
+			"Sì")'
+		'cmsg_nolabel=("Não"
+			"No"
+			"Nein"
+			"Nom"
+			"No"
+			"Non")'
+	'cmsg_todos_os_dados_serao_perdidos=("Todos os dados disco DESTINO serão perdidos!"
+			"All DESTINATION disk data will be lost!"
+			"Alle DESTINATION-Festplattendaten gehen verloren!"
+			"Toutes les données du disque DESTINATION seront perdues!"
+			"¡Se perderán todos los datos del disco de DESTINO!"
+			"Tutti i dati del disco DESTINATION andranno persi!")'
+	'cwarning=("** AVISO **"
+			"** WARNING **"
+			"** NOTIZ **"
+			"** AVIS **"
+			"** DARSE CUENTA **"
+			"** AVVISO **")'
+	'cmsg_DismountFileSystem=("Desmontando sistema de arquivos"
+			"Unmounting file system"
+			"Unmounten des Dateisystems"
+			"Démontage du système de fichiers"
+			"Desmontar el sistema de archivos"
+			"Smontaggio del file system")'
+	'cmsg_FinalizadaComSucesso=("Instalação finalizada com sucesso."
+			"Installation completed successfully."
+			"Installation erfolgreich abgeschlossen."
+			"L installation s est terminée avec succès."
+			"Instalación completada con éxito"
+			"Installazione completata con successo")'
+	'cmsg_ErroTar=("Falha ao descompactar o tarball"
+			"Failed to unpack the tarball."
+			"Der Tarball konnte nicht entpackt werden."
+			"Impossible de décompresser l archive tar."
+			"Error al desempaquetar el tarball"
+			"Impossibile decomprimere il tarball")'
+	'cmsg_Para=("para"
+		"for"
+		"pro"
+		"pour"
+		"por"
+		"per")'
+	'cmsg_ConfSalva=("Configurações salvas para instalação"
+		"Settings saved for installation"
+		"Für die Installation gespeicherte Einstellungen"
+		"Paramètres enregistrés pour l installation"
+		"Configuraciones guardadas para la instalación"
+		"Impostazioni salvate per l installazione")'
+	'cmsg_Operacao=("nenhuma operação especificada - use -h para ajuda"
+		"no operation specified - use -h for help"
+		"keine Operation angegeben - verwenden Sie -h für Hilfe"
+		"aucune opération spécifiée - utilisez -h pour l aide"
+		"no se especificó ninguna operación - use -h para obtener ayuda"
+		"nessuna operazione specificata - usa -h per aiuto")'
+	'cmsg_OneOperacao=("apenas uma operação pode ser usada por vez"
+		"only one operation can be used at a time"
+		"es kann jeweils nur eine Operation verwendet werden"
+		"une seule opération peut être utilisée à la fois"
+		"solo se puede usar una operación a la vez"
+		"è possibile utilizzare una sola operazione alla volta")'
+	'cmsg_TestandoDisco=("Testando disco"
+		"Testing disk"
+		"Testscheibe"
+		"Disque de test"
+		"Disco de prueba"
+		"Disco di prova")'
+	'cmsg_ContinuarParticionamento=("Continuar com o particionamento em"
+		"Continue with partitioning on"
+		"Fahren Sie mit Partitionierung fort"
+		"Continuer avec le partitionnement sur"
+		"Continuar con la partición en"
+		"Continua con il partizionamento attivo")'
+	'cmsg_FormatandoParticao=("Formatando partição"
+		"Formatting partition"
+		"Partition formatieren"
+		"Partition de formatage"
+		"Partición de formato"
+		"Partizione di formattazione")'
+	'cmsg_AtivandoServico=("Ativando serviço"
+		"Activating service"
+		"Aktivierungsdienst"
+		"Service d activation"
+		"Servicio de activación"
+		"Servizio di attivazione")'
+	'cmsg_Permissoes=("permissões"
+		"permissions"
+		"Berechtigungen"
+		"autorisations"
+		"permisos"
+		"autorizzazioni")'
+	'cmsg_ChecandoTarball=("Checando existência e integridade do tarball"
+		"Checking tarball existence and integrity"
+		"Existenz und Integrität des Tarballs prüfen"
+		"Vérification de l existence et de l intégrité de l archive tar"
+		"Comprobación de la existencia e integridad de tarball"
+		"Controllo dell esistenza e dell integrità del tarball")'
+	'cmsg_IniciandoDownload=("Iniciando download de"
+		"Starting download"
+		"Download wird gestartet"
+		"Démarrage du téléchargement"
+		"Descarga Puesta en marcha"
+		"Avvio del download")'
+	'cmsg_CriandoParticoes=("Criando partições em"
+		"Creating partitions in"
+		"Partitionen erstellen in"
+		"Création de partitions dans"
+		"Creación de particiones en"
+		"Creazione di partizioni in")'
+	'cmsg_CriandoDiretorios=("Criando diretórios em"
+		"Creating directories in"
+		"Erstellen von Verzeichnissen in"
+		"Création de répertoires dans"
+		"Creación de directorios en"
+		"Creazione di directory in")'
+	'cmsg_AtualizandoRepositorio=("Atualizando repositório em"
+		"Updating repository in"
+		"Repository aktualisieren in"
+		"Mise à jour du référentiel dans"
+		"Actualización de repositorios en"
+		"Aggiornamento dei repository in")'
+	'cmsg_InstalandoMetaPacotes=("Instalando meta pacote X em"
+		"Installing metapackage X in"
+		"Installieren von Metapaket X in"
+		"Installation du métapaquet X dans"
+		"Instalación del metapaquete X en"
+		"Installazione del metapacchetto X in")'
+	'cmsg_AtualizandoPacotesBase=("Atualizando pacotes base em"
+		"Updating base packages in"
+		"Aktualisieren von Basispaketen in"
+		"Mise à jour des packages de base dans"
+		"Actualización de paquetes base en"
+		"Aggiornamento dei pacchetti base in")'
+	'cmsg_AtualizandoPacotesAdicionais=("Atualizando pacotes adicionais em"
+		"Updating additional packages in"
+		"Aktualisieren zusätzlicher Pakete in"
+		"Mise à jour de packages supplémentaires dans"
+		"Actualización de paquetes adicionales en"
+		"Aggiornamento di pacchetti aggiuntivi in")'
+	'cmsg_part_disk=("Visualizar partições do disco"
+		"View disk partitions"
+		"Anzeigen von Festplattenpartitionen"
+		"Afficher les partitions de disque"
+		"Ver particiones de disco"
+		"Visualizza le partizioni del disco")'
+	'cmsg_TitleDisco=("** DISCO **"
+		"** DISK **"
+		"** DISKO **"
+		"** DISCO **"
+		"** DISCO **"
+		"** DISCO **")'
+	'cmsg_TitleFileSystem=("** FILESYSTEM **"
+		"** FILESYSTEM **"
+		"** DATEISYSTEM **"
+		"** SYSTÈME DE FICHIERS **"
+		"** SISTEMA DE ARCHIVOS **"
+		"** FILESYSTEM **")'
+	'cmsg_ChecandoParticoesMontadas=("Checando por partições montadas no disco"
+		"Checking for mounted partitions on disk"
+		"Suche nach gemounteten Partitionen auf der Festplatte"
+		"Vérification des partitions montées sur le disque"
+		"Comprobación de particiones montadas en el disco"
+		"Controllo delle partizioni montate su disco")'
+	'cmsg_all_mounted_part=("O disco selecionado contém partições montadas"
+		"The selected disk contains mounted partitions"
+		"Die ausgewählte Festplatte enthält gemountete Partitionen"
+		"Le disque sélectionné contient des partitions montées"
+		"El disco seleccionado contiene particiones montadas"
+		"Il disco selezionato contiene partizioni montate")'
+	'cmsgSetKeyboardLayout=("Escolher outro layout de teclado"
+		"Choose another keyboard layout"
+		"Wählen Sie ein anderes Tastaturlayout"
+		"Choisissez une autre disposition de clavier"
+		"Elija otro diseño de teclado"
+		"Scegli un altro layout di tastiera")'
+	'cmsg_LayoutAtual=("Layout atual"
+		"Current layout"
+		"Aktuelle Anordnung"
+		"Mise en page actuelle"
+		"Diseño actual"
+		"Disposizione attuale")'
+	'cmsg_umount_partition=("Aguarde, Desmontando particao de trabalho"
+		"Please wait, Unmounting work partition"
+		"Bitte warten, Arbeitspartition wird ausgehängt"
+		"Veuillez patienter, Démontage de la partition de travail"
+		"Espere, desmontando la partición de trabajo"
+		"Attendere, smontaggio della partizione di lavoro in corso")'
+	'cmsg_ErroLeituraDisco=("Erro de leitura do disco"
+		"Disk read error"
+		"Fehler beim Lesen der Festplatte"
+		"Erreur de lecture du disque"
+		"Error de lectura de disco"
+		"Errore di lettura del disco")'
+	'cmsg_SemRota=("Sem rota para o servidor"
+		"No route to server"
+		"Keine Route zum Server"
+		"Pas de route vers le serveur"
+		"Sin ruta al servidor"
+		"Nessun instradamento al server")'
+	'cmsg_CheckNet=("Check sua conexão com a internet!"
+		"Check your internet connection!"
+		"Prüfe deine Internetverbindung!"
+		"Vérifiez votre connection internet!"
+		"¡Comprueba tu conexión a Internet!"
+		"Controlla la tua connessione Internet!")'
+	'cmsg_CommandNotFound=("não encontrei o comando"
+		"i didn t find the command"
+		"ich habe den Befehl nicht gefunden"
+		"je n ai pas trouvé la commande"
+		"no encontre el comando"
+		"non ho trovato il comando")'
+	'cmsg_ImpossivelContinuar=("IMPOSSÍVEL CONTINUAR"
+		"IMPOSSIBLE TO CONTINUE"
+		"UNMÖGLICH WEITER"
+		"IMPOSSIBLE DE CONTINUER"
+		"IMPOSIBLE CONTINUAR"
+		"IMPOSSIBILE CONTINUARE")'
+	'cmsg_ImpossivelContinuar1=("Esse script precisa dos comandos listados acima"
+		"This script needs the commands listed above"
+		"Dieses Skript benötigt die oben aufgeführten Befehle"
+		"Ce script a besoin des commandes listées ci-dessus"
+		"Este script necesita los comandos enumerados anteriormente"
+		"Questo script necessita dei comandi sopra elencati")'
+	'cmsg_ImpossivelContinuar2=("Instale-os e/ou verifique se estão no seu"
+		"Install them and/or make sure they are on your"
+		"Installieren Sie sie und/oder vergewissern Sie sich, dass sie sich auf Ihrem befinden"
+		"Installez-les et/ou assurez-vous qu ils sont sur votre"
+		"Instálelos y/o asegúrese de que estén en su"
+		"Installali e/o assicurati che siano sul tuo")'
+	'cmsg_InstCommand=("Instalar o(s) comando(s)"
+		"Install the command(s)"
+		"Befehl(e) installieren"
+		"Installez la ou les commandes"
+		"Instale los comandos"
+		"Installa i comandi")'
+	'cmsg_RunNew=("INFO: Rode novamente o aplicativo"
+		"INFO: Run the application again"
+		"INFO: Führen Sie die Anwendung erneut aus"
+		"INFO : Exécutez à nouveau l application"
+		"INFO: Vuelva a ejecutar la aplicación"
+		"INFORMAZIONI: eseguire nuovamente l applicazione")'
+	'cmsg_RunNewErro=("ERRO na instalação dos comandos. Tente manualmente."
+		"ERROR installing commands. Try manually."
+		"FEHLER beim Installieren von Befehlen. Versuchen Sie es manuell."
+		"ERREUR lors de l installation des commandes. Essayez manuellement."
+		"ERROR al instalar comandos. Prueba manualmente."
+		"ERRORE durante l installazione dei comandi. Prova manualmente.")'
+	'cmsg_CopiandoCaminhoReserva=("Criando caminho de inicialização padrão/reserva para"
+		"Creating default/reserve boot path for"
+		"Erstellen eines Standard-/Reserve-Startpfads für"
+		"Création d un chemin de démarrage par défaut/réservé pour"
+		"Creación de una ruta de arranque predeterminada/reservada para"
+		"Creazione del percorso di avvio predefinito/riservato per")'
+	'cmsg_Wm=("gerenciador de janelas (wm)"
+		"window manager (wm)"
+		"Fenstermanager (wm)"
+		"gestionnaire de fenêtres (wm)"
+		"gestor de ventanas (wm)"
+		"gestore di finestre (wm)")'
+	'cmsg_NotConfDisco=("O disco não foi configurado, faça isso antes de iniciar a instalação."
+		"The disk has not been configured, please do this before starting the installation."
+		"Die Festplatte wurde noch nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Le disque n a pas été configuré, veuillez le faire avant de commencer l installation."
+		"El disco no ha sido configurado, hágalo antes de iniciar la instalación."
+		"Il disco non è stato configurato, eseguire questa operazione prima di avviare l installazione.")'
+	'cmsg_NotConfFileSystem=("O filesystem não foi configurado, faça isso antes de iniciar a instalação."
+		"The filesystem has not been configured, please do this before starting the installation."
+		"Das Dateisystem wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Le système de fichiers n a pas été configuré, veuillez le faire avant de commencer l installation."
+		"El sistema de archivos no se ha configurado, hágalo antes de iniciar la instalación."
+		"Il filesystem non è stato configurato, eseguire questa operazione prima di iniziare l installazione.")'
+	'cmsg_NotConfBootLoader=("O Bootloader não foi configurado, faça isso antes de iniciar a instalação."
+		"Bootloader has not been configured, please do this before starting the installation."
+		"Bootloader wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Bootloader n a pas été configuré, veuillez le faire avant de commencer l installation."
+		"No se ha configurado el gestor de arranque, hágalo antes de iniciar la instalación."
+		"Bootloader non è stato configurato, eseguire questa operazione prima di iniziare l installazione.")'
+	'cmsg_NotConfTeclado=("O teclado não foi configurado, faça isso antes de iniciar a instalação."
+		"The keyboard has not been configured, please do this before starting the installation."
+		"Die Tastatur wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Le clavier n a pas été configuré, veuillez le faire avant de commencer l installation."
+		"El teclado no ha sido configurado, hazlo antes de iniciar la instalación."
+		"La tastiera non è stata configurata, farlo prima di iniziare l installazione.")'
+	'cmsg_NotConfTimezone=("O timezone não foi configurado, faça isso antes de iniciar a instalação."
+		"The timezone has not been configured, do this before starting the installation."
+		"Die Zeitzone wurde nicht konfiguriert, tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Le fuseau horaire n a pas été configuré, faites-le avant de commencer l installation."
+		"La zona horaria no ha sido configurada, hazlo antes de iniciar la instalación."
+		"Il fuso orario non è stato configurato, farlo prima di iniziare l installazione.")'
+	'cmsg_NotConfWm=("O Gerenciador de Janelas não foi configurado, faça isso antes de iniciar a instalação."
+		"Window Manager has not been configured, please do this before starting the installation."
+		"Window Manager wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Le gestionnaire de fenêtres n a pas été configuré, veuillez le faire avant de commencer l installation."
+		"El Administrador de ventanas no se ha configurado, hágalo antes de comenzar la instalación."
+		"Window Manager non è stato configurato, eseguire questa operazione prima di iniziare l installazione.")'
+	'cmsg_NotConfWifi=("Rede wifi não foi configurada, faça isso antes de iniciar a instalação."
+		"WiFi network has not been configured, do this before starting the installation."
+		"Das WiFi-Netzwerk wurde nicht konfiguriert, tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Le réseau WiFi n a pas été configuré, faites-le avant de commencer l installation."
+		"No se ha configurado la red WiFi, hazlo antes de iniciar la instalación."
+		"La rete WiFi non è stata configurata, farlo prima di iniziare l installazione.")'
+	'cmsg_NotConfExtra=("Extra não foi configurado, faça isso antes de iniciar a instalação."
+		"Extra has not been configured, please do this before starting the installation."
+		"Extra wurde nicht konfiguriert, bitte tun Sie dies, bevor Sie mit der Installation beginnen."
+		"Extra n a pas été configuré, veuillez le faire avant de commencer l installation."
+		"Extra no se ha configurado, hágalo antes de comenzar la instalación."
+		"Extra non è stato configurato, eseguire questa operazione prima di iniziare l installazione.")'
+	'cmsg_Usage1=("Instalar"
+		"Install"
+		"Installieren"
+		"Installer"
+		"Instalar"
+		"Installare")'
+	'cmsg_Usage2=("Rodar chroot na partição instalada"
+		"Run chroot on installed partition"
+		"Führen Sie Chroot auf der installierten Partition aus"
+		"Exécutez chroot sur la partition installée"
+		"Ejecute chroot en la partición instalada"
+		"Esegui chroot sulla partizione installata")'
+	'cmsg_Usage3=("Ativar modo gráfico"
+		"Enable graphics mode"
+		"Grafikmodus aktivieren"
+		"Activer le mode graphique"
+		"Habilitar el modo de gráficos"
+		"Abilitare la modalità grafica")'
+	'cmsg_Usage4=("Saída resumida"
+		"Summarized output"
+		"Zusammengefasste Ausgabe"
+		"Sortie résumée"
+		"Salida resumida"
+		"Riepilogo dell output")'
+	'cmsg_Usage5=("Mostrar versão do aplicativo"
+		"Show app version"
+		"App-Version anzeigen"
+		"Afficher la version de l application"
+		"Mostrar versión de la aplicación"
+		"Mostra la versione dell app")'
+	'cmsg_Usage6=("Remove cores da saída"
+		"Remove colors from output"
+		"Farben aus der Ausgabe entfernen"
+		"Supprimer les couleurs de la sortie"
+		"Eliminar colores de la salida"
+		"Rimuovi i colori dall output")'
+	'cmsg_Usage7=("Este help"
+		"This help"
+		"Diese Hilfe"
+		"Cette aide"
+		"Es ayuda"
+		"È aiuto")'
+	'cmsg_Extra1=("Nome Completo"
+		"Full Name"
+		"Vollständiger Name"
+		"Nom et prénom"
+		"Nombre completo"
+		"Nome e cognome")'
+	'cmsg_Extra2=("Nome usuario"
+		"Username"
+		"Nutzername"
+		"Nom d utilisateur"
+		"Nombre de usuario"
+		"Nome utente")'
+	'cmsg_Extra3=("Senha usuario"
+		"Password user"
+		"Kennwortbenutzer"
+		"Mot de passe utilisateur"
+		"Contraseña de usuario"
+		"Password utente")'
+	'cmsg_Extra4=("Senha root"
+		"Root password"
+		"Root-Passwort"
+		"Mot de passe racine"
+		"Contraseña raíz"
+		"Password di root")'
+	'cmsg_Extra6=("Disco destino"
+		"Target disk"
+		"Zielfestplatte"
+		"Disque cible"
+		"Disco de destino"
+		"Disco di destinazione")'
+	'cmsg_Extra11=("Gerenciador Janelas"
+		"Window Manager"
+		"Fenstermanager"
+		"Gestionnaire Fenêtres"
+		"Administrador de Windows"
+		"Gestore di Windows")'
+	'cmsg_Bios=("Sistema Básico de Entrada e Saída"
+		"Basic Entry and Exit System"
+		"Grundlegendes Ein- und Ausstiegssystem"
+		"Système d entrée et de sortie de base"
+		"Sistema Básico de Entrada y Salida"
+		"Sistema di ingresso e uscita di base")'
+	'cmsg_Efi=("Interface de Firmware Extensível"
+		"Extensible Firmware Interface"
+		"Erweiterbare Firmware-Schnittstelle"
+		"Interface de micrologiciel extensible"
+		"Interfaz de Firmware Extensible"
+		"Interfaccia Firmware Estensibile")'
+	'cmsg_ExtraEfi=("Detectado boot via EFI \n↓ é recomendável instalar ↓"
+		"EFI boot detected \n↓ install recommended ↓"
+		"EFI-Start erkannt \n↓ Installation empfohlen ↓"
+		"Démarrage EFI détecté \n↓ installation recommandée ↓"
+		"Arranque EFI detectado \n↓ instalación recomendada ↓"
+		"Avvio EFI rilevato \n↓ installazione consigliata ↓")'
+	'cmsg_ExtraNotEfi=("EFI não detectado \n↓ é recomendável instalar BIOS ↓"
+		"EFI not detected \n↓ it is recommended to install BIOS ↓"
+		"EFI nicht erkannt \n↓ Es wird empfohlen, das BIOS zu installieren ↓"
+		"EFI non détecté \n↓ il est recommandé d installer le BIOS ↓"
+		"EFI no detectado \n↓ se recomienda instalar BIOS ↓"
+		"EFI non rilevato \n↓ si consiglia di installare il BIOS ↓")'
+	'welcome=("Bem-vindo ao $APP"
+		"Welcome to the $APP"
+		"Willkommen beim $APP"
+		"Bienvenue dans le programme $APP"
+		"Bienvenido al $APP"
+		"Benvenuto nel programma $APP")'
+	'escolhaIdioma=("Escolha o idioma"
+		"Choose language"
+		"Sprache wählen"
+		"Choisissez la langue"
+		"Elige lengua"
+		"Scegli la lingua")'
+	'cmsg_adduser1=("Usuário não pode ser root! Novamente?"
+		"User cannot be root! Again?"
+		"Benutzer kann nicht root sein! Nochmal?"
+		"L utilisateur ne peut pas être root ! De nouveau?"
+		"¡El usuario no puede ser root! ¿Otra vez?"
+		"L utente non può essere root! Di nuovo?")'
+	'cmsg_adduser2=("Usuário não pode ser vazio! Novamente?"
+		"User cannot be empty! Again?"
+		"Benutzer darf nicht leer sein! Nochmal?"
+		"L utilisateur ne peut pas être vide ! De nouveau?"
+		"¡El usuario no puede estar vacío! ¿Otra vez?"
+		"L utente non può essere vuoto! Di nuovo?")'
+	'cmsg_adduser3=("Senha do usuário não pode ser vazia! Novamente?"
+		"User password cannot be empty! Again?"
+		"Das Benutzerpasswort darf nicht leer sein! Nochmal?"
+		"Le mot de passe utilisateur ne peut pas être vide ! De nouveau?"
+		"¡La contraseña de usuario no puede estar vacía! ¿Otra vez?"
+		"La password utente non può essere vuota! Di nuovo?")'
+	'cmsg_adduser4=("Senha de root não pode ser vazia! Novamente?"
+		"Root password cannot be empty! Again?"
+		"Das Root-Passwort darf nicht leer sein! Nochmal?"
+		"Le mot de passe root ne peut pas être vide ! De nouveau?"
+		"¡La contraseña raíz no puede estar vacía! ¿Otra vez?"
+		"La password di root non può essere vuota! Di nuovo?")'
+	'cmsg_adduserCancel=("Cadastro de usuário cancelado"
+		"Canceled user registration"
+		"Abgebrochene Benutzerregistrierung"
+		"Enregistrement de l utilisateur annulé"
+		"Registro de usuario cancelado"
+		"Registrazione utente annullata")'
+	'cmsg_redewifi=("Rede wifi"
+		"Wifi network"
+		"Wifi-Netzwerk"
+		"Réseau Wi-Fi"
+		"Red WiFi"
+		"Rete Wi-Fi")'
+	'cmsg_senhawifi=("Senha wifi"
+		"Wifi password"
+		"WLAN Passwort"
+		"Mot de passe WiFi"
+		"Contraseña de wifi"
+		"Password Wi-Fi")'
+	'cmsg_mkfs=("↓ é recomendável ext4 ↓"
+		"↓ ext4 is recommended ↓"
+		"↓ ext4 wird empfohlen ↓"
+		"↓ ext4 est recommandé ↓"
+		"↓ Se recomienda ext4 ↓"
+		"↓ Si consiglia ext4 ↓")'
+
+	)
+	for xmsg in "${langmsg[@]}"; do eval "$xmsg"; done
+	#echo "lang       ${#lang[@]} ${lang[@]} ${lang[$PT_BR]} ${lang[$EN_US]}"
+	#echo "cmsg_ERRO ${#cmsg_ERRO[@]} ${cmsg_ERRO[@]} ${cmsg_ERRO[$PT_BR]} ${cmsg_ERRO[$EN_US]}"
+}
+
+sh_getlocale() {
+	local lc
+
+	LC_DEFAULT="${Aidioma[pt_BR]}"
+	LOCALE="pt_BR"
+	if lc=$(grep _ <(locale -a) | head -1 | cut -c1-5); then
+		LOCALE="$lc"
+		LC_DEFAULT="${Aidioma[$lc]}"
+	fi
+}
+
+sh_getRegion() {
+   case "$1" in
+      AF) echo "Africa" ;;
+      AN) echo "Antarctica" ;;
+      AS) echo "Asia" ;;
+      EU) echo "Europe" ;;
+      NA) echo "North America" ;;
+      OC) echo "Oceania" ;;
+      SA) echo "South and Central America" ;;
+      World) echo "Globally Available" ;;
+      *) echo "$1" ;;
+   esac
+}
+
+sh_getMirrors() {
+	local line region url location tier var
+
+	if ! test -e "$MIRRORLIST"; then
+		alerta "MIRRORS LIST" "\n${RED}Unable to continue!${RESET}"\
+									 "Mirror list file not found in path : ${BLUE}$MIRRORLIST${RESET}"
+		return 1
+	fi
+
+   while read -r line; do
+      [[ "$line" = '#'* ]] && continue
+      while IFS=$'\t' read -r region url location tier; do
+			var="${url##http://}"
+			var="${var##https://}"
+			var="${var%%\/*}"
+		   Amirrors+=(["$var"]="$url|$(sh_getRegion "$region")|$location|$tier|")
+      done <<< "$line"
+   done < "$MIRRORLIST"
+   return 0
+}
+
+sh_download_mirrors_list() {
+	msg "DOWNLOAD MIRRORS LIST" "fetching new mirror list at ${MIRRORURL}"
+	if ! wget --quiet -c "$MIRRORURL" -O "$MIRRORLIST" &>/dev/null; then
+		alerta "DOWNLOAD MIRRORS LIST" \
+				"\nunable to fetch new mirror list from $MIRRORURL"\
+				"${RED}Check your internet!${RESET}"\
+				"Attempt to use local list."
+		return 1
+	fi
+	return 0
+}
+
+sh_splitarray() {
+	local str="$1"
+	local pos="$2"
+	local sep="${3:-'|'}"
+	local array
+
+	[[ $# -eq 3 && "$pos" = "|" && "$sep" =~ ^[0-9]+$ ]] && { sep="$2"; pos="$3";}
+	[[ $# -eq 2 && "$pos" = "$sep"                    ]] && { sep="$pos"; pos=1;}
+	[[ $# -eq 1 || ! "$pos" =~ ^[0-9]+$               ]] && { pos=1; }
+
+	IFS="$sep" read -r -a array <<< "$str"
+	echo "${array[pos-1]}"
+}
+
+sh_choosemirror() {
+	declare -A Aflag
+	local exit_status
+	local array
+	local x
+	local sep="\xe2\x94\x82"
+	local fields
+	local -i REPOSITORY=1
+	local -i REGION=2
+	local -i LOCATION=3
+	local -i TIER=4
+
+	Amirrors+=([void.chililinux.com_2]="https://void.chililinux.com/voidlinux/|South and Central America|Pimenta Bueno, Brazil|2|")
+	Amirrors+=([void.chilios.com.br]="https://void.chilios.com.br/voidlinux/|South and Central America|Pimenta Bueno, Brazil|2|")
+	Amirrors+=([void.chilios.com.br_2]="http://void.chilios.com.br/voidlinux/|South and Central America|Pimenta Bueno, Brazil|2|")
+
+	while true; do
+		array=()
+		sorted_list=$(for key in "${!Amirrors[@]}"; { echo "$key|${Amirrors[$key]}"; } | sort -t\| -k5 -k3)
+		while IFS='|' LC_ALL=C read -r -a fields; do
+			key="${fields[0]}"
+			[[ "$_MIRROR" = "$key" ]] && Aflag["$key"]='on' || Aflag["$key"]='off'
+         array+=("$key" "$(printf "$sep%-6s$sep%-25s$sep%-23s$sep%-s"\
+											 "Tier ${fields[TIER]}"\
+											 "${fields[REGION]}"\
+											 "${fields[LOCATION]}"\
+											 "${fields[REPOSITORY]}")"\
+											 "${Aflag[$key]}")
+		done <<< "${sorted_list[@]}"
+
+		mirror=$(${DIALOG} --title "** MIRROR **"				\
+			--backtitle "$ccabec"									\
+			--default-item "${_MIRROR}"							\
+			--colors														\
+			--clear														\
+			--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"		\
+			--ok-label 	"${cmsg_Aceitar[$LC_DEFAULT]}"		\
+			--extra-button	--extra-label  "void-testmirror"	\
+			--checklist "${cmsg_LABEL[$LC_DEFAULT]}"			\
+			0 0 0 "${array[@]}" 2>&1 >/dev/tty 					)
+
+		exit_status=$?
+		case $exit_status in
+			"$D_ESC"|"$D_CANCEL")
+				return 1
+				;;
+			3)
+				oldgrafico=$grafico; grafico=$true;
+				if [[ -n $(command -v void-testmirror) || -n $(command -v ./void-testmirror) ]]; then
+					msg "** MIRROR ** void-testmirror" "$(log_info_msg "Wait... ${cmsg_Gerando[$LC_DEFAULT]} test with void-mirror ${xurl}")"
+					result=$(void-testmirror --nocolor --ping --quiet);
+				   evaluate_retval "$?" "$err_not_fatal"
+					[[ -z "$result" ]] && result="${RED}ERRO DESCONHECIDO: void-testmirror não retornou resultado${RESET}"
+					info "** MIRROR ** void-testmirror" "\n${BOLD}${WHITE}$result"
+				else
+					msg "INFO" "$(log_info_msg "Wait... ${cmsg_Gerando[$LC_DEFAULT]} test with void-mirror ${xurl}")"
+				   evaluate_retval "1" "$err_not_fatal"
+					info "** MIRROR ** void-testmirror" "\n${RED}void-testmirror não foi localizado no \$PATH${RESET}" \
+																	"${RED}void-testmirror não foi localizado em $PWD!${RESET}"
+				fi
+				grafico=$oldgrafico
+				continue
+				;;
+		esac
+		_MIRROR=($(strtoarray "$mirror"))
+		if conf "** MIRROR **"																					\
+					"\n${BOLD}${CYAN}Mirror     : $_MIRROR" 												\
+					"\n${BOLD}${CYAN}Url Mirror : $url_mirror" 											\
+					"\n${BOLD}${CYAN}Region     : $(sh_splitarray "${Amirrors[$mirror]}" 2)"	\
+					"\n${BOLD}${CYAN}Location   : $(sh_splitarray "${Amirrors[$mirror]}" 3)\n"	\
+					"\n${RED}Deseja definir/alterar o mirror deste host para o escolhido?${RESET}\n\n"; then
+
+		   mkdir -p "/etc/xbps.d/"
+		   >| "/etc/xbps.d/00-repository-main.conf"
+			for i in "${_MIRROR[@]}"; do
+				url_mirror="$(sh_splitarray "${Amirrors[$i]}" 1)"
+				msg "INFO" "$(log_info_msg "${cmsg_Configurando[$LC_DEFAULT]} ${cmsg_Mirror[$LC_DEFAULT],,} ${cmsg_Em[$LC_DEFAULT]}: /etc/xbps.d/00-repository-main.conf")"
+				echo repository="${url_mirror}current"							>> "/etc/xbps.d/00-repository-main.conf"
+				echo repository="${url_mirror}current/nonfree"				>> "/etc/xbps.d/00-repository-main.conf"
+				echo repository="${url_mirror}current/multilib"				>> "/etc/xbps.d/00-repository-main.conf"
+				echo repository="${url_mirror}current/multilib/nonfree"	>> "/etc/xbps.d/00-repository-main.conf"
+			   evaluate_retval "$?"
+			done
+		fi
+		return 0
+	done
+}
+
+sh_ambiente
+sh_getlocale
+sh_language
+sh_setvarcolors
+sh_ascii_lines
+sh_logprefix
+sh_checkDependencies
+sh_disableprintk
+[[ "$1" = @(-V|-v|version|-version|--version) ]] && { sh_version; exit $(( $# ? 0 : 1 ));}
+sh_main "$@"
+sh_checkroot
+sh_download_mirrors_list
+sh_getMirrors
+sh_choosemirror "$@"
+sh_enableprintk

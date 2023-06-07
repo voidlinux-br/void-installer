@@ -1,0 +1,46 @@
+2023-05-08 seg 21:01 UTC-0400 Vilmar Catafesta <vcatafesta@gmail.com>
++ void-xrandr				#app for xrandr
+2023-04-30 dom 23:42 UTC-0400 Vilmar Catafesta <vcatafesta@gmail.com>
++ bashrc.sh					#several updates
++ void-install				#several updates
++ void-clonedisk			#fix issues
++ void-gitclone			#fix issues
++ void-mirror				#fix issues
++ void-remove-vg			#fix issues
++ void-services			#fix issues
++ void-testmirror			#fix issues
++ void-wifi					#fix issues
+2023-04-28 sex 16:48 UTC-0400 Vilmar Catafesta <vcatafesta@gmail.com>
++ void-install				#several updates
++ void-remove-vg
++ void-clonedisk
+
+2023-04-04 sex 11:45 UTC-0400 Vilmar Catafesta <vcatafesta@gmail.com>
++ void-mirror				#several updates
++ void-testmirror			#several updates
+
+2023-31-01 ter 21:37 UTC-0400 Vilmar Catafesta <vcatafesta@gmail.com>
++ bashrc.sh
++ .dircolors
+
+2023-25-01 qua 12:03 UTC-0400 Vilmar Catafesta <vcatafesta@gmail.com>
++ void-services
+
+2023-22-01 dom 23:25 UTC-0400 Vilmar Catafesta <vcatafesta@gmail.com>
++ void-mirror
+
+2023-22-01 dom 18:33 UTC-0400 Vilmar Catafesta <vcatafesta@gmail.com>
++ void-testmirror
++ void-wifi
++ void-x86_64-base-minimal-current.tar.xz
+
+2023-13-01 sex 13:01 UTC-0400 Vilmar Catafesta <vcatafesta@gmail.com>
++ README file
++ LICENSE file
++ MAINTAINERS file
++ INSTALL file
++ Makefile file
++ README.md file
++ ChangeLog file
++ install.sh
++ .gitignore
