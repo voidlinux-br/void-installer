@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/06/06
+#  Altered: 2023/06/11
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -39,7 +39,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='1.6.706-20230606'
+readonly _VERSION_='1.6.708-20230611'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -1472,6 +1472,16 @@ sh_dwmminimal() {
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Dwm ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
+sh_lxdeminimal() {
+	local apkgs=('lxde')
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Lxde ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${apkgs[*]}"
+}
+
+sh_lxqtminimal() {
+	local apkgs=('lxqt')
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Lxqt ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${apkgs[*]}"
+}
+
 sh_make_bspwm_conf() {
 	local user="${AsUser[cuser]}"
 	shell='/bin/bash'
@@ -2545,6 +2555,8 @@ sh_choosewm() {
 	aWm[fluxbox]="Fluxbox"
 	aWm[i3wm]="i3wm"
 	aWm[gnome]="Gnome"
+	aWm[lxde]="The 'Lightweight X11 Desktop Environment'"
+	aWm[lxqt]="lxqt"
 	aWm[mate]="Mate"
 	aWm[openbox]="Openbox"
 	aWm[plasma]="Kde Plasma-Desktop"
@@ -2574,6 +2586,8 @@ sh_choosewm() {
 		fluxbox			"${aWm[fluxbox]}"			"${aFlag[fluxbox]}"	\
 		gnome				"${aWm[gnome]}"			"${aFlag[gnome]}"  	\
 		i3wm				"${aWm[i3wm]}"				"${aFlag[i3wm]}"   	\
+		lxde				"${aWm[lxde]}"				"${aFlag[lxde]}"   	\
+		lxqt				"${aWm[lxqt]}"				"${aFlag[lxqt]}"   	\
 		mate				"${aWm[mate]}"				"${aFlag[mate]}"   	\
 		openbox			"${aWm[openbox]}" 		"${aFlag[openbox]}"	\
 		plasma			"${aWm[plasma]}"			"${aFlag[plasma]}"	\
@@ -2882,7 +2896,7 @@ sh_extract_root_fs() {
 sh_install() {
 #	local abase=(base-system dbus lvm2 wireless_tools nano grub os-prober efivar efibootmgr grub-x86_64-efi
 #					 parted xz zstd wget curl dialog bash-completion git bc geoip geoip-data geoipupdate iputils)
-	local akernel=(linux dbus)
+	local akernel=(linux dbus wifi-firmware)
 	local abase=(cryptsetup lvm2 wireless_tools xz wpa_supplicant)
 	local agrub=(grub os-prober)
 
@@ -2919,7 +2933,7 @@ sh_install() {
 				sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-remove -oOy"
 			fi
 		fi
-		sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${akernel[*]}"
+		sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel and firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${akernel[*]}"
 		sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${abase[*]} ${agrub[*]}"
 		sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install" "xbps-install -y $_PKGS" "$err_not_fatal"
 #		sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y $_EXTRAS" "$err_not_fatal"
@@ -2964,6 +2978,8 @@ sh_install() {
 			"sway")		sh_swayminimal;;
 			"twm")		sh_twmminimal;;
 			"mate")		sh_mateminimal;;
+			"lxde")		sh_lxdeminimal;;
+			"lxqt")		sh_lxqminimal;;
 			esac
 		done
 
