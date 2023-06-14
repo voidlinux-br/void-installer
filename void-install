@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/06/11
+#  Altered: 2023/06/13
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -39,7 +39,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='1.6.709-20230611'
+readonly _VERSION_='1.6.710-20230613'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -70,7 +70,7 @@ declare -ga aBrowser=('firefox' 'firefox-i18n-pt-BR')
 declare -ga aBackground=('gnome-backgrounds' 'mate-backgrounds')
 declare -ga aDisplaymanager=('lxdm' 'lxappearance' 'lxinput' 'lxrandr' 'lxtask')
 declare -ga aFilemanager=('Thunar' 'pcmanfm' 'octoxbps')
-declare -ga aFont=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font' 'noto-fonts-emoji' 'font-emoji-one-color' 'ttf-ubuntu-font-family')
+declare -ga aFont=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font' 'noto-fonts-emoji' 'font-emoji-one-color' 'ttf-ubuntu-font-family' 'unicode-emoji')
 declare -ga aMedia=('pulseaudio' 'pavucontrol' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
 declare -ga aMicrode=('intel-ucode' 'linux-firmware-amd')
 declare -ga aNetwork=('NetworkManager' 'network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda')
