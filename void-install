@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/06/14
+#  Altered: 2023/06/15
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -39,7 +39,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='1.7.799-20230614'
+readonly _VERSION_='1.7.800-20230615'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -78,7 +78,7 @@ declare -ga aPerfumaria=('setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-not
 declare -ga aPrinter=('cups' 'system-config-printer' 'system-config-printer-udev' 'splix' 'samsung-unified-driver' 'brother-brlaser' 'cups-pdf')
 declare -ga aTerminal=('lxterminal' 'rxvt-unicode' 'xfce4-terminal')
 declare -ga aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs')
-declare _PKGS='vim nano lynx neofetch pfetch wget curl bc geoip geoip-data geoipupdate iputils tree bat bash-completion vsv vpm opendoas'
+declare _PKGS='vim nano lynx pv neofetch pfetch wget curl bc geoip geoip-data geoipupdate iputils tree bat bash-completion vsv vpm opendoas'
 declare _EXTRAS='nano-syntax-highlighting'
 #
 declare _DEVICE='/dev/sdX'
@@ -2621,7 +2621,7 @@ sh_choosewm() {
 		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"						\
 		--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"					\
 		--checklist 	"${cmsg_LBL_check[$LC_DEFAULT]}"					\
-		0 70 0																		\
+		0 70 16																	\
 		tty     			"${aWm[tty]}"				"${aFlag[tty]}"		\
 		awesome			"${aWm[awesome]}"			"${aFlag[awesome]}"	\
 		bspwm				"${aWm[bspwm]}"			"${aFlag[bspwm]}"		\
