@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/06/11
+#  Altered: 2023/06/26
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -39,7 +39,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='1.6.709-20230611'
+readonly _VERSION_='1.8.876-20230626'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -49,7 +49,7 @@ readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk pa
 #readonly _TARBALL_ROOTFS=void-x86_64-base-system-current.tar.xz
 readonly _TARBALL_ROOTFS=void-x86_64-base-custom-current.tar.xz
 #
-declare -i quiet=0 grafico=0 ncounter=0
+declare -i quiet=0 grafico=0 ncounter=0 njobs=41
 declare -i LAUTO=1 LINSTALL=0 LCHROOT=0 LBIND=0 LMKPART=0 LEFI=0 LBIOS=1 LMKPARTED=0 LOSPROBER=0 LFDE=0 LVM=0 LFS=0 LPARTITION=0 LTABLE=0
 declare -gA AsUser=([cpass]='void' [cpassroot]='voidlinux' [chostname]='voidlinux' [cgroups]='wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder')
 declare -gA Amntpoint
@@ -60,7 +60,7 @@ declare -gA AARRAY_PART_DEVICES
 declare -gA AARRAY_VG_DEVICES
 declare -gA AConfFde=([partition]='' [vg]='voidvm' [passphrase]='voidlinux' [verifypassphrase]='voidlinux' [lvroot]='25%' [lvswap]='2%' [lvvar]='' [lvhome]='100%')
 declare -gA AConfDisk=([_DEVICE]='/dev/sdX' [_FILESYSTEM]='ext4' [_DISKTABLE]='' [_BOOTLOADER]='/dev/sdX' [_OSPROBER]=0)
-declare -gA AConfLocale=([_TIMEZONE]='America/Sao_Paulo' [_KEYMAP]='br-abnt2' [_CLOCK]='UTC')
+declare -gA AConfLocale=([_TIMEZONE]='America/Sao_Paulo' [_KEYMAP]='br-abnt2' [_CLOCK]='UTC' [_FONT]='Lat2-Terminus16')
 declare -gA AConfMirror=([_SOURCE]='network' [_MIRROR]='repo-fastly.voidlinux.org' [url_mirror]='https://repo-fastly.voidlinux.org' [location]='Fastly Global CDN')
 declare -gA AConfWifi=([_NETWORK]='wifi_ssid' [_PASSWORD]='wifi_password')
 declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
@@ -68,17 +68,18 @@ declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT
 declare -ga aArchiver=('xarchiver' 'unrar' 'zip' 'p7zip' 'unzip' 'bzip2')
 declare -ga aBrowser=('firefox' 'firefox-i18n-pt-BR')
 declare -ga aBackground=('gnome-backgrounds' 'mate-backgrounds')
+declare -ga aBluetooth=('bluez' 'bluez-alsa' 'bluedevil' 'blueman' 'bluez-cups')
 declare -ga aDisplaymanager=('lxdm' 'lxappearance' 'lxinput' 'lxrandr' 'lxtask')
 declare -ga aFilemanager=('Thunar' 'pcmanfm' 'octoxbps')
-declare -ga aFont=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font' 'noto-fonts-emoji' 'font-emoji-one-color' 'ttf-ubuntu-font-family')
-declare -ga aMedia=('pulseaudio' 'pavucontrol' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
+declare -ga aFont=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font' 'noto-fonts-emoji' 'font-emoji-one-color' 'ttf-ubuntu-font-family' 'unicode-emoji')
+declare -ga aMedia=('pulseaudio' 'pavucontrol' 'pasystray' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
 declare -ga aMicrode=('intel-ucode' 'linux-firmware-amd')
-declare -ga aNetwork=('NetworkManager' 'network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda')
-declare -ga aPerfumaria=('setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notification-daemon')
+declare -ga aNetwork=('NetworkManager' 'network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda' 'inetutils')
+declare -ga aPerfumery=('setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notification-daemon')
 declare -ga aPrinter=('cups' 'system-config-printer' 'system-config-printer-udev' 'splix' 'samsung-unified-driver' 'brother-brlaser' 'cups-pdf')
 declare -ga aTerminal=('lxterminal' 'rxvt-unicode' 'xfce4-terminal')
-declare -ga aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind')
-declare _PKGS='vim neofetch pfetch nano wget curl bc geoip geoip-data geoipupdate iputils vsv tree bat bash-completion vpm opendoas'
+declare -ga aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs')
+declare _PKGS='vim nano lynx pv neofetch pfetch wget curl bc geoip geoip-data geoipupdate iputils inetutils tree bat bash-completion vsv vpm opendoas'
 declare _EXTRAS='nano-syntax-highlighting'
 #
 declare _DEVICE='/dev/sdX'
@@ -89,6 +90,7 @@ declare _WINDOWMANAGER=('tty')
 declare _WIFI_NETWORK="wifi_ssid"
 declare _WIFI_PASSWORD="wifi_password"
 declare _SOURCE="network"
+declare _ONLY_TTY=1
 trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
 
 info_msg() {
@@ -105,7 +107,7 @@ cleanup() {
 sh_setEnvironment() {
 	declare url_mirror='https://repo-fastly.voidlinux.org/'
 	declare -g app_conf='/tmp/void-install.conf'
-	readonly cnickefi='void_install'
+	readonly cnickefi='Void_install'
 	readonly dir_install='/mnt/voidlinux'
 	readonly url_tarball="https://github.com/voidlinux-br/void-installer/raw/master/${_TARBALL_ROOTFS}"
 	readonly true=1
@@ -176,6 +178,8 @@ sh_setEnvironment() {
 	RESET="\Zn"
 	: echo "$err_fatal"
 
+	size=$(stty size)
+	read -r MAXROW MAXCOL <<< "$size"
 	if [[ -z "${COLUMNS}" ]]; then
    	COLUMNS=$(stty size)
 	   COLUMNS=${COLUMNS##* }
@@ -465,6 +469,7 @@ msg() {
 	printf "%s\n" "$(timespec) [ $cinfo ]$ufmt ${logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 
    if (( grafico )); then
+		logmessage="$last_msg"
       ${DIALOG}							\
       --no-collapse						\
       --colors								\
@@ -490,7 +495,7 @@ mensagem() {
 }
 
 fmt() {
-	printf "${bold}${yellow}%03d/%03d${reset}" "$ncounter" "$ncounter"
+	printf "${bold}${yellow}%03d/%03d${reset}" "$ncounter" "$njobs"
 	return $?
 }
 
@@ -630,7 +635,7 @@ alerta() {
 		--backtitle "$ccabec"            		\
 		--ok-label	"${cmsg_ok[$LC_DEFAULT]}"	\
 		--msgbox    "\n$2\n$3\n$4\n$5\n$6" 		\
-		8 60
+		10 60
 }
 
 readconf() {
@@ -845,18 +850,6 @@ EOF
 	evaluate_retval "$?"
 }
 
-sh_update_rc() {
-	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} rc.local ${cmsg_Em[$LC_DEFAULT]} $dir_install"
-	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	cat > "$dir_install"/etc/rc.local <<- EOF
-HOSTNAME="${AsUser[chostname]}"
-HARDWARECLOCK="${AConfLocale[_CLOCK]}"
-TIMEZONE="${AConfLocale[_TIMEZONE]}"
-KEYMAP="${AConfLocale[_KEYMAP]}"
-EOF
-	evaluate_retval "$?" "$err_not_fatal"
-}
-
 sh_update_sshd() {
 	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} sshd_config ${cmsg_Em[$LC_DEFAULT]} $dir_install"
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
@@ -876,6 +869,7 @@ EOF
 
 sh_update_locale() {
 	local lc="${LOCALE}.UTF-8"
+
 	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $dir_install"
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
 	#sed -e "/en_US.UTF-8 UTF-8/s/^\#//" -i "$dir_install/etc/default/libc-locales"
@@ -900,13 +894,66 @@ sh_update_hostname() {
 	evaluate_retval "$?" "$err_not_fatal"
 }
 
-sh_update_timezone() {
-	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} timezone pass1 ${cmsg_Em[$LC_DEFAULT]} $dir_install/etc/rc.local"
+sh_update_rc_local() {
+	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} rc.local ${cmsg_Em[$LC_DEFAULT]} $dir_install"
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	[[ ! -e "$dir_install/etc/rc.conf" ]] && >| "$dir_install/etc/rc.conf"
-	if [[ -e "$dir_install/etc/rc.conf" ]]; then
-		sed -i -e "s|TIMEZONE=.*|TIMEZONE=${AConfLocale[_TIMEZONE]}|g" "$dir_install/etc/rc.conf"
-		sed -i -e "s|#\?TIMEZONE=.*|TIMEZONE=${AConfLocale[_TIMEZONE]}|g" "$dir_install/etc/rc.conf"
+	cat > "$dir_install"/etc/rc.local <<- EOF
+#HOSTNAME="${AsUser[chostname]}"
+#HARDWARECLOCK="${AConfLocale[_CLOCK]}"
+#TIMEZONE="${AConfLocale[_TIMEZONE]}"
+#KEYMAP="${AConfLocale[_KEYMAP]}"
+#hwclock --systohc
+EOF
+	evaluate_retval "$?" "$err_not_fatal"
+}
+
+#HOSTNAME="${AsUser[chostname]}"
+
+sh_update_rc_conf() {
+	local cfile_rc="$dir_install/etc/rc.conf"
+
+	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} hostname ${cmsg_Em[$LC_DEFAULT]} $dir_install"
+	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+	[[ ! -e "$cfile_rc" ]] && >| "$cfile_rc"
+	if [[ -e "$cfile_rc" ]]; then
+		sed -i -e "s|HOSTNAME=.*|HOSTNAME=${AsUser[chostname]}|g"    "$cfile_rc"
+		sed -i -e "s|#\?HOSTNAME=.*|HOSTNAME=${AsUser[chostname]}|g" "$cfile_rc"
+	fi
+	evaluate_retval "$?" "$err_not_fatal"
+
+	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} hardware clock ${cmsg_Em[$LC_DEFAULT]} $dir_install"
+	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+	[[ ! -e "$cfile_rc" ]] && >| "$cfile_rc"
+	if [[ -e "$cfile_rc" ]]; then
+		sed -i -e "s|HARDWARECLOCK=.*|HARDWARECLOCK=${AConfLocale[_CLOCK]}|g"    "$cfile_rc"
+		sed -i -e "s|#\?HARDWARECLOCK=.*|HARDWARECLOCK=${AConfLocale[_CLOCK]}|g" "$cfile_rc"
+	fi
+	evaluate_retval "$?" "$err_not_fatal"
+
+	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} console font ${cmsg_Em[$LC_DEFAULT]} $dir_install"
+	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+	[[ ! -e "$cfile_rc" ]] && >| "$cfile_rc"
+	if [[ -e "$cfile_rc" ]]; then
+		sed -i -e "s|FONT=.*|FONT=${AConfLocale[_FONT]}|g"    "$cfile_rc"
+		sed -i -e "s|#\?FONT=.*|FONT=${AConfLocale[_FONT]}|g" "$cfile_rc"
+	fi
+	evaluate_retval "$?" "$err_not_fatal"
+
+	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} ${cmsg_Teclado[$LC_DEFAULT],,} ${AConfLocale[_KEYMAP]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"
+	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+	[[ ! -e "$cfile_rc" ]] && >| "$cfile_rc"
+	if [[ -e "$cfile_rc" ]]; then
+		sed -i -e "s|KEYMAP=.*|KEYMAP=${AConfLocale[_KEYMAP]}|g"    "$cfile_rc"
+		sed -i -e "s|#\?KEYMAP=.*|KEYMAP=${AConfLocale[_KEYMAP]}|g" "$cfile_rc"
+	fi
+	evaluate_retval "$?" "$err_not_fatal"
+
+	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} timezone pass1 ${cmsg_Em[$LC_DEFAULT]} $cfile_rc"
+	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+	[[ ! -e "$cfile_rc" ]] && >| "$cfile_rc"
+	if [[ -e "$cfile_rc" ]]; then
+		sed -i -e "s|TIMEZONE=.*|TIMEZONE=${AConfLocale[_TIMEZONE]}|g" "$cfile_rc"
+		sed -i -e "s|#\?TIMEZONE=.*|TIMEZONE=${AConfLocale[_TIMEZONE]}|g" "$cfile_rc"
 	fi
 	evaluate_retval "$?" "$err_not_fatal"
 	sh_chroot_job "${cmsg_Ajustando[$LC_DEFAULT]} timezone pass2 ${cmsg_Em[$LC_DEFAULT]} $dir_install" "ln -sf /usr/share/zoneinfo/${AConfLocale[_TIMEZONE]} /etc/localtime" "$err_not_fatal"
@@ -954,17 +1001,6 @@ sh_update_console() {
 		sed -i "$dir_install/$cfile"								\
       	-e 's|#\(GRUB_TERMINAL_INPUT\).*|\1=console|'	\
 			-e 's|#\(GRUB_TERMINAL_OUTPUT\).*|\1=console|'
-	fi
-	evaluate_retval "$?" "$err_not_fatal"
-}
-
-sh_update_keymap() {
-	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} ${cmsg_Teclado[$LC_DEFAULT],,} ${AConfLocale[_KEYMAP]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"
-	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	[[ ! -e "$dir_install/etc/rc.conf" ]] && >| "$dir_install/etc/rc.conf"
-	if [[ -e "$dir_install/etc/rc.conf" ]]; then
-		sed -i -e "s|KEYMAP=.*|KEYMAP=${AConfLocale[_KEYMAP]}|g" "$dir_install/etc/rc.conf"
-		sed -i -e "s|#\?KEYMAP=.*|KEYMAP=${AConfLocale[_KEYMAP]}|g" "$dir_install/etc/rc.conf"
 	fi
 	evaluate_retval "$?" "$err_not_fatal"
 }
@@ -1139,7 +1175,8 @@ sh_cmd_job() {
 
 	last_msg="$cmsg"
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	eval "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+#	eval "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	eval "$cjob" 2>&1 | tee -i -a "$BOOTLOG" | dialog --colors --backtitle "$cmsg" --title "$cmsg" --begin 10 50 --progressbox 24 120 --and-widget
 	lretval="${PIPESTATUS[0]}"
 	evaluate_retval "$lretval" "$erro_fatal"
 	shell='/bin/sh'
@@ -1154,7 +1191,12 @@ sh_chroot_job() {
 
 	last_msg="$cmsg"
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	if (( grafico )) ; then
+		chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" \
+		| dialog --colors --backtitle "$ccabec" --title "${YELLOW}Step:$ufmt ${RED}==> ${RESET}[$logmessage] ${BOLD}${WHITE}[$(sh_time_elapsed)]" --progressbox $(($MAXROW/2)) $(($MAXCOL-20))
+	else
+		chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	fi
 	lretval="${PIPESTATUS[0]}"
 	evaluate_retval "$lretval" "$erro_fatal"
 	shell='/bin/sh'
@@ -1264,13 +1306,21 @@ sh_make_fstab() {
 }
 
 sh_activating_services() {
-	local aServices=('agetty-tty1' 'agetty-tty2' 'dhcpcd' 'wpa_supplicant' 'udevd' 'uuidd' 'dmeventd' 'sshd' 'lxdm' 'dbus' 'NetworkManager')
+	local aServicesTTY=('agetty-tty1' 'agetty-tty2' 'dhcpcd' 'wpa_supplicant' 'udevd' 'uuidd' 'dmeventd' 'sshd' 'dbus' 'socklog-unix' 'nanoklogd' 'openntpd')
+	local aServicesX=('lxdm' 'NetworkManager')
 	local service
 
-	for service in "${aServices[@]}"
+	for service in "${aServicesTTY[@]}"
 	do
 		sh_chroot_job "${cmsg_AtivandoServico[$LC_DEFAULT]} $service ${cmsg_Em[$LC_DEFAULT]} $dir_install" "ln -sf /etc/sv/$service /etc/runit/runsvdir/current/" "$err_not_fatal"
 	done
+
+	if [[ $_ONLY_TTY -eq $false ]] ; then
+		for service in "${aServicesX[@]}"
+		do
+			sh_chroot_job "${cmsg_AtivandoServico[$LC_DEFAULT]} $service ${cmsg_Em[$LC_DEFAULT]} $dir_install" "ln -sf /etc/sv/$service /etc/runit/runsvdir/current/" "$err_not_fatal"
+		done
+	fi
 }
 
 sh_mk_working_dir() {
@@ -1382,13 +1432,29 @@ sh_X11minimal(){
 	apkgs+=("${aFilemanager[@]}")
 	apkgs+=("${aBrowser[@]}")
 	apkgs+=("${aBackground[@]}")
+	apkgs+=("${aBluetooth[@]}")
 	apkgs+=("${aNetwork[@]}")
 	apkgs+=("${aMedia[@]}")
 	apkgs+=("${aPrinter[@]}")
-	apkgs+=("${aPerfumaria[@]}")
-#	apkgs+=("${aMicrocode[@]}")
+	apkgs+=("${aPerfumery[@]}")
+	apkgs+=("${aMicrocode[@]}")
 	apkgs+=("${aArchiver[@]}")
-	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} $dir_install" "xbps-install -y ${apkgs[*]}"
+
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Xorg ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aXorg[*]}"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Font's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aFont[*]}" "$err_not_fatal"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} DisplayManager's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aDisplaymanager[*]}"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Terminal's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aTerminal[*]}" "$err_not_fatal"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} FileManager's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aFilemanager[*]}" "$err_not_fatal"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Browser's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aBrowser[*]}" "$err_not_fatal"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Background's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aBackground[*]}" "$err_not_fatal"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Bluetooth's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aBluetooth[*]}" "$err_not_fatal"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Networks's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aNetwork[*]}"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Media's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aMedia[*]}" "$err_not_fatal"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Printer's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aPrinter[*]}" "$err_not_fatal"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Perfumery's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aPerfumery[*]}" "$err_not_fatal"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Microde's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aMicrocode[*]}" "$err_not_fatal"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Archivers's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aArchiver[*]}" "$err_not_fatal"
+#	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
 sh_fluxboxminimal() {
@@ -1412,7 +1478,7 @@ sh_openboxminimal() {
 }
 
 sh_plasmaminimal() {
-	local apkgs=('plasma-desktop')
+	local apkgs=('plasma-desktop' 'plasma-nm' 'plasma-pa' 'plasma-disks')
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Plasma-Desktop ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
@@ -1433,8 +1499,8 @@ sh_gnomeminimal() {
 
 sh_i3minimal() {
 	local apkgs=('i3' 'dmenu' 'i3status' 'i3lock' 'geany' 'volumeicon' 'mc' 'scrot' 'ImageMagick'
-					 'gnome-themes-standard' 'axel' 'pasystray' 'mps-youtube' 'youtube-dl' 'mpv' 'xarchiver'
-					 'cava' 'mate-themes' 'xdg-user-dirs')
+					 'gnome-themes-standard' 'axel' 'mps-youtube' 'youtube-dl' 'mpv' 'xarchiver'
+					 'cava' 'mate-themes')
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} I3 ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
@@ -2459,6 +2525,9 @@ sh_dryrun() {
 	sh_umount_fs
 	sh_mount_fs
 	sh_init_bind
+#	sh_update_rc_conf
+#	sh_update_rc_local
+#	sh_activating_services
 	chroot "$dir_install" "/bin/bash"
 	sh_umount_fs
 }
@@ -2481,14 +2550,14 @@ ${orange}       ${APP} ${reset}-i -f
 ${orange}       ${APP} ${reset}-i -f /tmp/void-install-custom.conf
 
 [<operations>] ${reset}
-   ${red}-i  --install${cyan}       #${cmsg_Usage1[$LC_DEFAULT]}
-   ${red}-c  --chroot${cyan}        #${cmsg_Usage2[$LC_DEFAULT]}
-   ${red}-f  --file${cyan}          #${cmsg_Usage8[$LC_DEFAULT]} (default: $app_conf)
-   ${red}-g  --grafico${cyan}       #${cmsg_Usage3[$LC_DEFAULT]}
-   ${red}-q  --quiet${cyan}         #${cmsg_Usage4[$LC_DEFAULT]}
-   ${red}-V  --version${cyan}       #${cmsg_Usage5[$LC_DEFAULT]}
-   ${red}-n  --nocolor${cyan}       #${cmsg_Usage6[$LC_DEFAULT]}
-   ${red}-h  --help${cyan}          #${cmsg_Usage7[$LC_DEFAULT]}${reset}
+   ${red}-i  --install${cyan}       # ${cmsg_Usage1[$LC_DEFAULT]}
+   ${red}-c  --chroot${cyan}        # ${cmsg_Usage2[$LC_DEFAULT]}
+   ${red}-f  --file${cyan}          # ${cmsg_Usage8[$LC_DEFAULT]} (default: $app_conf)
+   ${red}-g  --grafico${cyan}       # ${cmsg_Usage3[$LC_DEFAULT]}
+   ${red}-q  --quiet${cyan}         # ${cmsg_Usage4[$LC_DEFAULT]}
+   ${red}-V  --version${cyan}       # ${cmsg_Usage5[$LC_DEFAULT]}
+   ${red}-n  --nocolor${cyan}       # ${cmsg_Usage6[$LC_DEFAULT]}
+   ${red}-h  --help${cyan}          # ${cmsg_Usage7[$LC_DEFAULT]}${reset}
 EOF
 }
 
@@ -2578,7 +2647,7 @@ sh_choosewm() {
 		--cancel-label "${cmsg_Sair[$LC_DEFAULT]}"						\
 		--ok-label 		"${cmsg_Aceitar[$LC_DEFAULT]}"					\
 		--checklist 	"${cmsg_LBL_check[$LC_DEFAULT]}"					\
-		0 70 0																		\
+		0 70 16																	\
 		tty     			"${aWm[tty]}"				"${aFlag[tty]}"		\
 		awesome			"${aWm[awesome]}"			"${aFlag[awesome]}"	\
 		bspwm				"${aWm[bspwm]}"			"${aFlag[bspwm]}"		\
@@ -2846,7 +2915,7 @@ sh_grubInstall() {
 	fi
 	if (( LEFI )); then
 		sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} GRUB EFI ${cmsg_Em[$LC_DEFAULT]} $_BOOTLOADER"\
-						  "grub-install $_BOOTLOADER --target=$TARGET_EFI --efi-directory=/boot/efi --boot-directory=/boot --bootloader-id=$cnickefi --recheck"
+						  "grub-install $_BOOTLOADER --target=$TARGET_EFI --efi-directory=/boot/efi --boot-directory=/boot --bootloader-id=$cnickefi --removable --recheck"
 		sh_mkefiroaming
 	fi
 	if ! (( LVM )); then
@@ -2894,13 +2963,18 @@ sh_extract_root_fs() {
 }
 
 sh_install() {
-#	local abase=(base-system dbus lvm2 wireless_tools nano grub os-prober efivar efibootmgr grub-x86_64-efi
-#					 parted xz zstd wget curl dialog bash-completion git bc geoip geoip-data geoipupdate iputils)
+	#local abase=(base-system dbus lvm2 wireless_tools nano grub os-prober efivar efibootmgr grub-x86_64-efi
+	# 				  parted xz zstd wget curl dialog bash-completion git bc geoip geoip-data geoipupdate iputils)
 	local akernel=(linux dbus wifi-firmware)
-	local abase=(cryptsetup lvm2 wireless_tools xz wpa_supplicant)
+	local afirmware=(wifi-firmware)
+	local abase=(zstd cryptsetup lvm2 wireless_tools xz wpa_supplicant socklog-void openntpd)
 	local agrub=(grub os-prober)
+	local start_datetime
+	local end_datetime
 
 	sh_checkInstall || return 1
+	start_time=$(date +%s)  # Obtém o tempo de início em segundos desde a época Unix
+	start_datetime=$(date)
 	if (( LEFI )); then
 		if sh_getBootEFI; then
 			agrub+=(grub-"$TARGET_EFI")
@@ -2912,6 +2986,7 @@ sh_install() {
 		fi
 	fi
 
+	{
 	ncounter=0
 	sh_umount_fs
 	if ! sh_make_fs ; then die "Erro"; fi
@@ -2933,25 +3008,29 @@ sh_install() {
 				sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-remove -oOy"
 			fi
 		fi
-		sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel and firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${akernel[*]}"
+		sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${akernel[*]}"
+		sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${akernel[*]}" "$err_not_fatal"
 		sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${abase[*]} ${agrub[*]}"
-		sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install" "xbps-install -y $_PKGS" "$err_not_fatal"
+		sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install" "xbps-install -y $_PKGS" "$err_not_fatal" "$err_not_fatal"
 #		sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y $_EXTRAS" "$err_not_fatal"
 		sh_grubInstall
 		sh_make_fstab
 		sh_update_bashrc
 		sh_make_user
 		sh_update_hostname
-		sh_update_rc
+		sh_update_rc_local
 		sh_update_sshd
-		sh_update_timezone
+#		sh_update_timezone
+		sh_update_rc_conf
 		sh_update_locale
 		sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-reconfigure -f glibc-locales"
-		sh_update_keymap
+#		sh_update_keymap
 		sh_update_wpa_suplicant
 
+		_ONLY_TTY=$false
 		if [[ "${#_WINDOWMANAGER[@]}" -eq 1 ]]; then
 			if [[ "${_WINDOWMANAGER}" = 'tty' ]]; then
+				_ONLY_TTY=$true
 				:
 			else
 				sh_update_Xkeymap
@@ -2992,11 +3071,48 @@ sh_install() {
 		sh_chmod_tmp
 		sh_copy_scripts
 		sh_umount_fs
-		alerta "$ccabec" "${cmsg_FinalizadaComSucesso[LC_DEFAULT]}"
+		end_datetime=$(date)
+		alerta "$APP" "${cmsg_FinalizadaComSucesso[LC_DEFAULT]}\n" \
+			"Start Date time  : $start_datetime" \
+			"Finish Date Time : $end_datetime" \
+			"Time elapsed     : ${RED}$(sh_time_elapsed)"
 	else
 		die "${cmsg_ERRO[LC_DEFAULT]} tar #$?. ${cmsg_ErroTar[LC_DEFAULT]} $_TARBALL_ROOTFS ${cmsg_Em[LC_DEFAULT]} $dir_install"
 	fi
 	exit 0
+	} # > out & sh_monitor
+}
+
+sh_time_elapsed() {
+	local end_time=$(date +%s)  						# Obtém o tempo de término em segundos desde a época Unix
+	local duration=$((end_time - start_time))  	# Calcula a duração em segundos
+	local	hours=$((duration / 3600))
+	local minutes=$(( (duration % 3600) / 60))
+	local seconds=$((duration % 60))
+
+	# Formatar os valores para terem sempre dois dígitos
+	hours=$(printf "%02d" $hours)
+	minutes=$(printf "%02d" $minutes)
+	seconds=$(printf "%02d" $seconds)
+	echo "$hours:$minutes:$seconds"
+}
+
+sh_monitor_old() {
+	${DIALOG}						\
+		--clear						\
+		--backtitle "$ccabec"  	\
+		--title 		"$BOOTLOG"	\
+		--tailbox	$BOOTLOG 20 120
+}
+
+sh_monitor() {
+	${DIALOG}                                		\
+		--clear                               		\
+		--colors                               	\
+		--title "$BOOTLOG"								\
+		--begin 10 10 --tailboxbg $BOOTLOG 20 120	\
+		--and-widget                           	\
+		--begin 3 10 --progressbox "$last_msg" 5 30
 }
 
 sh_setLanguage() {
@@ -3547,12 +3663,12 @@ sh_setLanguage() {
 		"Suppression des packages anciens/absoles"
 		"Eliminación de paquetes antiguos/absole"
 		"Rimozione di pacchetti vecchi/absole")'
-	'cmsg_InstalandoMetaPacotes=("Instalando meta pacote X em"
-		"Installing metapackage X in"
-		"Installieren von Metapaket X in"
-		"Installation du métapaquet X dans"
-		"Instalación del metapaquete X en"
-		"Installazione del metapacchetto X in")'
+	'cmsg_InstalandoMetaPacotes=("Instalando meta pacote X"
+		"Installing metapackage X"
+		"Installieren von Metapaket X"
+		"Installation du métapaquet X"
+		"Instalación del metapaquete X"
+		"Installazione del metapacchetto X")'
 	'cmsg_AtualizandoPacotesBase=("Atualizando pacotes base"
 		"Updating base packages"
 		"Aktualisieren von Basispaketen"
