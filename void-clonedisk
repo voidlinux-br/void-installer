@@ -7,7 +7,7 @@
 #  Chili GNU/Linux - https://chilios.com.br
 #
 #  Created: 2019/04/05
-#  Altered: 2022/05/02
+#  Altered: 2022/06/27
 #
 #  Copyright (c) 2019-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #
@@ -32,7 +32,7 @@
 #set -e
 #declare -r APP="${0##*/}"
 declare -r _APP_="void-clonedisk"
-declare -r _VERSION_="4.0.6.20230502"
+declare -r _VERSION_="4.0.7.20230627"
 declare -r distro=$(uname -n)
 declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
@@ -247,6 +247,7 @@ display_result() {
       --beep                     \
       --no-collapse              \
       --no-cr-wrap               \
+		--no-nl-expand					\
       --backtitle "$xbacktitle"  \
       --msgbox    "$1"           \
       0 0
