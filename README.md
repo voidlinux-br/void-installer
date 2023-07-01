@@ -1,27 +1,27 @@
-# void-install - instalador brasileirinho do VOID Linux
+# void-install - VOID Linux Brazilian installer
 
 ## Download:
 
-- 1 - usando git
+- 1 - using git
 	- git clone --depth=1 https://github.com/voidlinux-br/void-installer
 
-- 2 - usando curl/wget stdin
+- 2 - using curl/wget stdin
 	- sh <(curl -s -L https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
 	- sh <(wget -q -O - https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
 	- curl -s -O https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh | sh
 	- wget -q -O - https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh | sh
 
-- 3 - usando curl/wget
+- 3 - using curl/wget
 	- curl -O https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh
 	- wget https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh
 	- chmod +x install.sh
 	- ./install.sh
 
-## Instalação (após download):
-- 1 - usando make
+## Installation (after download):
+- 1 - using make
 	- sudo make install
 
-- 2 - rodando no repo local
+- 2 - running in local repo
 	- ./void-install
 
 Examples
