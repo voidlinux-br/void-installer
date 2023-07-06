@@ -29,6 +29,7 @@ install:
 	@install -m 4755 void-gitclone ${BINDIR}/void-gitclone
 	@install -m 4755 void-remove-vg ${BINDIR}/void-remove-vg
 	@install -m 4755 void-xrandr ${BINDIR}/void-xrandr
+	@install -m 4755 void-runimage ${BINDIR}/void-runimage
 	@mkdir -p ${INFODIR}
 	@cp Makefile ChangeLog INSTALL LICENSE MAINTAINERS README.md ${DOCDIR}/
 	@cp Makefile ChangeLog INSTALL LICENSE MAINTAINERS README.md ${INFODIR}/
@@ -49,6 +50,7 @@ uninstall:
 	@rm ${BINDIR}/void-gitclone
 	@rm ${BINDIR}/void-remove-vg
 	@rm ${BINDIR}/void-xrandr
+	@rm ${BINDIR}/void-runimage
 	@rm -fd ${BINDIR}
 	@rm -fd ${INFODIR}
 	@echo "${APP} foi removido."
