@@ -42,7 +42,8 @@
 	umask 0022
 	url="https://raw.githubusercontent.com/voidlinux-br/void-installer/master"
 	files=('void-install' 'void-gitclone' 'void-mirror' 'void-services'
-			 'void-testmirror' 'void-wifi' 'void-remove-vg' 'void-clonedisk' 'void-xrandr'
+			 'void-testmirror' 'void-wifi' 'void-remove-vg' 'void-clonedisk'
+			 'void-xrandr' 'void-runimage'
 			 'ChangeLog.txt' 'INSTALL' 'LICENSE' 'MAINTAINERS' 'Makefile'
 			 'README.md' 'bashrc.sh' '.dircolors' 'void-x86_64-base-custom-current.tar.xz')
 	tmpDir=~/void-installer
@@ -78,6 +79,7 @@
 	chmod +x $tmpDir/void-clonedisk
 	chmod +x $tmpDir/void-wifi
 	chmod +x $tmpDir/void-xrandr
+	chmod +x $tmpDir/void-runimage
 	chmod +x $tmpDir/bashrc.sh
 	ls -la --color=auto $tmpDir
 

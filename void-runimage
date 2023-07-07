@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+#shellcheck disable=SC2034,SC2155,SC2154,SC2181
+
+#  void-runimage
+#  Created: 2023/04/25
+#  Altered: 2023/07/06
+#
+#  Copyright (c) 2023-2023, Vilmar Catafesta <vcatafesta@gmail.com>
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+#  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+#  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+#  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+#  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+#  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+#  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#debug
+export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
+#set -x
+#set -e
+shopt -s extglob
+
+#system
+readonly APP="${0##*/}"
+readonly _VERSION_='1.0.00-20230706'
+readonly DEPENDENCIES=('tput' 'printf' 'qemu-system-x86_64')
+readonly PACKAGEDEP=([tput]='ncurses' [printf]='coreutils' [qemu-system-x86_64X]='qemu')
+trap cleanup_working_dir EXIT
+
+function cleanup_working_dir {
+	if [[ -d "${working_dir}" ]]; then
+		rm -rf -- "${working_dir}"
+	fi
+}
+
+function die {
+	local msg=$1; shift
+	printf "  %b %s\\n" "${CROSS}" "${bold}${red}${msg}"
+	exit 1
+}
+
+function log_msg() {
+	local retval="${PIPESTATUS[0]}"
+
+	if [[ $retval -eq 0 ]]; then
+		printf "  %b %s\\n" "${TICK}" "${*}"
+	else
+		printf "  %b %s\\n" "${CROSS}" "${*}"
+	fi
+}
+
+function sh_checkRoot {
+	local str="Root user check"
+	if [[ "$(id -u)" != "0" ]]; then
+		die "${red} error: you cannot perform this operation unless you are root."
+	fi
+	printf "  %b %s\\n" "${TICK}" "${str}"
+	return 0
+}
+
+function sh_usage {
+	log_msg "usage:"
+cat <<EOF
+	${orange}$APP ${reset}file.iso
+	${orange}$APP ${reset}file.img
+	${orange}$APP ${reset}/dev/sdX
+EOF
+}
+
+function sh_setenvironment {
+	declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
+	tput sgr0 # reset colors
+	bold=$(tput bold)
+	reset=$(tput sgr0)
+	white="${bold}$(tput setaf 7)"
+	black="${bold}$(tput setaf 0)"
+	red=$(tput bold)$(tput setaf 196)
+	green=$(tput setaf 2)
+	yellow=$(tput bold)$(tput setaf 3)
+	blue=$(tput setaf 4)
+	pink=$(tput setaf 5)
+	cyan=$(tput setaf 6)
+	orange=$(tput setaf 3)
+	purple=$(tput setaf 125);
+	violet=$(tput setaf 61);
+	force=0
+	COL_NC='\e[0m' # No Color
+	COL_LIGHT_GREEN='\e[1;32m'
+	COL_LIGHT_RED='\e[1;31m'
+	TICK="${white}[${COL_LIGHT_GREEN}✓${COL_NC}${white}]"
+	CROSS="${white}[${COL_LIGHT_RED}✗${COL_NC}${white}]"
+	INFO="[i]"
+	# shellcheck disable=SC2034
+	DONE="${COL_LIGHT_GREEN} done!${COL_NC}"
+	OVER="\\r\\033[K"
+	DOTPREFIX="  ${black}::${reset} "
+}
+
+sh_unsetvarcolors() {
+	unset bold reset cyan red blue white black
+	unset green yellow orange pink cyan purple violet
+}
+
+function sh_checkDependencies {
+	local d
+	local errorFound=0
+	declare -a missing
+
+	for d in "${DEPENDENCIES[@]}"; do
+		[[ -n $(command -v "$d") ]] && { :; } || { \
+			printf "%s\n" "${red}ERROR${reset}: Could not find command ${cyan}'$d'${reset} -> install package '${PACKAGEDEP[$d]}'"
+			missing+=("$d")
+			errorFound=1
+		}
+	done
+	if (( errorFound )); then
+		echo "${yellow}---------------IMPOSSIBLE TO CONTINUE---------------"
+		echo "${black}This script needs the commands listed above"
+		echo "Install them and/or make sure they are in your \$PATH"
+		echo "${yellow}---------------IMPOSSIBLE TO CONTINUE---------------"
+		exit 1
+	fi
+}
+
+frv() {
+	if test $# -ge 1; then
+		if test -r $1; then
+		   local ovmf_code='/usr/share/edk2-ovmf/x64/OVMF_CODE.fd'
+			local working_dir="$(mktemp -dt frv.XXXXXXXXXX)"
+
+			if [[ ! -f '/usr/share/edk2-ovmf/x64/OVMF_VARS.fd' ]]; then
+				printf 'ERROR: %s\n' "OVMF_VARS.fd not found. Install edk2-ovmf."
+				exit 1
+			fi
+			cp -av -- '/usr/share/edk2-ovmf/x64/OVMF_VARS.fd' "${working_dir}/"
+
+			if [[ ${1: -4} == ".iso" ]]; then
+			  # Executar como CD-ROM
+				qemu-system-x86_64 \
+				  	-machine accel=kvm \
+					-cpu host \
+				  	-smp "$(nproc)" \
+			    	-name 'Chili' \
+			    	-m 16G \
+				 	-cdrom $1 \
+				 	-boot d \
+				  	-vga virtio \
+				  	-display gtk \
+		       	-hda /archlive/qemu/hdc.img \
+				  	-device virtio-net-pci,netdev=net0 -netdev user,id=net0 \
+				  	-device intel-hda -audiodev pa,id=snd0,server=localhost \
+				  	-device hda-output,audiodev=snd0 \
+				  	-net nic,model=virtio -net user \
+	 				-drive if=pflash,format=raw,unit=0,file=${ovmf_code},read-only=off \
+					-drive if=pflash,format=raw,unit=1,file=${working_dir}/OVMF_VARS.fd \
+		        	-machine type=q35,smm=on,accel=kvm,usb=on,pcspk-audiodev=snd0 \
+				  	-serial stdio
+			else
+				# Executar como disco RAW
+				qemu-system-x86_64 \
+				  	-machine accel=kvm \
+				  	-smp "$(nproc)" \
+			    	-name 'Chili' \
+				  	-m 16G \
+				  	-drive file=${1},if=virtio,format=raw \
+				  	-device virtio-net-pci,netdev=net0 -netdev user,id=net0 \
+				  	-vga virtio \
+				  	-display gtk \
+		       	-hda /archlive/qemu/hdc.img \
+				  	-device intel-hda -audiodev pa,id=snd0,server=localhost \
+				  	-device hda-output,audiodev=snd0 \
+				  	-net nic,model=virtio -net user \
+					-drive if=pflash,format=raw,unit=0,file=${ovmf_code},read-only=off \
+					-drive if=pflash,format=raw,unit=1,file=${working_dir}/OVMF_VARS.fd \
+		        	-machine type=q35,smm=on,accel=kvm,usb=on,pcspk-audiodev=snd0 \
+				  	-serial stdio
+			fi
+		else
+			log_msg "${red}ERROR: ${cyan}'$1' ${red}could not read or does not exist"
+			sh_usage
+		fi
+	else
+		sh_usage
+   fi
+}
+
+sh_setenvironment
+sh_checkRoot
+sh_checkDependencies
+frv "$@"
