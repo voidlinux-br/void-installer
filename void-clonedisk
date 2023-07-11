@@ -7,7 +7,7 @@
 #  Chili GNU/Linux - https://chilios.com.br
 #
 #  Created: 2019/04/05
-#  Altered: 2022/05/02
+#  Altered: 2022/07/07
 #
 #  Copyright (c) 2019-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #
@@ -32,7 +32,7 @@
 #set -e
 #declare -r APP="${0##*/}"
 declare -r _APP_="void-clonedisk"
-declare -r _VERSION_="4.0.6.20230502"
+declare -r _VERSION_="4.0.7.20230707"
 declare -r distro=$(uname -n)
 declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
@@ -235,21 +235,18 @@ alerta() {
 }
 
 display_result() {
-	local xbacktitle=$ccabec
-
-	if [ "$3" != "" ] ; then
-		xbacktitle="$3"
-	fi
+	local xtitle="$1"; shift
 
 	dialog                        \
-      --title     "$2"           \
-      --colors                   \
-      --beep                     \
-      --no-collapse              \
-      --no-cr-wrap               \
-      --backtitle "$xbacktitle"  \
-      --msgbox    "$1"           \
-      0 0
+		--title     "$xtitle"      \
+		--backtitle "$ccabec"      \
+		--colors                   \
+		--beep                     \
+		--no-nl-expand             \
+		--no-cr-wrap               \
+		--no-collapse              \
+		--msgbox    "$*"           \
+		0 0
 }
 
 info() {
@@ -378,9 +375,11 @@ $(printf "%${nlen}s$sep%-6s$sep%6s$sep%-6s$sep%-15s$sep%-30s" "DEVICE" "TRAN" "S
     			init
     			;;
     		3)
-         	result=$(fdisk -l "$sd");
-    			display_result	"${BOLD}${RED}${REVERSE}Info disk : $sd\n\n${RESET}${BOLD}${WHITE}$result"\
-									"$cmsg_disco_origem"
+				result=$(fdisk -l "$sd")
+				message=$(printf "\n\n%s" "$result")
+				display_result "$cmsg_disco_origem"\
+           					   "${BOLD}${RED}${REVERSE}Info disk : $sd${RESET}"\
+                           "${BOLD}${WHITE}$message"
     			continue
     			;;
     	esac
@@ -447,9 +446,11 @@ $(printf "%${nlen}s$sep%-6s$sep%6s$sep%-6s$sep%-15s$sep%-30s" "DEVICE" "TRAN" "S
     			sh_choose_source_disk
     			;;
     		3)
-         	result=$( fdisk -l "$sddest" );
-    			display_result	"${BOLD}${RED}${REVERSE}Info disk : $sd\n\n${RESET}${BOLD}${WHITE}$result"\
-									"$cmsg_disco_destino"
+				result=$(fdisk -l "$sddest")
+				message=$(printf "\n\n%s" "$result")
+    			display_result "$cmsg_disco_destino"\
+									"${BOLD}${RED}${REVERSE}Info disk : $sddest${RESET}"\
+									"${RESET}${BOLD}${WHITE}$message"\
     			continue
     			;;
     	esac
@@ -498,8 +499,11 @@ ${BLUE} ${cmsg_disco_origem[LC_DEFAULT]}: $DEVICE_SOURCE | $SIZE_SOURCE | $MODEL
 ${RED}${cmsg_disco_destino[LC_DEFAULT]}: $DEVICE_DESTINATION | $SIZE_DESTINATION | $MODEL_DESTINATION"\
 		10 100 0
 	nchoice=$?
-	[[ $nchoice -eq 0 ]] && display_result "${BOLD}${RED}${REVERSE}Cloning completed!\n\n${RESET}${BOLD}${WHITE}$(fdisk -l "$sddest")\n"\
-														"fdisk -l $sddest"
+	result=$(fdisk -l "$sddest")
+	message=$(printf "\n\n%s" "$result")
+   [[ $nchoice -eq 0 ]] && display_result "fdisk -l $sddest" \
+                                          "${BOLD}${RED}${REVERSE}Cloning completed!"\
+                                          "${RESET}${BOLD}${WHITE}$message"
 	return $nchoice
 }
 

@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/06/18
+#  Altered: 2023/06/27
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -39,7 +39,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='1.8.869-20230618'
+readonly _VERSION_='1.8.877-20230627'
 readonly	distro=$(uname -n)
 readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -74,12 +74,12 @@ declare -ga aFilemanager=('Thunar' 'pcmanfm' 'octoxbps')
 declare -ga aFont=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font' 'noto-fonts-emoji' 'font-emoji-one-color' 'ttf-ubuntu-font-family' 'unicode-emoji')
 declare -ga aMedia=('pulseaudio' 'pavucontrol' 'pasystray' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
 declare -ga aMicrode=('intel-ucode' 'linux-firmware-amd')
-declare -ga aNetwork=('NetworkManager' 'network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda')
+declare -ga aNetwork=('NetworkManager' 'network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda' 'inetutils')
 declare -ga aPerfumery=('setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notification-daemon')
 declare -ga aPrinter=('cups' 'system-config-printer' 'system-config-printer-udev' 'splix' 'samsung-unified-driver' 'brother-brlaser' 'cups-pdf')
 declare -ga aTerminal=('lxterminal' 'rxvt-unicode' 'xfce4-terminal')
 declare -ga aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs')
-declare _PKGS='vim nano lynx pv neofetch pfetch wget curl bc geoip geoip-data geoipupdate iputils tree bat bash-completion vsv vpm opendoas'
+declare _PKGS='vim nano lynx pv neofetch pfetch wget curl bc geoip geoip-data geoipupdate iputils inetutils tree bat bash-completion vsv vpm opendoas'
 declare _EXTRAS='nano-syntax-highlighting'
 #
 declare _DEVICE='/dev/sdX'
@@ -107,7 +107,7 @@ cleanup() {
 sh_setEnvironment() {
 	declare url_mirror='https://repo-fastly.voidlinux.org/'
 	declare -g app_conf='/tmp/void-install.conf'
-	readonly cnickefi='void_install'
+	readonly cnickefi='Void_install'
 	readonly dir_install='/mnt/voidlinux'
 	readonly url_tarball="https://github.com/voidlinux-br/void-installer/raw/master/${_TARBALL_ROOTFS}"
 	readonly true=1
@@ -635,7 +635,7 @@ alerta() {
 		--backtitle "$ccabec"            		\
 		--ok-label	"${cmsg_ok[$LC_DEFAULT]}"	\
 		--msgbox    "\n$2\n$3\n$4\n$5\n$6" 		\
-		8 60
+		10 60
 }
 
 readconf() {
@@ -695,10 +695,13 @@ display_result() {
 			--backtitle	"$ccabec"						\
 			--no-collapse									\
 			--no-cr-wrap									\
+			--no-nl-expand									\
 			--ok-label	"${cmsg_ok[$LC_DEFAULT]}"	\
 			--msgbox    "$1"								\
-			15 100
+			0 0
 }
+
+#			15 100
 
 notconf() {
 	xtitle="$1"
@@ -1193,7 +1196,7 @@ sh_chroot_job() {
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
 	if (( grafico )) ; then
 		chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" \
-		| dialog --colors --backtitle "$ccabec" --title "Step:$ufmt ==> [$logmessage]" --progressbox $(($MAXROW/2)) $(($MAXCOL-10))
+		| dialog --colors --backtitle "$ccabec" --title "${YELLOW}Step:$ufmt ${RED}==> ${RESET}[$logmessage] ${BOLD}${WHITE}[$(sh_time_elapsed)]" --progressbox $(($MAXROW/2)) $(($MAXCOL-20))
 	else
 		chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	fi
@@ -2550,14 +2553,14 @@ ${orange}       ${APP} ${reset}-i -f
 ${orange}       ${APP} ${reset}-i -f /tmp/void-install-custom.conf
 
 [<operations>] ${reset}
-   ${red}-i  --install${cyan}       #${cmsg_Usage1[$LC_DEFAULT]}
-   ${red}-c  --chroot${cyan}        #${cmsg_Usage2[$LC_DEFAULT]}
-   ${red}-f  --file${cyan}          #${cmsg_Usage8[$LC_DEFAULT]} (default: $app_conf)
-   ${red}-g  --grafico${cyan}       #${cmsg_Usage3[$LC_DEFAULT]}
-   ${red}-q  --quiet${cyan}         #${cmsg_Usage4[$LC_DEFAULT]}
-   ${red}-V  --version${cyan}       #${cmsg_Usage5[$LC_DEFAULT]}
-   ${red}-n  --nocolor${cyan}       #${cmsg_Usage6[$LC_DEFAULT]}
-   ${red}-h  --help${cyan}          #${cmsg_Usage7[$LC_DEFAULT]}${reset}
+   ${red}-i  --install${cyan}       # ${cmsg_Usage1[$LC_DEFAULT]}
+   ${red}-c  --chroot${cyan}        # ${cmsg_Usage2[$LC_DEFAULT]}
+   ${red}-f  --file${cyan}          # ${cmsg_Usage8[$LC_DEFAULT]} (default: $app_conf)
+   ${red}-g  --grafico${cyan}       # ${cmsg_Usage3[$LC_DEFAULT]}
+   ${red}-q  --quiet${cyan}         # ${cmsg_Usage4[$LC_DEFAULT]}
+   ${red}-V  --version${cyan}       # ${cmsg_Usage5[$LC_DEFAULT]}
+   ${red}-n  --nocolor${cyan}       # ${cmsg_Usage6[$LC_DEFAULT]}
+   ${red}-h  --help${cyan}          # ${cmsg_Usage7[$LC_DEFAULT]}${reset}
 EOF
 }
 
@@ -2915,7 +2918,7 @@ sh_grubInstall() {
 	fi
 	if (( LEFI )); then
 		sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} GRUB EFI ${cmsg_Em[$LC_DEFAULT]} $_BOOTLOADER"\
-						  "grub-install $_BOOTLOADER --target=$TARGET_EFI --efi-directory=/boot/efi --boot-directory=/boot --bootloader-id=$cnickefi --recheck"
+						  "grub-install $_BOOTLOADER --target=$TARGET_EFI --efi-directory=/boot/efi --boot-directory=/boot --bootloader-id=$cnickefi --removable --recheck"
 		sh_mkefiroaming
 	fi
 	if ! (( LVM )); then
@@ -2969,8 +2972,12 @@ sh_install() {
 	local afirmware=(wifi-firmware)
 	local abase=(zstd cryptsetup lvm2 wireless_tools xz wpa_supplicant socklog-void openntpd)
 	local agrub=(grub os-prober)
+	local start_datetime
+	local end_datetime
 
 	sh_checkInstall || return 1
+	start_time=$(date +%s)  # Obtém o tempo de início em segundos desde a época Unix
+	start_datetime=$(date)
 	if (( LEFI )); then
 		if sh_getBootEFI; then
 			agrub+=(grub-"$TARGET_EFI")
@@ -3067,12 +3074,30 @@ sh_install() {
 		sh_chmod_tmp
 		sh_copy_scripts
 		sh_umount_fs
-		alerta "$APP" "${cmsg_FinalizadaComSucesso[LC_DEFAULT]}"
+		end_datetime=$(date)
+		alerta "$APP" "${cmsg_FinalizadaComSucesso[LC_DEFAULT]}\n" \
+			"Start Date time  : $start_datetime" \
+			"Finish Date Time : $end_datetime" \
+			"Time elapsed     : ${RED}$(sh_time_elapsed)"
 	else
 		die "${cmsg_ERRO[LC_DEFAULT]} tar #$?. ${cmsg_ErroTar[LC_DEFAULT]} $_TARBALL_ROOTFS ${cmsg_Em[LC_DEFAULT]} $dir_install"
 	fi
 	exit 0
 	} # > out & sh_monitor
+}
+
+sh_time_elapsed() {
+	local end_time=$(date +%s)  						# Obtém o tempo de término em segundos desde a época Unix
+	local duration=$((end_time - start_time))  	# Calcula a duração em segundos
+	local	hours=$((duration / 3600))
+	local minutes=$(( (duration % 3600) / 60))
+	local seconds=$((duration % 60))
+
+	# Formatar os valores para terem sempre dois dígitos
+	hours=$(printf "%02d" $hours)
+	minutes=$(printf "%02d" $minutes)
+	seconds=$(printf "%02d" $seconds)
+	echo "$hours:$minutes:$seconds"
 }
 
 sh_monitor_old() {
