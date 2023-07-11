@@ -3,7 +3,7 @@
 
 #  void-runimage
 #  Created: 2023/04/25
-#  Altered: 2023/07/07
+#  Altered: 2023/07/11
 #
 #  Copyright (c) 2023-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -35,9 +35,10 @@ export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='1.0.01-20230707'
+readonly _VERSION_='1.0.02-20230711'
 readonly DEPENDENCIES=('tput' 'printf' 'qemu-system-x86_64')
 readonly PACKAGEDEP=([tput]='ncurses' [printf]='coreutils' [qemu-system-x86_64X]='qemu')
+readonly xmem=8G
 declare -i uefi=0
 trap cleanup_working_dir EXIT
 
@@ -163,23 +164,25 @@ function sh_checkDependencies {
 function filerun_bios {
 	if test $# -ge 1; then
 		if test -r $1; then
-			qemu-system-x86_64 \
-	        	-no-fd-bootchk\
-	        	-drive file=${1},if=none,id=disk1,format=raw \
-	        	-device ide-hd,drive=disk1,bootindex=1 \
-				-machine accel=kvm \
-				-cpu host \
-				-smp "$(nproc)" \
-				-name 'Chili' \
-				-m 16G \
-	        	-name archiso,process=archiso_0 \
-	        	-device virtio-scsi-pci,id=scsi0 \
-	        	-device virtio-net-pci,romfile=,netdev=net0 -netdev user,id=net0,hostfwd=tcp::60022-:22 \
-	        	-audiodev pa,id=snd0,server=localhost \
-	        	-device ich9-intel-hda \
-	        	-device hda-output,audiodev=snd0 \
-	        	-global ICH9-LPC.disable_s3=1 \
-	        	-serial stdio
+			sudo qemu-system-x86_64\
+			-no-fd-bootchk\
+			-machine accel=kvm\
+			-cpu host\
+			-smp "$(nproc)"\
+			-m ${xmem}\
+			-name 'Chili'\
+			-drive file=${1},format=raw,if=none,id=disk1\
+			-device ide-hd,drive=disk1,bootindex=1\
+	    	-name archiso,process=archiso_0\
+	    	-device virtio-scsi-pci,id=scsi0\
+		  	-device virtio-net-pci,netdev=net0 -netdev user,id=net0 \
+		  	-net nic,model=virtio -net user \
+	    	-audiodev pa,id=snd0,server=localhost\
+	    	-device ich9-intel-hda\
+	    	-device hda-output,audiodev=snd0\
+	    	-global ICH9-LPC.disable_s3=1\
+	    	-machine type=q35,smm=on,accel=kvm,usb=on,pcspk-audiodev=snd0\
+	    	-serial stdio
 		else
 			log_msg "${red}ERROR: ${cyan}'$1' ${red}could not read or does not exist"
 	   fi
@@ -187,6 +190,8 @@ function filerun_bios {
 		sh_usage
    fi
 }
+
+
 
 function filerun_uefi {
 	if test $# -ge 1; then
@@ -203,16 +208,16 @@ function filerun_uefi {
 			if [[ ${1: -4} == ".iso" ]]; then
 			  # Executar como CD-ROM
 				qemu-system-x86_64 \
+					-no-fd-bootchk\
 				  	-machine accel=kvm \
 					-cpu host \
 				  	-smp "$(nproc)" \
 			    	-name 'Chili' \
-			    	-m 16G \
+					-m ${xmem}\
 				 	-cdrom $1 \
 				 	-boot d \
 				  	-vga virtio \
 				  	-display gtk \
-		       	-hda /archlive/qemu/hdc.img \
 				  	-device virtio-net-pci,netdev=net0 -netdev user,id=net0 \
 				  	-device intel-hda -audiodev pa,id=snd0,server=localhost \
 				  	-device hda-output,audiodev=snd0 \
@@ -224,15 +229,15 @@ function filerun_uefi {
 			else
 				# Executar como disco RAW
 				qemu-system-x86_64 \
+					-no-fd-bootchk\
 				  	-machine accel=kvm \
 				  	-smp "$(nproc)" \
 			    	-name 'Chili' \
-				  	-m 16G \
+					-m ${xmem}\
 				  	-drive file=${1},if=virtio,format=raw \
 				  	-device virtio-net-pci,netdev=net0 -netdev user,id=net0 \
 				  	-vga virtio \
 				  	-display gtk \
-		       	-hda /archlive/qemu/hdc.img \
 				  	-device intel-hda -audiodev pa,id=snd0,server=localhost \
 				  	-device hda-output,audiodev=snd0 \
 				  	-net nic,model=virtio -net user \
@@ -271,6 +276,7 @@ while true; do
       *)             sh_usage;;
    esac
 done
+
 
 sh_checkRoot
 if ((uefi)); then
