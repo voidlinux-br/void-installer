@@ -77,7 +77,7 @@ function sh_checkRoot {
 }
 
 function sh_version {
-   printf	"${orange}${0##*/} v${_VERSION_}${reset}\n"\
+	printf "${orange}${0##*/} v${_VERSION_}${reset}\n"\
 "   ${bold}Copyright (C) 2023 vcatafesta@gmail.com\n"\
 "   GPLv3+ License: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>\n"\
 "   This is free software: you are free to change and redistribute it.\n"\
@@ -94,8 +94,8 @@ Options:
 	-h|--help              print this help
 	-u|--uefi              set boot type to 'UEFI'
 	-b|--bridge            configure net as bridge
- 	-n|--nocolor           remove colors from output
- 	-V|--version           print version
+	-n|--nocolor           remove colors from output
+	-V|--version           print version
 
 Example:
 	Run an image/disk using UEFI:
@@ -249,20 +249,20 @@ OPTIONS=ubVnh
 LONGOPTIONS=uefi,bridge,version,nocolor,help
 opts=$(getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@")
 if [ $? -ne 0 ]; then
-   sh_usage
+	sh_usage
 fi
 eval set -- "$opts"
 
 while true; do
-   case "$1" in
-      -u|--uefi)  	uefi=1;shift;;
-      -b|--bridge)  	bridge=1;shift;;
-      -n|--nocolor)  sh_unsetvarcolors;shift;;
-      -V|--version)  sh_version;;
-      -h|--help)     sh_usage;;
-      --)            shift;break;;
-      *)             sh_usage;;
-   esac
+	case "$1" in
+		-u|--uefi)  	uefi=1;shift;;
+		-b|--bridge)  	bridge=1;shift;;
+		-n|--nocolor)  sh_unsetvarcolors;shift;;
+		-V|--version)  sh_version;;
+		-h|--help)     sh_usage;;
+		--)            shift;break;;
+		*)             sh_usage;;
+	esac
 done
 
 sh_checkRoot
