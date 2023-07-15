@@ -268,10 +268,12 @@ done
 sh_checkRoot
 if ((bridge)); then
 	qemu_options+=(-netdev bridge,br=$iface_bridge,id=net0)
-	qemu_options+=(-device virtio-net-pci,netdev=net0)
+#	qemu_options+=(-device virtio-net-pci,netdev=net0)
+	qemu_options+=(-device e1000,netdev=net0)
 else
 	qemu_options+=(-netdev user,id=net0)
-	qemu_options+=(-device virtio-net-pci,netdev=net0)
+#	qemu_options+=(-device virtio-net-pci,netdev=net0)
+	qemu_options+=(-device e1000,netdev=net0)
 fi
 if ((uefi)); then
 	filerun_uefi "$@"
