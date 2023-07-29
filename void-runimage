@@ -3,7 +3,7 @@
 
 #  void-runimage
 #  Created: 2023/04/25
-#  Altered: 2023/07/11
+#  Altered: 2023/07/15
 #
 #  Copyright (c) 2023-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -35,7 +35,7 @@ export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='1.1.11-20230711'
+readonly _VERSION_='1.1.15-20230715'
 readonly DEPENDENCIES=('tput' 'printf' 'qemu-system-x86_64')
 readonly PACKAGEDEP=([tput]='ncurses' [printf]='coreutils' [qemu-system-x86_64X]='qemu')
 readonly xmem='8G'
@@ -224,7 +224,7 @@ function sh_set_qemu_common_options {
 	qemu_options+=(-machine accel=kvm)
 	qemu_options+=(-cpu host)
 	qemu_options+=(-smp "$(nproc)")
-	qemu_options+=(-name 'Chili')
+	qemu_options+=(-name 'void-runimage')
 	qemu_options+=(-m ${xmem})
 	qemu_options+=(-vga virtio)
 	qemu_options+=(-display gtk)
@@ -268,11 +268,9 @@ done
 sh_checkRoot
 if ((bridge)); then
 	qemu_options+=(-netdev bridge,br=$iface_bridge,id=net0)
-#	qemu_options+=(-device virtio-net-pci,netdev=net0)
 	qemu_options+=(-device e1000,netdev=net0)
 else
 	qemu_options+=(-netdev user,id=net0)
-#	qemu_options+=(-device virtio-net-pci,netdev=net0)
 	qemu_options+=(-device e1000,netdev=net0)
 fi
 if ((uefi)); then

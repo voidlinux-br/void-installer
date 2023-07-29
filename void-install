@@ -385,7 +385,7 @@ sh_setVarColors() {
 		reset=$(tput sgr0)
 		black=$(tput setaf 0);
 		red=$(tput bold)$(tput setaf 196)
-		green=$(tput setaf 2)
+		green=$(tput bold)$(tput setaf 2)
 		yellow=$(tput bold)$(tput setaf 3)
 		blue=$(tput setaf 4)
 		pink=$(tput setaf 5)
