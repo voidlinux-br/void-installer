@@ -380,20 +380,36 @@ sh_setVarColors() {
 	# does the terminal support true-color?
 	if [[ -n "$(command -v "tput")" ]]; then
 		#tput setaf 127 | cat -v  #capturar saida
-		tput sgr0 # reset colors
-		bold=$(tput bold)
+		# Definir a variável de controle para restaurar a formatação original
 		reset=$(tput sgr0)
-		black=$(tput setaf 0);
+
+		# Definir os estilos de texto como variáveis
+		bold=$(tput bold)
+		underline=$(tput smul)      # Início do sublinhado
+		nounderline=$(tput rmul)    # Fim do sublinhado
+		reverse=$(tput rev)         # Inverte as cores de fundo e texto
+
+		# Definir as cores ANSI como variáveis
+	   black=$(tput bold)$(tput setaf 0);
 		red=$(tput bold)$(tput setaf 196)
 		green=$(tput bold)$(tput setaf 2)
 		yellow=$(tput bold)$(tput setaf 3)
 		blue=$(tput setaf 4)
 		pink=$(tput setaf 5)
+		magenta=$(tput setaf 5)
 		cyan=$(tput setaf 6)
 		white=$(tput setaf 7)
-		orange=$(tput setaf 3)
+		gray=$(tput setaf 8)
+		orange=$(tput setaf 202)
 		purple=$(tput setaf 125);
 		violet=$(tput setaf 61);
+		light_red=$(tput setaf 9)
+		light_green=$(tput setaf 10)
+		light_yellow=$(tput setaf 11)
+		light_blue=$(tput setaf 12)
+		light_magenta=$(tput setaf 13)
+		light_cyan=$(tput setaf 14)
+		bright_white=$(tput setaf 15)
 	else
 		sh_unsetVarColors
 	fi
