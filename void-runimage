@@ -3,7 +3,7 @@
 
 #  void-runimage
 #  Created: 2023/04/25
-#  Altered: 2023/07/11
+#  Altered: 2023/07/15
 #
 #  Copyright (c) 2023-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -35,11 +35,14 @@ export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='1.0.02-20230711'
+readonly _VERSION_='1.1.15-20230715'
 readonly DEPENDENCIES=('tput' 'printf' 'qemu-system-x86_64')
 readonly PACKAGEDEP=([tput]='ncurses' [printf]='coreutils' [qemu-system-x86_64X]='qemu')
-readonly xmem=8G
+readonly xmem='8G'
+readonly iface_bridge='br0'
 declare -i uefi=0
+declare -i bridge=0
+declare -a qemu_options=()
 trap cleanup_working_dir EXIT
 
 function cleanup_working_dir {
@@ -74,7 +77,7 @@ function sh_checkRoot {
 }
 
 function sh_version {
-   printf	"${orange}${0##*/} v${_VERSION_}${reset}\n"\
+	printf "${orange}${0##*/} v${_VERSION_}${reset}\n"\
 "   ${bold}Copyright (C) 2023 vcatafesta@gmail.com\n"\
 "   GPLv3+ License: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>\n"\
 "   This is free software: you are free to change and redistribute it.\n"\
@@ -90,8 +93,9 @@ Usage:
 Options:
 	-h|--help              print this help
 	-u|--uefi              set boot type to 'UEFI'
- 	-n|--nocolor           remove colors from output
- 	-V|--version           print version
+	-b|--bridge            configure net as bridge
+	-n|--nocolor           remove colors from output
+	-V|--version           print version
 
 Example:
 	Run an image/disk using UEFI:
@@ -133,6 +137,7 @@ function sh_setenvironment {
 	DONE="${COL_LIGHT_GREEN} done!${COL_NC}"
 	OVER="\\r\\033[K"
 	DOTPREFIX="  ${black}::${reset} "
+	sh_set_qemu_common_options
 }
 
 function sh_unsetvarcolors {
@@ -164,25 +169,11 @@ function sh_checkDependencies {
 function filerun_bios {
 	if test $# -ge 1; then
 		if test -r $1; then
-			sudo qemu-system-x86_64\
-			-no-fd-bootchk\
-			-machine accel=kvm\
-			-cpu host\
-			-smp "$(nproc)"\
-			-m ${xmem}\
-			-name 'Chili'\
-			-drive file=${1},format=raw,if=none,id=disk1\
-			-device ide-hd,drive=disk1,bootindex=1\
-	    	-name archiso,process=archiso_0\
-	    	-device virtio-scsi-pci,id=scsi0\
-		  	-device virtio-net-pci,netdev=net0 -netdev user,id=net0 \
-		  	-net nic,model=virtio -net user \
-	    	-audiodev pa,id=snd0,server=localhost\
-	    	-device ich9-intel-hda\
-	    	-device hda-output,audiodev=snd0\
-	    	-global ICH9-LPC.disable_s3=1\
-	    	-machine type=q35,smm=on,accel=kvm,usb=on,pcspk-audiodev=snd0\
-	    	-serial stdio
+			qemu-system-x86_64\
+				-drive file=${1},format=raw,if=none,id=disk1\
+				-device ide-hd,drive=disk1,bootindex=1\
+		    	-device virtio-scsi-pci,id=scsi0\
+				"${qemu_options[@]}"
 		else
 			log_msg "${red}ERROR: ${cyan}'$1' ${red}could not read or does not exist"
 	   fi
@@ -190,8 +181,6 @@ function filerun_bios {
 		sh_usage
    fi
 }
-
-
 
 function filerun_uefi {
 	if test $# -ge 1; then
@@ -206,45 +195,20 @@ function filerun_uefi {
 			cp -av -- '/usr/share/edk2-ovmf/x64/OVMF_VARS.fd' "${working_dir}/"
 
 			if [[ ${1: -4} == ".iso" ]]; then
-			  # Executar como CD-ROM
-				qemu-system-x86_64 \
-					-no-fd-bootchk\
-				  	-machine accel=kvm \
-					-cpu host \
-				  	-smp "$(nproc)" \
-			    	-name 'Chili' \
-					-m ${xmem}\
-				 	-cdrom $1 \
-				 	-boot d \
-				  	-vga virtio \
-				  	-display gtk \
-				  	-device virtio-net-pci,netdev=net0 -netdev user,id=net0 \
-				  	-device intel-hda -audiodev pa,id=snd0,server=localhost \
-				  	-device hda-output,audiodev=snd0 \
-				  	-net nic,model=virtio -net user \
-	 				-drive if=pflash,format=raw,unit=0,file=${ovmf_code},read-only=off \
-					-drive if=pflash,format=raw,unit=1,file=${working_dir}/OVMF_VARS.fd \
-		        	-machine type=q35,smm=on,accel=kvm,usb=on,pcspk-audiodev=snd0 \
-				  	-serial stdio
+			  # ISO disk
+				qemu-system-x86_64\
+				 	-cdrom $1\
+				 	-boot d\
+	 				-drive if=pflash,format=raw,unit=0,file=${ovmf_code},read-only=off\
+					-drive if=pflash,format=raw,unit=1,file=${working_dir}/OVMF_VARS.fd\
+					"${qemu_options[@]}"
 			else
-				# Executar como disco RAW
-				qemu-system-x86_64 \
-					-no-fd-bootchk\
-				  	-machine accel=kvm \
-				  	-smp "$(nproc)" \
-			    	-name 'Chili' \
-					-m ${xmem}\
-				  	-drive file=${1},if=virtio,format=raw \
-				  	-device virtio-net-pci,netdev=net0 -netdev user,id=net0 \
-				  	-vga virtio \
-				  	-display gtk \
-				  	-device intel-hda -audiodev pa,id=snd0,server=localhost \
-				  	-device hda-output,audiodev=snd0 \
-				  	-net nic,model=virtio -net user \
-					-drive if=pflash,format=raw,unit=0,file=${ovmf_code},read-only=off \
-					-drive if=pflash,format=raw,unit=1,file=${working_dir}/OVMF_VARS.fd \
-		        	-machine type=q35,smm=on,accel=kvm,usb=on,pcspk-audiodev=snd0 \
-				  	-serial stdio
+				# RAW disk
+				qemu-system-x86_64\
+				  	-drive file=${1},format=raw,if=virtio\
+					-drive if=pflash,format=raw,unit=0,file=${ovmf_code},read-only=off\
+					-drive if=pflash,format=raw,unit=1,file=${working_dir}/OVMF_VARS.fd\
+					"${qemu_options[@]}"
 			fi
 		else
 			log_msg "${red}ERROR: ${cyan}'$1' ${red}could not read or does not exist"
@@ -255,30 +219,60 @@ function filerun_uefi {
    fi
 }
 
+function sh_set_qemu_common_options {
+	qemu_options+=(-no-fd-bootchk)
+	qemu_options+=(-machine accel=kvm)
+	qemu_options+=(-cpu host)
+	qemu_options+=(-smp "$(nproc)")
+	qemu_options+=(-name 'void-runimage')
+	qemu_options+=(-m ${xmem})
+	qemu_options+=(-vga virtio)
+	qemu_options+=(-display gtk)
+	qemu_options+=(-device intel-hda)
+	qemu_options+=(-audiodev pa,id=snd0,server=localhost)
+	qemu_options+=(-device hda-output,audiodev=snd0)
+	qemu_options+=(-device ich9-intel-hda)
+	qemu_options+=(-global ICH9-LPC.disable_s3=1)
+	qemu_options+=(-machine type=q35,smm=on,accel=kvm,usb=on,pcspk-audiodev=snd0)
+	qemu_options+=(-serial stdio)
+}
+
+#				  	-netdev user,id=net0 \
+#				  	-device virtio-net-pci,netdev=net0 \
+#				  	-net nic,model=virtio \
+#				  	-net user \
+
 sh_setenvironment
 sh_checkDependencies
 
-OPTIONS=uVnh
-LONGOPTIONS=uefi,version,nocolor,help
+OPTIONS=ubVnh
+LONGOPTIONS=uefi,bridge,version,nocolor,help
 opts=$(getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@")
 if [ $? -ne 0 ]; then
-   sh_usage
+	sh_usage
 fi
 eval set -- "$opts"
 
 while true; do
-   case "$1" in
-      -u|--uefi)  	uefi=1;shift;;
-      -n|--nocolor)  sh_unsetvarcolors;shift;;
-      -V|--version)  sh_version;;
-      -h|--help)     sh_usage;;
-      --)            shift;break;;
-      *)             sh_usage;;
-   esac
+	case "$1" in
+		-u|--uefi)  	uefi=1;shift;;
+		-b|--bridge)  	bridge=1;shift;;
+		-n|--nocolor)  sh_unsetvarcolors;shift;;
+		-V|--version)  sh_version;;
+		-h|--help)     sh_usage;;
+		--)            shift;break;;
+		*)             sh_usage;;
+	esac
 done
 
-
 sh_checkRoot
+if ((bridge)); then
+	qemu_options+=(-netdev bridge,br=$iface_bridge,id=net0)
+	qemu_options+=(-device e1000,netdev=net0)
+else
+	qemu_options+=(-netdev user,id=net0)
+	qemu_options+=(-device e1000,netdev=net0)
+fi
 if ((uefi)); then
 	filerun_uefi "$@"
 else
