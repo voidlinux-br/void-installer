@@ -7,7 +7,7 @@
 
 #  install.sh
 #  Created: 2023/01/10
-#  Altered: 2023/04/05
+#  Altered: 2023/08/28
 #
 #  Copyright (c) 2023-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2023-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -41,39 +41,67 @@
 
 	umask 0022
 	url="https://raw.githubusercontent.com/voidlinux-br/void-installer/master"
-	files=('void-install' 'void-gitclone' 'void-mirror' 'void-services'
-			 'void-testmirror' 'void-wifi' 'void-remove-vg' 'void-clonedisk'
-			 'void-xrandr' 'void-runimage' 'void-maketar'
-			 'ChangeLog.txt' 'INSTALL' 'LICENSE' 'MAINTAINERS' 'Makefile'
-			 'README.md' 'bashrc.sh' '.dircolors' 'void-x86_64-base-custom-current.tar.xz')
+	url_blob="https://github.com/voidlinux-br/void-installer/blob/master"
+	declare -a files_bin=('void-install' 'void-maketar' 'void-mirror' 'void-services' 'void-testmirror' 'void-wifi' 'void-remove-vg' 'void-clonedisk' 'void-xrandr' 'void-runimage' 'void-gitclone')
+	declare -a files_home=('ChangeLog.txt' 'INSTALL' 'LICENSE' 'MAINTAINERS' 'Makefile' 'README.md' 'bashrc.sh' '.dircolors' 'install.sh')
+	declare -a files_lang=('void-install' 'void-maketar')
+	declare -a files_blob=('void-x86_64-base-custom-current.tar.xz')
+	declare -a idioma=(bg cs da de el en es et fi fr he hr hu is it ja ko nl no pl pt-PT pt-BR ro ru sk sv tr uk zh fa hi ar)
 	tmpDir=~/void-installer
-	directory_to_download="usr/share/locale"
-	[[ ! -d "$tmpDir" ]] && { mkdir "$tmpDir" || oops "Não é possível criar diretório temporário para baixar arquivos";}
+	dir_locale="usr/share/locale"
+
+	[[ ! -d "$tmpDir" ]] && { mkdir -p "$tmpDir" || oops "Não é possível criar diretório temporário para baixar arquivos"; }
 
 	require_util() {
-		command -v "$1" > /dev/null 2>&1 ||
-			oops "você não tem '$1' instalado, que é preciso para $2"
+		command -v "$1" >/dev/null 2>&1 || oops "você não tem '$1' instalado, que é preciso para $2"
 	}
 
 	#require_util tar "descompatar o tarball"
 
-	if command -v curl > /dev/null 2>&1; then
+	if command -v curl >/dev/null 2>&1; then
 		cmdfetch() { curl --silent --continue-at - --insecure -L "$1" -o "$2"; }
-	elif command -v wget > /dev/null 2>&1; then
+	elif command -v wget >/dev/null 2>&1; then
 		cmdfetch() { wget --quiet -c "$1" -O "$2"; }
 	else
-		oops "você não tem wget ou curl instalado, que é necessário para baixar os arquivos"
+		require_util curl "downloader"
+		require_util wget "downloader"
 	fi
 
-	for f in "${files[@]}"; do
+	for f in "${files_bin[@]}"; do
 		echo "baixando $f from '$url' to '$tmpDir'..."
 		cmdfetch "$url/$f" "$tmpDir/$f" || oops "falha no download '$url/$f'"
 	done
 
-    for file in "${files[@]}" ; do
-    	chmod +x $tmpDir/$file
-    done
-	cp -rf usr/share/locale/* /usr/share/locale/
+	for f in "${files_home[@]}"; do
+		echo "baixando $f from '$url' to '$tmpDir'..."
+		cmdfetch "$url/$f" "$tmpDir/$f" || oops "falha no download '$url/$f'"
+	done
+
+	for f in "${files_blob[@]}"; do
+		if cmdfetch "$url_blob/$f" "$tmpDir/$f" || oops "falha no download '$url/$f'"; then
+			echo "baixando $f from '$url_blob' to '$tmpDir'..."
+		fi
+	done
+
+	for lang in "${idioma[@]}"; do
+		for f in "${files_lang[@]}"; do
+			[[ ! -d "$tmpDir/$dir_locale/$lang/LC_MESSAGES/" ]] && {
+				mkdir -p "$tmpDir/$dir_locale/$lang/LC_MESSAGES/" ||
+					oops "Não é possível criar diretório temporário para baixar arquivos"
+			}
+			if cmdfetch "$url_blob/$dir_locale/$lang/LC_MESSAGES/$f.mo" "$tmpDir/$dir_locale/$lang/LC_MESSAGES/$f.mo"; then
+				echo "baixando $f.mo from '$url_blob/$dir_locale/$lang/LC_MESSAGES/' to '$tmpDir/$dir_locale/$lang/LC_MESSAGES/'"
+			fi
+		done
+	done
+
+	cp -rfv $tmpDir/usr/share/locale/* /usr/share/locale/
+
+	for file in "${files_bin[@]}"; do
+		chmod +x $tmpDir/$file
+		mv -v $tmpDir/$file /usr/bin/
+	done
+
 	ls -la --color=auto $tmpDir
 
 	echo
