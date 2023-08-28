@@ -89,8 +89,8 @@
 				mkdir -p "$tmpDir/$dir_locale/$lang/LC_MESSAGES/" ||
 					oops "Não é possível criar diretório temporário para baixar arquivos"
 			}
-			if cmdfetch "$url_blob/$dir_locale/$lang/LC_MESSAGES/$f.mo" "$tmpDir/$dir_locale/$lang/LC_MESSAGES/$f.mo"; then
-				echo "baixando $f.mo from '$url_blob/$dir_locale/$lang/LC_MESSAGES/' to '$tmpDir/$dir_locale/$lang/LC_MESSAGES/'"
+			if cmdfetch "$url/$dir_locale/$lang/LC_MESSAGES/$f.mo" "$tmpDir/$dir_locale/$lang/LC_MESSAGES/$f.mo"; then
+				echo "baixando $f.mo from '$url/$dir_locale/$lang/LC_MESSAGES/' to '$tmpDir/$dir_locale/$lang/LC_MESSAGES/'"
 			fi
 		done
 	done
