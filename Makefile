@@ -34,6 +34,7 @@ install:
 	@mkdir -p ${INFODIR}
 	@cp Makefile ChangeLog INSTALL LICENSE MAINTAINERS README.md ${DOCDIR}/
 	@cp Makefile ChangeLog INSTALL LICENSE MAINTAINERS README.md ${INFODIR}/
+    $cp -rf usr/share/locale/* /usr/share/locale/
 	@echo ":: Feito! ${APP} software instalado em: ${BINDIR}"
 	@echo
 	@echo -e "uso:"

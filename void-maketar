@@ -6,7 +6,7 @@
 #  Description: Create tar of directories
 #
 #  Created: 2023/07/28
-#  Altered: 2023/07/2
+#  Altered: 2023/08/28
 #
 #  Copyright (c) 2023-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -31,8 +31,13 @@
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 #  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#export LANGUAGE=en
+#export LANGUAGE=pt_BR
+export TEXTDOMAINDIR=/usr/share/locale
+export TEXTDOMAIN=void-maketar
+
 readonly APP="${0##*/}"
-readonly _VERSION_="1.0.0-20230728"
+readonly _VERSION_="2.0.0-20230828"
 readonly DEPENDENCIES=(pigz tar tput sed)
 
 function sh_diahora {
@@ -106,7 +111,7 @@ function sh_setvarcolors {
 }
 
 die() {
-	printf "${red}$CROSS ${pink}%03d/%03d => ${red}FATAL: %s\n\033[m" "$ncontador" "$njobs" "$@"
+	printf "${red}$CROSS ${pink}%03d/%03d => ${red}$(gettext "FATAL:") %s\n\033[m" "$ncontador" "$njobs" "$@"
 	exit 1
 }
 
@@ -117,7 +122,7 @@ function info_msg() {
 }
 
 function run_cmd {
-	info_msg "$APP: Running $*"
+	info_msg "$APP: $(gettext "Rodando") $*"
 	eval "$@"
 }
 
@@ -127,15 +132,15 @@ function sh_checkDependencies() {
 	declare -a missing
 
 	for d in "${DEPENDENCIES[@]}"; do
-		[[ -z $(command -v "$d") ]] && missing+=("$d") && errorFound=1 && info_msg "${red}ERRO: não encontrei o comando${reset}: ${cyan}'$d'${reset}"
+		[[ -z $(command -v "$d") ]] && missing+=("$d") && errorFound=1 && info_msg "${red}$(gettext "ERRO: não consegui encontrar o comando")${reset}: ${cyan}'$d'${reset}"
 	done
 
 	if ((errorFound)); then
-		echo "${yellow}---------------IMPOSSIBLE TO CONTINUE-------------${reset}"
-		echo "This script needs the commands listed above"
-		echo "Install them and/or make sure they are in your ${red}\$PATH${reset}"
-		echo "${yellow}---------------IMPOSSIBLE TO CONTINUE-------------${reset}"
-		die "Installation aborted!"
+		echo "${yellow}---------------$(gettext "IMPOSSÍVEL CONTINUAR")-------------${reset}"
+		echo "$(gettext "Este script precisa dos comandos listados acima")"
+		echo "$(gettext "Instale-os e/ou verifique se eles estão em seu") ${red}\$PATH${reset}"
+		echo "${yellow}---------------$(gettext "IMPOSSÍVEL CONTINUAR")-------------${reset}"
+		die "$(gettext "Instalação abortada!")"
 	fi
 }
 
@@ -153,7 +158,7 @@ function sh_main {
 	if ((error)); then
 		die "$@"
 	else
-		info_msg "Successfully created $FILENAME"
+		info_msg "$FILENAME $(gettext "Criado com sucesso!")"
 	fi
 }
 
@@ -161,7 +166,7 @@ sh_config
 sh_checkDependencies
 
 if [ "$(id -u)" -ne 0 ]; then
-	die "$APP: need root perms to continue, exiting."
+	die "$APP: $(gettext "precisa de permissões de root para continuar, saindo.")"
 fi
 
 # Process command line options using getopts
@@ -173,7 +178,7 @@ while getopts "qn" opt; do
 		sh_setvarcolors
 		;;
 	\?)
-		echo "Invalid option: -$OPTARG" >&2
+		echo "$(gettext "Opção inválida"): -$OPTARG" >&2
 		exit 1
 		;;
 	esac
@@ -182,13 +187,13 @@ shift $((OPTIND - 1))
 
 if [ $# -ne 1 ]; then
 	cat <<-EOF
-		Usage: $APP [options] <directory>
-		Options:
-		  -q          Quiet mode (suppress progress messages)
-		  -n          Disable colors in the output
+		Usage: $APP [$(gettext "opções")] <$(gettext "diretório")>
+		$(gettext "opções:")
+		  -q          $(gettext "Modo silencioso (suprimir mensagens de progresso)")
+		  -n          $(gettext "Desativar cores na saída")
 	EOF
 	exit 1
 fi
 
-[[ ! -d "$1" ]] && die "${cyan}$1${reset} does not exist!"
+[[ ! -d "$1" ]] && die "${cyan}$1${reset} $(gettext "não existe!")"
 sh_main "$@"

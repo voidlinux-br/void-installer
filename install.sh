@@ -47,6 +47,7 @@
 			 'ChangeLog.txt' 'INSTALL' 'LICENSE' 'MAINTAINERS' 'Makefile'
 			 'README.md' 'bashrc.sh' '.dircolors' 'void-x86_64-base-custom-current.tar.xz')
 	tmpDir=~/void-installer
+	directory_to_download="usr/share/locale"
 	[[ ! -d "$tmpDir" ]] && { mkdir "$tmpDir" || oops "Não é possível criar diretório temporário para baixar arquivos";}
 
 	require_util() {
@@ -64,24 +65,15 @@
 		oops "você não tem wget ou curl instalado, que é necessário para baixar os arquivos"
 	fi
 
-	for f in "${files[@]}"
-	do
+	for f in "${files[@]}"; do
 		echo "baixando $f from '$url' to '$tmpDir'..."
 		cmdfetch "$url/$f" "$tmpDir/$f" || oops "falha no download '$url/$f'"
 	done
 
-	chmod +x $tmpDir/void-install
-	chmod +x $tmpDir/void-gitclone
-	chmod +x $tmpDir/void-mirror
-	chmod +x $tmpDir/void-services
-	chmod +x $tmpDir/void-testmirror
-	chmod +x $tmpDir/void-remove-vg
-	chmod +x $tmpDir/void-clonedisk
-	chmod +x $tmpDir/void-wifi
-	chmod +x $tmpDir/void-xrandr
-	chmod +x $tmpDir/void-runimage
-	chmod +x $tmpDir/void-maketar
-	chmod +x $tmpDir/bashrc.sh
+    for file in "${files[@]}" ; do
+    	chmod +x $tmpDir/$file
+    done
+	cp -rf usr/share/locale/* /usr/share/locale/
 	ls -la --color=auto $tmpDir
 
 	echo
