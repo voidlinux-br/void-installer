@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/08/28
+#  Altered: 2023/09/05
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -43,7 +43,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.0.00-20230828'
+readonly _VERSION_='2.0.10-20230905'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -53,8 +53,8 @@ readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk pa
 #readonly _TARBALL_ROOTFS=void-x86_64-base-system-current.tar.xz
 readonly _TARBALL_ROOTFS=void-x86_64-base-custom-current.tar.xz
 #
-declare -i quiet=0 grafico=0 ncounter=0 njobs=41
-declare -i LAUTO=1 LINSTALL=0 LCHROOT=0 LBIND=0 LMKPART=0 LEFI=0 LBIOS=1 LMKPARTED=0 LOSPROBER=0 LFDE=0 LVM=0 LFS=0 LPARTITION=0 LTABLE=0
+declare -gi quiet=0 grafico=0 ncounter=0 njobs=60
+declare -gi LAUTO=1 LINSTALL=0 LCHROOT=0 LBIND=0 LMKPART=0 LEFI=0 LBIOS=1 LMKPARTED=0 LOSPROBER=0 LFDE=0 LVM=0 LFS=0 LPARTITION=0 LTABLE=0
 declare -gA AsUser=([cpass]='void' [cpassroot]='voidlinux' [chostname]='voidlinux' [cgroups]='wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder')
 declare -gA Amntpoint
 declare -gA AmntpointFDE
@@ -83,7 +83,7 @@ declare -ga aPerfumery=('setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-noti
 declare -ga aPrinter=('cups' 'system-config-printer' 'system-config-printer-udev' 'splix' 'samsung-unified-driver' 'brother-brlaser' 'cups-pdf')
 declare -ga aTerminal=('lxterminal' 'rxvt-unicode' 'xfce4-terminal')
 declare -ga aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs')
-declare _PKGS='vim nano lynx pv neofetch pfetch wget curl bc geoip geoip-data geoipupdate iputils inetutils tree bat bash-completion vsv vpm opendoas'
+declare _PKGS='vim nano lynx pv neofetch pfetch wget curl bc geoip geoip-data geoipupdate iputils inetutils tree bat bash-completion vsv vpm xtools'
 declare _EXTRAS='nano-syntax-highlighting'
 #
 declare _DEVICE='/dev/sdX'
@@ -488,7 +488,7 @@ DOT() {
 }
 
 msg() {
-	((ncounter++))
+	((++ncounter))
 	cinfo="$1"
 	cfmt="$(fmt)"
 	ufmt=$(unfmt "$cfmt")
@@ -511,6 +511,12 @@ msg() {
 	fi
 }
 
+fmt() {
+#	printf "${bold}${yellow}%03d/%03d${reset}" "$ncounter" "$njobs"
+	printf "${bold}${yellow}%03d/%03d${reset}" "$njobs" "$ncounter"
+	return $?
+}
+
 mensagem() {
 	cinfo="$1"
 	last_msg="$2"
@@ -521,11 +527,6 @@ mensagem() {
 		--backtitle "$ccabec" \
 		--infobox "$last_msg" \
 		8 100
-}
-
-fmt() {
-	printf "${bold}${yellow}%03d/%03d${reset}" "$ncounter" "$njobs"
-	return $?
 }
 
 unfmt() {
@@ -539,7 +540,8 @@ log_info_msg() {
 	last_msg="$*"
 
 	if ! ((quiet)); then
-		echo -n -e "${BMPREFIX}${@}"
+#		echo -n -e "${BMPREFIX}${@}"
+		echo -n -e "${BMPREFIX}${*}"
 	fi
 	return 0
 }
@@ -1509,7 +1511,39 @@ sh_plasmaminimal() {
 }
 
 sh_xfce4minimal() {
-	local apkgs=('xfce4' 'xfce4-whiskermenu-plugin' 'xfce4-pulseaudio-plugin' 'xfce4-screenshooter' 'xfce4-clipman-plugin')
+	local apkgs=('xfce4'
+				 'xfce4-appfinder'
+				 'xfce4-battery-plugin'
+				 'xfce4-clipman-plugin'
+				 'xfce4-cpufreq-plugin'
+				 'xfce4-cpugraph-plugin'
+				 'xfce4-datetime-plugin'
+				 'xfce4-dict'
+				 'xfce4-diskperf-plugin'
+				 'xfce4-fsguard-plugin'
+				 'xfce4-genmon-plugin'
+				 'xfce4-mailwatch-plugin'
+				 'xfce4-mpc-plugin'
+				 'xfce4-netload-plugin'
+				 'xfce4-notifyd'
+				 'xfce4-panel'
+				 'xfce4-pulseaudio-plugin'
+				 'xfce4-power-manager'
+				 'xfce4-screensaver'
+				 'xfce4-session'
+				 'xfce4-settings'
+				 'xfce4-screenshooter'
+				 'xfce4-sensors-plugin'
+				 'xfce4-systemload-plugin'
+				 'xfce4-taskmanager'
+				 'xfce4-time-out-plugin'
+				 'xfce4-timer-plugin'
+				 'xfce4-verve-plugin'
+				 'xfce4-whiskermenu-plugin'
+				 'xfce4-weather-plugin'
+				 'xfce4-wavelan-plugin'
+				 'xfce4-xkb-plugin'
+				 )
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Xfce4 ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
