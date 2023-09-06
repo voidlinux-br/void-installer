@@ -6,10 +6,10 @@
 	- git clone --depth=1 https://github.com/voidlinux-br/void-installer
 
 - 2 - using curl/wget stdin
-	- sh <(curl -s -L https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
-	- sh <(wget -q -O - https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
-	- curl -s -O https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh | sh
-	- wget -q -O - https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh | sh
+	- bash <(curl -s -L https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
+	- bash <(wget -q -O - https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
+	- curl -s -O https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh | bash
+	- wget -q -O - https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh | bash
 
 - 3 - using curl/wget
 	- curl -O https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh
