@@ -43,9 +43,9 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.0.15-20230906'
+readonly _VERSION_='2.0.16-20230906'
 readonly distro=$(uname -n)
-readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup)
+readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
 #
 #readonly _TARBALL_ROOTFS=void-x86_64-base-minimal-current.tar.xz
@@ -86,7 +86,7 @@ declare -ga aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogi
 declare _ga aEditorTxt=('nano' 'vim')
 declare _ga aEditorX=('kate')
 declare _ga aDownloader=('wget' 'curl' 'git')
-declare _ga aUtility=('binutils' 'sed' 'grep' 'tree' 'pv')
+declare _ga aUtility=('gettext' 'binutils' 'sed' 'grep' 'tree' 'pv')
 declare _PKGS='neofetch pfetch bc bat bash-completion vsv vpm xtools geoip geoip-data geoipupdate'
 declare _EXTRAS='nano-syntax-highlighting'
 #
