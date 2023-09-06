@@ -108,3 +108,4 @@
 	echo "Entre em: $tmpDir e digite:"
 	echo "sudo ./void-install"
 }
+
