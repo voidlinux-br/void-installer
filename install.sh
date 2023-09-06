@@ -99,13 +99,15 @@
 
 	for file in "${files_bin[@]}"; do
 		sudo chmod +x $tmpDir/$file
-		sudo mv -v $tmpDir/$file /usr/bin/
+		sudo cp -rfv $tmpDir/$file /usr/bin/
 	done
 
 	ls -la --color=auto $tmpDir
 
 	echo
-	echo "Entre em: $tmpDir e digite:"
-	echo "sudo ./void-install"
+	echo "digite:"
+	echo "	sudo void-install"
+	echo "ou entre em: $tmpDir e digite:"
+	echo "	sudo ./void-install"
 }
 
