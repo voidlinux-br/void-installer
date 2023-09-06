@@ -86,7 +86,7 @@ declare -ga aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogi
 declare _ga aEditorTxt=('nano' 'vim')
 declare _ga aEditorX=('kate')
 declare _ga aDownloader=('wget' 'curl' 'git')
-declare _ga aUtility=('gettext' 'binutils' 'sed' 'grep' 'tree' 'pv')
+declare _ga aUtility=('gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted')
 declare _PKGS='neofetch pfetch bc bat bash-completion vsv vpm xtools geoip geoip-data geoipupdate'
 declare _EXTRAS='nano-syntax-highlighting'
 #
