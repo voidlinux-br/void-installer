@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-28 18:29-0400\n"
+"POT-Creation-Date: 2023-09-06 16:48-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,174 +17,182 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: void-mirror:50
+#: void-mirror:53
 msgid "Interrompido! Saindo..."
 msgstr ""
 
-#: void-mirror:73
+#: void-mirror:76
 msgid "Removendo arquivos temporários..."
 msgstr ""
 
-#: void-mirror:136
+#: void-mirror:146
 msgid "verificando caminho"
 msgstr ""
 
-#: void-mirror:487
+#: void-mirror:499
 msgid "Português"
 msgstr ""
 
-#: void-mirror:488
+#: void-mirror:500
 msgid "English"
 msgstr ""
 
-#: void-mirror:489
+#: void-mirror:501
 msgid "Deustch"
 msgstr ""
 
-#: void-mirror:490
+#: void-mirror:502
 msgid "Français"
 msgstr ""
 
-#: void-mirror:491
+#: void-mirror:503
 msgid "Español"
 msgstr ""
 
-#: void-mirror:492
+#: void-mirror:504
 msgid "Italiano"
 msgstr ""
 
-#: void-mirror:536
+#: void-mirror:548
 msgid "LISTA DE ESPELHOS"
 msgstr ""
 
-#: void-mirror:536
+#: void-mirror:548
 msgid "Não é possível continuar!"
 msgstr ""
 
-#: void-mirror:537
+#: void-mirror:549
 msgid "Arquivo de lista de espelhos não encontrado no caminho"
 msgstr ""
 
-#: void-mirror:554 void-mirror:556
+#: void-mirror:578 void-mirror:580
 msgid "BAIXAR LISTA DE ESPELHOS"
 msgstr ""
 
-#: void-mirror:554
+#: void-mirror:578
 msgid "buscando nova lista de espelhos em"
 msgstr ""
 
-#: void-mirror:557
-msgid "incapaz de buscar uma nova lista de espelhos de"
-msgstr ""
-
-#: void-mirror:558
+#: void-mirror:581
 msgid "Verifique sua conexão com a internet"
 msgstr ""
 
-#: void-mirror:559
-msgid "Tentando usar lista local."
+#: void-mirror:582
+msgid "Incapaz de buscar uma nova lista de espelhos de"
 msgstr ""
 
-#: void-mirror:615 void-mirror:635 void-mirror:639 void-mirror:643
+#: void-mirror:583
+msgid "Tentando usar a lista local"
+msgstr ""
+
+#: void-mirror:672 void-mirror:676 void-mirror:680 void-mirror:749
 msgid "=== ESPELHO ==="
 msgstr ""
 
-#: void-mirror:635 void-mirror:641
+#: void-mirror:672 void-mirror:678
 msgid "Aguarde..."
 msgstr ""
 
-#: void-mirror:635 void-mirror:641
+#: void-mirror:672 void-mirror:678
 msgid "testando com"
 msgstr ""
 
-#: void-mirror:638
+#: void-mirror:675
 msgid "não retornou resultado"
 msgstr ""
 
-#: void-mirror:643
+#: void-mirror:680
 msgid "não foi localizado no"
 msgstr ""
 
-#: void-mirror:644
+#: void-mirror:681
 msgid "não foi localizado em"
 msgstr ""
 
-#: void-mirror:656
-msgid "Deseja definir/alterar o mirror deste host para o escolhido?"
+#: void-mirror:696
+msgid "Deseja definir/alterar o espelho deste host para o(s) escolhido(s) ?"
 msgstr ""
 
-#: void-mirror:682
+#: void-mirror:727
 msgid "erro: você não pode realizar esta operação a menos que seja root."
 msgstr ""
 
-#: void-mirror:683
+#: void-mirror:728
 msgid "ERRO"
 msgstr ""
 
-#: void-mirror:684
+#: void-mirror:729
 msgid "não encontrei o comando"
 msgstr ""
 
-#: void-mirror:685
+#: void-mirror:730
 msgid "IMPOSSÍVEL CONTINUAR"
 msgstr ""
 
-#: void-mirror:686
+#: void-mirror:731
 msgid "Esse script precisa dos comandos listados acima"
 msgstr ""
 
-#: void-mirror:687
+#: void-mirror:732
 msgid "Instale-os e/ou verifique se estão no seu"
 msgstr ""
 
-#: void-mirror:688
+#: void-mirror:733
 msgid "Instalar o(s) comando(s)"
 msgstr ""
 
-#: void-mirror:689
+#: void-mirror:734
 msgid "INFO: Rode novamente o aplicativo"
 msgstr ""
 
-#: void-mirror:690
+#: void-mirror:735
 msgid "ERRO na instalação dos comandos. Tente manualmente."
 msgstr ""
 
-#: void-mirror:691
+#: void-mirror:736
 msgid "Instalação abortada"
 msgstr ""
 
-#: void-mirror:692
+#: void-mirror:737
 msgid "Ok"
 msgstr ""
 
-#: void-mirror:693
+#: void-mirror:738
 msgid "Aceitar"
 msgstr ""
 
-#: void-mirror:694
+#: void-mirror:739
 msgid "Sair"
 msgstr ""
 
-#: void-mirror:695
+#: void-mirror:740
 msgid "Sim"
 msgstr ""
 
-#: void-mirror:696
+#: void-mirror:741
 msgid "Não"
 msgstr ""
 
-#: void-mirror:697
+#: void-mirror:742
 msgid "Gerando"
 msgstr ""
 
-#: void-mirror:698
+#: void-mirror:743
+msgid "Atualizando espelhos..."
+msgstr ""
+
+#: void-mirror:744
 msgid "Usar as setas ↑ e ↓ para navegar."
 msgstr ""
 
-#: void-mirror:699
+#: void-mirror:745
 msgid "Usar TAB para alternar entre os botões."
 msgstr ""
 
-#: void-mirror:700
+#: void-mirror:746
 msgid "Usar ENTER ou BARRA DE ESPAÇO para selecionar e aceitar."
+msgstr ""
+
+#: void-mirror:748
+msgid "Configurando espelho em"
 msgstr ""

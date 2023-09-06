@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-28 09:50-0400\n"
+"POT-Creation-Date: 2023-09-06 17:25-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,66 +17,66 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: void-maketar:115
+#: void-maketar:114
 msgid "FATAL:"
 msgstr ""
 
-#: void-maketar:126
+#: void-maketar:125
 msgid "Rodando"
 msgstr ""
 
-#: void-maketar:136
+#: void-maketar:135
 msgid "ERRO: não consegui encontrar o comando"
 msgstr ""
 
-#: void-maketar:140 void-maketar:143
+#: void-maketar:139 void-maketar:142
 msgid "IMPOSSÍVEL CONTINUAR"
 msgstr ""
 
-#: void-maketar:141
+#: void-maketar:140
 msgid "Este script precisa dos comandos listados acima"
 msgstr ""
 
-#: void-maketar:142
+#: void-maketar:141
 msgid "Instale-os e/ou verifique se eles estão em seu"
 msgstr ""
 
-#: void-maketar:144
+#: void-maketar:143
 msgid "Instalação abortada!"
 msgstr ""
 
-#: void-maketar:162
+#: void-maketar:161
 msgid "Criado com sucesso!"
 msgstr ""
 
-#: void-maketar:170
+#: void-maketar:169
 msgid "precisa de permissões de root para continuar, saindo."
 msgstr ""
 
-#: void-maketar:182
+#: void-maketar:181
 msgid "Opção inválida"
 msgstr ""
 
-#: void-maketar:191
+#: void-maketar:190
 msgid "opções"
 msgstr ""
 
-#: void-maketar:191
+#: void-maketar:190
 msgid "diretório"
 msgstr ""
 
-#: void-maketar:192
+#: void-maketar:191
 msgid "opções:"
 msgstr ""
 
-#: void-maketar:193
+#: void-maketar:192
 msgid "Modo silencioso (suprimir mensagens de progresso)"
 msgstr ""
 
-#: void-maketar:194
+#: void-maketar:193
 msgid "Desativar cores na saída"
 msgstr ""
 
-#: void-maketar:199
+#: void-maketar:198
 msgid "não existe!"
 msgstr ""
