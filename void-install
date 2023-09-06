@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/09/05
+#  Altered: 2023/09/06
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -43,7 +43,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.0.10-20230905'
+readonly _VERSION_='2.0.15-20230906'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -70,7 +70,7 @@ declare -gA AConfWifi=([_NETWORK]='wifi_ssid' [_PASSWORD]='wifi_password')
 declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
 declare -ga aArchiver=('xarchiver' 'unrar' 'zip' 'p7zip' 'unzip' 'bzip2')
-declare -ga aBrowser=('firefox' 'firefox-i18n-pt-BR')
+declare -ga aBrowser=('firefox' 'firefox-i18n-pt-BR' 'lynx')
 declare -ga aBackground=('gnome-backgrounds' 'mate-backgrounds')
 declare -ga aBluetooth=('bluez' 'bluez-alsa' 'bluedevil' 'blueman' 'bluez-cups')
 declare -ga aDisplaymanager=('lxdm' 'lxappearance' 'lxinput' 'lxrandr' 'lxtask')
@@ -78,12 +78,16 @@ declare -ga aFilemanager=('Thunar' 'pcmanfm' 'octoxbps')
 declare -ga aFont=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font' 'noto-fonts-emoji' 'font-emoji-one-color' 'ttf-ubuntu-font-family' 'unicode-emoji')
 declare -ga aMedia=('pulseaudio' 'pavucontrol' 'pasystray' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
 declare -ga aMicrode=('intel-ucode' 'linux-firmware-amd')
-declare -ga aNetwork=('NetworkManager' 'network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda' 'inetutils')
+declare -ga aNetwork=('NetworkManager' 'network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda' 'inetutils' 'iputils')
 declare -ga aPerfumery=('setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notification-daemon')
 declare -ga aPrinter=('cups' 'system-config-printer' 'system-config-printer-udev' 'splix' 'samsung-unified-driver' 'brother-brlaser' 'cups-pdf')
 declare -ga aTerminal=('lxterminal' 'rxvt-unicode' 'xfce4-terminal')
 declare -ga aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs')
-declare _PKGS='vim nano lynx pv neofetch pfetch wget curl bc geoip geoip-data geoipupdate iputils inetutils tree bat bash-completion vsv vpm xtools'
+declare _ga aEditorTxt=('nano' 'vim')
+declare _ga aEditorX=('kate')
+declare _ga aDownloader=('wget' 'curl' 'git')
+declare _ga aUtility=('binutils' 'sed' 'grep' 'tree' 'pv')
+declare _PKGS='neofetch pfetch bc bat bash-completion vsv vpm xtools geoip geoip-data geoipupdate'
 declare _EXTRAS='nano-syntax-highlighting'
 #
 declare _DEVICE='/dev/sdX'
@@ -1467,6 +1471,7 @@ sh_X11minimal() {
 	apkgs+=("${aPerfumery[@]}")
 	apkgs+=("${aMicrocode[@]}")
 	apkgs+=("${aArchiver[@]}")
+	apkgs+=("${aEditorX[@]}")
 
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Xorg ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aXorg[*]}"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Font's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aFont[*]}" "$err_not_fatal"
@@ -3068,7 +3073,10 @@ sh_install() {
 			sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${akernel[*]}" "$err_not_fatal"
 			sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${abase[*]} ${agrub[*]}"
 			sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install" "xbps-install -y $_PKGS" "$err_not_fatal" "$err_not_fatal"
-			#		sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y $_EXTRAS" "$err_not_fatal"
+			sh_chroot_job "$(gettext "Instalando Editores de texto em") $dir_install" "xbps-install -y ${aEditorTxt[*]}" "$err_not_fatal" "$err_not_fatal"
+			sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install" "xbps-install -y ${aDownloader[*]}" "$err_not_fatal" "$err_not_fatal"
+			sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install" "xbps-install -y ${aUtility[*]}" "$err_not_fatal" "$err_not_fatal"
+#			sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y $_EXTRAS" "$err_not_fatal"
 			sh_grubInstall
 			sh_make_fstab
 			sh_update_bashrc
@@ -3076,11 +3084,11 @@ sh_install() {
 			sh_update_hostname
 			sh_update_rc_local
 			sh_update_sshd
-			#		sh_update_timezone
+#			sh_update_timezone
 			sh_update_rc_conf
 			sh_update_locale
 			sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-reconfigure -f glibc-locales"
-			#		sh_update_keymap
+#			sh_update_keymap
 			sh_update_wpa_suplicant
 
 			_ONLY_TTY=$false
