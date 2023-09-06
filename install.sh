@@ -95,11 +95,11 @@
 		done
 	done
 
-	cp -rfv $tmpDir/usr/share/locale/* /usr/share/locale/
+	sudo cp -rfv $tmpDir/usr/share/locale/* /usr/share/locale/
 
 	for file in "${files_bin[@]}"; do
-		chmod +x $tmpDir/$file
-		mv -v $tmpDir/$file /usr/bin/
+		sudo chmod +x $tmpDir/$file
+		sudo mv -v $tmpDir/$file /usr/bin/
 	done
 
 	ls -la --color=auto $tmpDir
