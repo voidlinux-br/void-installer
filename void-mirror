@@ -566,9 +566,9 @@ sh_download_mirrors_list() {
 	require_util() {
 		command -v "$1" >/dev/null 2>&1 || oops "você não tem '$1' instalado, que é preciso para $2"
 	}
-	if command -v curlx >/dev/null 2>&1; then
+	if command -v curl >/dev/null 2>&1; then
 		cmdfetch() { curl --compressed --silent --continue-at - --insecure -L "$1" -o "$2"; return $?; }
-	elif command -v wgetx >/dev/null 2>&1; then
+	elif command -v wget >/dev/null 2>&1; then
 		cmdfetch() { wget --quiet -c "$1" -O "$2"; return $?; }
 	else
 		require_util curl "downloader"
