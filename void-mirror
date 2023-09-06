@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2023/01/22
-#  Altered: 2023/08/28
+#  Altered: 2023/09/06
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -35,19 +35,22 @@ export TEXTDOMAIN=void-mirror
 #debug
 export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
+set -e
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='1.0.00-20230828'
-readonly DEPENDENCIES=(wget dialog cat sed grep printf)
+readonly _VERSION_='1.0.16-20230906'
+readonly DEPENDENCIES=(wget curl dialog cat sed grep printf)
 declare -A Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -A Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
 declare -A Amirrors
 declare -i quiet=0 grafico=1 ncontador=0
 declare _MIRROR="repo-fastly.voidlinux.org"
 declare BOOTLOG
-declare distro; distro=$(uname -n)
-declare Interrupted; Interrupted="$(gettext "Interrompido! Saindo...")"
+declare distro
+distro=$(uname -n)
+declare Interrupted
+Interrupted="$(gettext "Interrompido! Saindo...")"
 trap 'printf "\n${red}$Interrupted\n"; cleanup; exit 0' INT TERM HUP
 
 function debug() {
@@ -82,12 +85,12 @@ sh_ambiente() {
 	readonly err_fatal=$true
 	readonly err_not_fatal=$false
 	BOOTLOG="/tmp/void-mirror-$(sh_diahora).log"
-	: "${ccabec="$APP v${_VERSION_}"}"
-	: "${DIALOG=${DIALOG:-"dialog"}}"
-	: "${MIRRORPATH:=/usr/share/xmirror/}"
-	: "${MIRRORFILE:=mirrors.lst}"
-	: "${MIRRORURL:=https://xmirror.voidlinux.org/raw/$MIRRORFILE}"
-	: "${MIRRORLIST:=$MIRRORPATH$MIRRORFILE}"
+	ccabec="$APP v${_VERSION_}"
+	DIALOG='dialog'
+	MIRRORPATH='/usr/share/xmirror/'
+	MIRRORFILE='mirrors.lst'
+	MIRRORURL="https://xmirror.voidlinux.org/raw/$MIRRORFILE"
+	MIRRORLIST="$MIRRORPATH$MIRRORFILE"
 
 	# flag languages
 	PT_BR=0
@@ -111,12 +114,20 @@ sh_ambiente() {
 	: "${MAGENTA="\Z5"}"
 	: "${REVERSE="\Zr"}"
 	: "${UNDERLINE="\Zu"}"
-	WHITE="\Z7"
-	BLUE="\Z4"
-	CYAN="\Z6"
-	RED="\Z1"
-	BOLD="\Zb"
-	RESET="\Zn"
+
+   # dialog colors
+    GREEN="\Z2"
+    MAGENTA="\Z5"
+    REVERSE="\Zr"
+    UNDERLINE="\Zu"
+    BLACK="\Z0"
+    YELLOW="\Z3"
+    WHITE="\Z7"
+    BLUE="\Z4"
+    CYAN="\Z6"
+    RED="\Z1"
+    BOLD="\Zb"
+    RESET="\Zn"
 	: echo "$err_fatal"
 
 	if [ -z "${COLUMNS}" ]; then
@@ -129,12 +140,13 @@ sh_ambiente() {
 	COL=$((COLUMNS - 8))
 	SET_COL="\\033[${COL}G" # at the $COL char
 	CURS_ZERO="\\033[0G"
-	sh_check_mirror_path
 }
 
 sh_check_mirror_path() {
 	msg "MIRROR PATH" "$(gettext "verificando caminho") $MIRRORPATH"
-	[[ ! -d "${MIRRORPATH}" ]] && mkdir -p "${MIRRORPATH}" >>"$BOOTLOG"
+	if ! test -d "${MIRRORPATH}"; then
+		mkdir -p "${MIRRORPATH}" >>"$BOOTLOG"
+	fi
 }
 
 sh_disableprintk() {
@@ -265,7 +277,7 @@ DOT() {
 }
 
 msg() {
-	((ncontador++))
+	((++ncontador))
 	logmessage=$(sed 's/\\\033[^a-zA-Z]*.//g' <<<"$last_msg")
 	printf "%s\n" "$(timespec) [ INFO ]${2}" >>"$BOOTLOG"
 
@@ -392,7 +404,7 @@ alerta() {
 		--backtitle "$ccabec" \
 		--ok-label "${cmsg_ok[$LC_DEFAULT]}" \
 		--msgbox "$2\n$3\n$4\n$5\n$6" \
-		10 75
+		10 110
 }
 
 conf() {
@@ -484,12 +496,12 @@ sh_main() {
 			--cancel-label "${cmsg_Sair[$LC_DEFAULT]}" \
 			--menu "\n${escolhaIdioma[$LC_DEFAULT]}:" \
 			0 80 0 \
-			0 "$(gettext "Português")"    \
-			1 "$(gettext "English")"      \
-			2 "$(gettext "Deustch")"      \
-			3 "$(gettext "Français")"     \
-			4 "$(gettext "Español")"      \
-			5 "$(gettext "Italiano")"     )
+			0 "$(gettext "Português")" \
+			1 "$(gettext "English")" \
+			2 "$(gettext "Deustch")" \
+			3 "$(gettext "Français")" \
+			4 "$(gettext "Español")" \
+			5 "$(gettext "Italiano")")
 
 		exit_status=$?
 		case $exit_status in
@@ -499,7 +511,7 @@ sh_main() {
 		esac
 		LC_DEFAULT="$i18"
 		LOCALE="${Alocale[$i18]}"
-#       sh_choosemirror "$@"
+		#       sh_choosemirror "$@"
 		break
 	done
 }
@@ -534,7 +546,7 @@ sh_getMirrors() {
 
 	if ! test -e "$MIRRORLIST"; then
 		alerta "$(gettext "LISTA DE ESPELHOS")" "\n${RED}$(gettext "Não é possível continuar!")${RESET}" \
-		"$(gettext "Arquivo de lista de espelhos não encontrado no caminho") : ${BLUE}$MIRRORLIST${RESET}"
+			"$(gettext "Arquivo de lista de espelhos não encontrado no caminho") : ${BLUE}$MIRRORLIST${RESET}"
 		return 1
 	fi
 
@@ -551,12 +563,24 @@ sh_getMirrors() {
 }
 
 sh_download_mirrors_list() {
+	require_util() {
+		command -v "$1" >/dev/null 2>&1 || oops "você não tem '$1' instalado, que é preciso para $2"
+	}
+	if command -v curlx >/dev/null 2>&1; then
+		cmdfetch() { curl --compressed --silent --continue-at - --insecure -L "$1" -o "$2"; return $?; }
+	elif command -v wgetx >/dev/null 2>&1; then
+		cmdfetch() { wget --quiet -c "$1" -O "$2"; return $?; }
+	else
+		require_util curl "downloader"
+		require_util wget "downloader"
+	fi
+
 	msg "$(gettext "BAIXAR LISTA DE ESPELHOS")" "$(gettext "buscando nova lista de espelhos em") ${MIRRORURL}"
-	if ! wget --quiet -c "$MIRRORURL" -O "$MIRRORLIST" &>/dev/null; then
-		alerta "$(gettext "BAIXAR LISTA DE ESPELHOS")"  \
-			"\n$(gettext "incapaz de buscar uma nova lista de espelhos de") $MIRRORURL" \
-			"${RED}$(gettext "Verifique sua conexão com a internet")${RESET}" \
-			"$(gettext "Tentando usar lista local.")"
+	if ! cmdfetch "$MIRRORURL" "$MIRRORLIST"; then
+		alerta "$(gettext "BAIXAR LISTA DE ESPELHOS")" \
+			"\n${RED}${REVERSE}$(gettext "Verifique sua conexão com a internet")${RESET}" \
+			"$(gettext "Incapaz de buscar uma nova lista de espelhos de") : ${BLUE}${REVERSE}$MIRRORURL${RESET}" \
+  			"$(gettext "Tentando usar a lista local")                     : ${BLUE}${REVERSE}$MIRRORLIST"
 		return 1
 	fi
 	return 0
@@ -582,6 +606,14 @@ sh_splitarray() {
 	echo "${array[pos - 1]}"
 }
 
+sh_sync_mirrors() {
+	xbps-install -S | $DIALOG \
+		--backtitle "$ccabec - ${cmsg_Atualizando[LC_DEFAULT]}" \
+		--title "${cmsg_Atualizando[LC_DEFAULT]}" \
+		--programbox 20 110
+	exit 0
+}
+
 sh_choosemirror() {
 	declare -A Aflag
 	local exit_status
@@ -593,10 +625,15 @@ sh_choosemirror() {
 	local -i REGION=2
 	local -i LOCATION=3
 	local -i TIER=4
+	local main_file='/etc/xbps.d/00-repository-main.conf'
+	local mirror
+	local mirror0
+	local mirror1
+	local mirror2
 
 	Amirrors+=([void.chililinux.com_2]="https://void.chililinux.com/voidlinux/|South and Central America|Pimenta Bueno, Brazil|2|")
-	Amirrors+=([void.chilios.com.br]="https://void.chilios.com.br/voidlinux/|South and Central America|Pimenta Bueno, Brazil|2|")
-	Amirrors+=([void.chilios.com.br_2]="http://void.chilios.com.br/voidlinux/|South and Central America|Pimenta Bueno, Brazil|2|")
+	#	Amirrors+=([void.chilios.com.br]="https://void.chilios.com.br/voidlinux/|South and Central America|Pimenta Bueno, Brazil|2|")
+	#	Amirrors+=([void.chilios.com.br_2]="http://void.chilios.com.br/voidlinux/|South and Central America|Pimenta Bueno, Brazil|2|")
 
 	while true; do
 		array=()
@@ -612,7 +649,7 @@ sh_choosemirror() {
 			"${Aflag[$key]}")
 		done <<<"${sorted_list[@]}"
 
-		mirror=$(${DIALOG} --title "$(gettext "=== ESPELHO ===")" \
+		mirror=$(${DIALOG} --title "${cmsg_Espelho[LC_DEFAULT]}" \
 			--backtitle "$ccabec" \
 			--default-item "${_MIRROR}" \
 			--colors \
@@ -648,26 +685,34 @@ sh_choosemirror() {
 			;;
 		esac
 		_MIRROR=($(strtoarray "$mirror"))
-		if conf "** MIRROR **" \
-			"\n${BOLD}${CYAN}Mirror     : $_MIRROR" \
-			"\n${BOLD}${CYAN}Url Mirror : $url_mirror" \
-			"\n${BOLD}${CYAN}Region     : $(sh_splitarray "${Amirrors[$mirror]}" 2)" \
-			"\n${BOLD}${CYAN}Location   : $(sh_splitarray "${Amirrors[$mirror]}" 3)\n" \
-			"\n${RED}$(gettext "Deseja definir/alterar o mirror deste host para o escolhido?")${RESET}\n\n"; then
+		mirror0=${_MIRROR[0]}
+		mirror1=${_MIRROR[1]}
+		mirror2=${_MIRROR[2]}
+		if conf "${cmsg_Espelho[LC_DEFAULT]}" \
+			"\n${BOLD}${CYAN}Mirror     : $mirror0 | $mirror1 | $mirror2" \
+			"\n${BOLD}${CYAN}Url Mirror : $(sh_splitarray "${Amirrors[$mirror0]}" 1) | $(sh_splitarray "${Amirrors[$mirror1]}" 1) | $(sh_splitarray "${Amirrors[$mirror2]}" 1)" \
+			"\n${BOLD}${CYAN}Region     : $(sh_splitarray "${Amirrors[$mirror0]}" 2) | $(sh_splitarray "${Amirrors[$mirror1]}" 2) | $(sh_splitarray "${Amirrors[$mirror2]}" 2)" \
+			"\n${BOLD}${CYAN}Location   : $(sh_splitarray "${Amirrors[$mirror0]}" 3) | $(sh_splitarray "${Amirrors[$mirror1]}" 3) | $(sh_splitarray "${Amirrors[$mirror2]}" 3)\n" \
+			"\n${RED}$(gettext "Deseja definir/alterar o espelho deste host para o(s) escolhido(s) ?")${RESET}\n\n"; then
 
 			mkdir -p "/etc/xbps.d/"
-			echo "" "/etc/xbps.d/00-repository-main.conf"
+			mv -f "${main_file}" "${main_file}.old"
+			#			echo "" > "${main_file}"
 			for i in "${_MIRROR[@]}"; do
 				url_mirror="$(sh_splitarray "${Amirrors[$i]}" 1)"
-				msg "INFO" "$(log_info_msg "${cmsg_Configurando[$LC_DEFAULT]} ${cmsg_Mirror[$LC_DEFAULT],,} ${cmsg_Em[$LC_DEFAULT]}: /etc/xbps.d/00-repository-main.conf")"
+				clocation="$(sh_splitarray "${Amirrors[$i]}" 3)"
+				msg "INFO" "$(log_info_msg "${cmsg_Configurando[$LC_DEFAULT]}: ${main_file}")"
 				{
 					echo repository="${url_mirror}current"
+					[[ "$clocation" =~ .*Pimenta* ]] && echo repository="${url_mirror}current/extras"
 					echo repository="${url_mirror}current/nonfree"
 					echo repository="${url_mirror}current/multilib"
 					echo repository="${url_mirror}current/multilib/nonfree"
-				} >>"/etc/xbps.d/00-repository-main.conf"
-				evaluate_retval "$?"
+					echo
+				} >>"${main_file}"
+				#				evaluate_retval "$?"
 			done
+			sh_sync_mirrors
 		fi
 		return 0
 	done
@@ -694,13 +739,14 @@ sh_language() {
 	cmsg_Sair[pt_BR]=$(gettext "Sair")
 	cmsg_yeslabel[pt_BR]=$(gettext "Sim")
 	cmsg_nolabel[pt_BR]=$(gettext "Não")
-    cmsg_Gerando[pt_BR]=$(gettext "Gerando")
-    cmsg_LABEL1[pt_BR]=$(gettext "Usar as setas ↑ e ↓ para navegar.")
-    cmsg_LABEL2[pt_BR]=$(gettext "Usar TAB para alternar entre os botões.")
-    cmsg_LABEL3[pt_BR]=$(gettext "Usar ENTER ou BARRA DE ESPAÇO para selecionar e aceitar.")
-    cmsg_LABEL[pt_BR]="${cmsg_LABEL1[pt_BR]}\n${cmsg_LABEL2[pt_BR]}\n${cmsg_LABEL3[pt_BR]}"
-
-	
+	cmsg_Gerando[pt_BR]=$(gettext "Gerando")
+	cmsg_Atualizando[pt_BR]=$(gettext "Atualizando espelhos...")
+	cmsg_LABEL1[pt_BR]=$(gettext "Usar as setas ↑ e ↓ para navegar.")
+	cmsg_LABEL2[pt_BR]=$(gettext "Usar TAB para alternar entre os botões.")
+	cmsg_LABEL3[pt_BR]=$(gettext "Usar ENTER ou BARRA DE ESPAÇO para selecionar e aceitar.")
+	cmsg_LABEL[pt_BR]="${cmsg_LABEL1[pt_BR]}\n${cmsg_LABEL2[pt_BR]}\n${cmsg_LABEL3[pt_BR]}"
+	cmsg_Configurando[pt_BR]=$(gettext "Configurando espelho em")
+	cmsg_Espelho[pt_BR]=$(gettext "=== ESPELHO ===")
 }
 
 sh_ambiente
@@ -710,6 +756,7 @@ sh_setvarcolors
 sh_ascii_lines
 sh_logprefix
 sh_checkDependencies
+sh_check_mirror_path
 sh_disableprintk
 [[ "$1" = @(-V|-v|version|-version|--version) ]] && {
 	sh_version
