@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/09/06
+#  Altered: 2023/10/10
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -43,7 +43,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.0.16-20230906'
+readonly _VERSION_='2.0.17-20231010'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -920,6 +920,7 @@ sh_update_locale() {
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
 	cat >"$dir_install/etc/locale.conf" <<-EOF
 		LANG=$lc
+		LANGUAGE=$lc
 		LC_COLLATE=C
 		LC_ALL=$lc
 	EOF
