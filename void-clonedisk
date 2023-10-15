@@ -24,7 +24,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-#  chili-clonedisk uses quite a few external programs during its execution. You
+#  void-clonedisk uses quite a few external programs during its execution. You
 #  need to have at least the following installed for makepkg to function:
 #     awk, bsdtar (libarchive), bzip2, coreutils, fakeroot, file, find (findutils),
 #     gettext, gpg, grep, gzip, sed, tput (ncurses), xz, ETC
@@ -371,12 +371,12 @@ sh_choose_source_disk() {
 		sd=$(${DIALOG} \
 			--default-item "$sd" \
 			--backtitle "$ccabec" \
+			--clear \
 			--title "${cmsg_disco_origem[$LC_DEFAULT]}" \
 			--ok-label "${cmsg_Select[$LC_DEFAULT]}" \
-			--cancel-label "${cmsg_button_voltar[$LC_DEFAULT]}" \
+			--cancel-label "${cmsg_Sair[$LC_DEFAULT]}" \
 			--colors \
-			--extra-button \
-			--extra-label "${cmsg_info_disco[$LC_DEFAULT]}" \
+			--extra-button --extra-label "${cmsg_info_disco[$LC_DEFAULT]}" \
 			--menu "${cmsg_LABEL[$LC_DEFAULT]}\n\n\
 $(printf "%${nlen}s$sep%-6s$sep%6s$sep%-6s$sep%-15s$sep%-30s" "DEVICE" "TRAN" "SIZE" "PTTYPE" "LABEL" "MODEL")" \
 			0 0 25 "${array[@]}" 2>&1 >/dev/tty)
@@ -384,7 +384,7 @@ $(printf "%${nlen}s$sep%-6s$sep%6s$sep%-6s$sep%-15s$sep%-30s" "DEVICE" "TRAN" "S
 		exit_status=$?
 		case $exit_status in
 		"$D_ESC" | "$D_CANCEL")
-			init
+			exit 0
 			;;
 		3)
 			result=$(fdisk -l "$sd")
@@ -555,7 +555,7 @@ sh_Language() {
 	cmsg_formatando_particao[pt_BR]=$(gettext "Formatando partição")
 	cmsg_running_disk_cloning[pt_BR]=$(gettext "Executando clonagem de disco")
 	cmsg_Select[pt_BR]=$(gettext "Selecionar")
-	cmsg_Exit[pt_BR]=$(gettext "Sair")
+	cmsg_Sair[pt_BR]=$(gettext "Sair")
 	cmsg_button_voltar[pt_BR]=$(gettext "Voltar")
 	cmsg_disco_origem[pt_BR]=$(gettext "DISCO DE ORIGEM")
 	cmsg_todos_os_dados_serao_perdidos[pt_BR]="  ${RED}$(gettext "AVISO!")${RESET}  $(gettext "Todos os dados disco de DESTINO abaixo serão perdidos!")"
@@ -570,7 +570,7 @@ init() {
 			--backtitle "$ccabec" \
 			--title "${welcome}${xapp}" \
 			--ok-label "${cmsg_Ok[$LC_DEFAULT]}" \
-			--cancel-label "${cmsg_Exit[$LC_DEFAULT]}" \
+			--cancel-label "${cmsg_Sair[$LC_DEFAULT]}" \
 			--menu "\n$(gettext "Escolha o idioma:")" \
 			0 80 0 \
 			0 "$(gettext "Português")" \
