@@ -50,10 +50,10 @@
 	tmpDir=~/void-installer
 	dir_locale="usr/share/locale"
 
-	[[ ! -d "$tmpDir" ]] && { mkdir -p "$tmpDir" || oops "Não é possível criar diretório temporário para baixar arquivos"; }
+	[[ ! -d "$tmpDir" ]] && { mkdir -p "$tmpDir" || oops "Unable to create temporary directory to download files"; }
 
 	require_util() {
-		command -v "$1" >/dev/null 2>&1 || oops "você não tem '$1' instalado, que é preciso para $2"
+		command -v "$1" >/dev/null 2>&1 || oops "you do not have '$1' installed, which is needed to $2"
 	}
 
 	#require_util tar "descompatar o tarball"
@@ -68,18 +68,18 @@
 	fi
 
 	for f in "${files_bin[@]}"; do
-		echo "baixando $f from '$url' to '$tmpDir'..."
-		cmdfetch "$url/$f" "$tmpDir/$f" || oops "falha no download '$url/$f'"
+		echo "Downloading $f from '$url' to '$tmpDir'..."
+		cmdfetch "$url/$f" "$tmpDir/$f" || oops "download failure '$url/$f'"
 	done
 
 	for f in "${files_home[@]}"; do
-		echo "baixando $f from '$url' to '$tmpDir'..."
-		cmdfetch "$url/$f" "$tmpDir/$f" || oops "falha no download '$url/$f'"
+		echo "Downloading $f from '$url' to '$tmpDir'..."
+		cmdfetch "$url/$f" "$tmpDir/$f" || oops "download failure '$url/$f'"
 	done
 
 	for f in "${files_blob[@]}"; do
-		if cmdfetch "$url_blob/$f" "$tmpDir/$f" || oops "falha no download '$url/$f'"; then
-			echo "baixando $f from '$url_blob' to '$tmpDir'..."
+		if cmdfetch "$url_blob/$f" "$tmpDir/$f" || oops "download failure '$url/$f'"; then
+			echo "Downloading $f from '$url_blob' to '$tmpDir'..."
 		fi
 	done
 
@@ -87,10 +87,10 @@
 		for f in "${files_lang[@]}"; do
 			[[ ! -d "$tmpDir/$dir_locale/$lang/LC_MESSAGES/" ]] && {
 				mkdir -p "$tmpDir/$dir_locale/$lang/LC_MESSAGES/" ||
-					oops "Não é possível criar diretório temporário para baixar arquivos"
+					oops "Unable to create temporary directory to download files"
 			}
 			if cmdfetch "$url/$dir_locale/$lang/LC_MESSAGES/$f.mo" "$tmpDir/$dir_locale/$lang/LC_MESSAGES/$f.mo"; then
-				echo "baixando $f.mo from '$url/$dir_locale/$lang/LC_MESSAGES/' to '$tmpDir/$dir_locale/$lang/LC_MESSAGES/'"
+				echo "Downloading $f.mo from '$url/$dir_locale/$lang/LC_MESSAGES/' to '$tmpDir/$dir_locale/$lang/LC_MESSAGES/'"
 			fi
 		done
 	done
