@@ -44,7 +44,7 @@
 	url_blob="https://github.com/voidlinux-br/void-installer/blob/master"
 	declare -a files_bin=('void-install' 'void-maketar' 'void-mirror' 'void-services' 'void-testmirror' 'void-wifi' 'void-remove-vg' 'void-clonedisk' 'void-xrandr' 'void-runimage' 'void-gitclone')
 	declare -a files_home=('ChangeLog.txt' 'INSTALL' 'LICENSE' 'MAINTAINERS' 'Makefile' 'README.md' 'bashrc.sh' '.dircolors' 'install.sh')
-	declare -a files_lang=('void-install' 'void-maketar' 'void-mirror' 'void-clonedisk' 'void-xrandr')
+	declare -a files_lang=('void-install' 'void-maketar' 'void-mirror' 'void-clonedisk' 'void-xrandr' 'void-services')
 	declare -a files_blob=('void-x86_64-base-custom-current.tar.xz')
 	declare -a idioma=(bg cs da de el en es et fi fr he hr hu is it ja ko nl no pl pt-PT pt-BR ro ru sk sv tr uk zh fa hi ar)
 	tmpDir=~/void-installer
