@@ -68,18 +68,18 @@
 	fi
 
 	for f in "${files_bin[@]}"; do
-		echo "Downloading $f from '$url' to '$tmpDir'..."
+		echo "Downloading $f to '$tmpDir'..."
 		cmdfetch "$url/$f" "$tmpDir/$f" || oops "download failure '$url/$f'"
 	done
 
 	for f in "${files_home[@]}"; do
-		echo "Downloading $f from '$url' to '$tmpDir'..."
+		echo "Downloading $f to '$tmpDir'..."
 		cmdfetch "$url/$f" "$tmpDir/$f" || oops "download failure '$url/$f'"
 	done
 
 	for f in "${files_blob[@]}"; do
 		if cmdfetch "$url_blob/$f" "$tmpDir/$f" || oops "download failure '$url/$f'"; then
-			echo "Downloading $f from '$url_blob' to '$tmpDir'..."
+			echo "Downloading $f to '$tmpDir'..."
 		fi
 	done
 
@@ -90,7 +90,7 @@
 					oops "Unable to create temporary directory to download files"
 			}
 			if cmdfetch "$url/$dir_locale/$lang/LC_MESSAGES/$f.mo" "$tmpDir/$dir_locale/$lang/LC_MESSAGES/$f.mo"; then
-				echo "Downloading $f.mo from '$url/$dir_locale/$lang/LC_MESSAGES/' to '$tmpDir/$dir_locale/$lang/LC_MESSAGES/'"
+				echo "Downloading $f.mo to '$tmpDir/$dir_locale/$lang/LC_MESSAGES/'"
 			fi
 		done
 	done
