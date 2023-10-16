@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2023/04/25
-#  Altered: 2023/06/11
+#  Altered: 2023/10/16
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -28,6 +28,9 @@
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 #  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+export TEXTDOMAINDIR=/usr/share/locale
+export TEXTDOMAIN=void-remove-vg
+
 #debug
 export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
@@ -36,7 +39,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.0.11-20230611'
+readonly _VERSION_='0.1.00-20231016'
 
 sh_diahora() {
 	DIAHORA=$(date +"%d%m%Y-%T" | sed 's/://g')
@@ -57,8 +60,8 @@ sh_setenvironment() {
 	pink=$(tput setaf 5)
 	cyan=$(tput setaf 6)
 	orange=$(tput setaf 3)
-	purple=$(tput setaf 125);
-	violet=$(tput setaf 61);
+	purple=$(tput setaf 125)
+	violet=$(tput setaf 61)
 	force=0
 	readonly BOOTLOG="/tmp/$APP-$(sh_diahora).log"
 	COL_NC='\e[0m' # No Color
@@ -72,23 +75,11 @@ sh_setenvironment() {
 	OVER="\\r\\033[K"
 	DOTPREFIX="  ${black}::${reset} "
 	readonly LOGGER='/dev/tty8'
-	sh_getLocale
 }
 
 sh_unsetvarcolors() {
 	unset bold reset cyan red blue white black
 	unset green yellow orange pink cyan purple violet
-}
-
-sh_getLocale() {
-   local lc
-
-	LC_DEFAULT="${Alanguage[pt_BR]}"
-   LOCALE="pt_BR"
-   if lc=$(grep _ <(locale -a) | head -1 | cut -c1-5); then
-      LOCALE="$lc"
-      LC_DEFAULT="${Alanguage[$lc]}"
-   fi
 }
 
 readconf() {
@@ -98,7 +89,7 @@ readconf() {
 		read -r -p "$* [Y/n]"
 	fi
 	[[ ${REPLY^} == "" ]] && return 0
-	[[ ${REPLY^} == N  ]] && return 1 || return 0
+	[[ ${REPLY^} == N ]] && return 1 || return 0
 }
 
 readnotconf() {
@@ -107,20 +98,21 @@ readnotconf() {
 	else
 		read -r -p "$* [y/N]"
 	fi
-	[[ ${REPLY^} == "" ]]  && return 1
-	[[ ${REPLY^} == N  ]]  && return 1 || return 0
+	[[ ${REPLY^} == "" ]] && return 1
+	[[ ${REPLY^} == N ]] && return 1 || return 0
 }
 
 die() {
-	local msg=$1; shift
+	local msg=$1
+	shift
 	printf "  %b %s\\n" "${CROSS}" "${bold}${red}${msg}"
 	exit 1
 }
 
 sh_checkRoot() {
-	local str="Root user check"
+	local str="$(gettext "Verificação de usuário root")"
 	if [[ "$(id -u)" != "0" ]]; then
-		die "${red} error: you cannot perform this operation unless you are root."
+		die "${red}$(gettext "erro: você não pode executar esta operação a menos que seja root")"
 	fi
 	printf "  %b %s\\n" "${TICK}" "${str}"
 	return 0
@@ -138,10 +130,11 @@ log_msg() {
 
 sh_version() {
 	printf "%s\n" "${black}${0##*/} v${_VERSION_}${reset}"
-	printf "%s\n" "${bold}${black}Copyright (C) 2023 vcatafesta@gmail.com\n\
-GPLv3+ License: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>\n\
-This is free software: you are free to change and redistribute it.\n\
-THERE IS NO WARRANTY, to the fullest extent permitted by law.${reset}"
+	printf "\t%s\n\t%s\n\t%s\n\t%s\n" "${bold}${black}Copyright (C) 2023 vcatafesta@gmail.com"\
+				  "$(gettext "Licença GPLv3+: GNU GPL versão 3 ou posterior") <https://gnu.org/licenses/gpl.html>"\
+				  "$(gettext "Este é um software livre: você é livre para alterá-lo e redistribuí-lo.")"\
+				  "$(gettext "NÃO HÁ GARANTIA, em toda a extensão permitida por lei.")$reset"
+	exit 0
 }
 
 sh_usage() {
@@ -150,39 +143,45 @@ ${black}${APP} v$_VERSION_ ${reset}
 Usage: ${red}$0 -r|--remove <VG> [-l|--list] [-f|--force] [-V|--version] [-n|--nocolor] [-h|--help]
 
 ${cyan}[<operations>] ${reset}
-   ${red}-l  --list${cyan}          #list VGs
-   ${red}-r  --remove${cyan}        #remove VG (mandatory)
-   ${red}-f  --force${cyan}         #to force
-   ${red}-V  --version${cyan}       #print application version
-   ${red}-n  --nocolor${cyan}       #remove colors from output
-   ${red}-h  --help${cyan}          #this help
+   ${red}-v  --vgs${cyan}           $(gettext "#listar VGs (grupo de volumes)")
+   ${red}-p  --pvs${cyan}           $(gettext "#listar PVs (Volumes físicos)")
+   ${red}-l  --lvs${cyan}           $(gettext "#listar LVs (Volumes lógicos)")
+   ${red}-r  --remove${cyan}        $(gettext "#remover VG (obrigatório)")
+   ${red}-f  --force${cyan}         $(gettext "#forçar")
+   ${red}-V  --version${cyan}       $(gettext "#imprimir versão do aplicativo")
+   ${red}-n  --nocolor${cyan}       $(gettext "#remover cores da saída")
+   ${red}-h  --help${cyan}          $(gettext "#esta ajuda")
 EOF
 	exit 0
 }
 
 limpa_vm() {
-	echo -n "${black}";
-	log_msg "${green}starting cleaning";
+	echo -n "${black}"
+	log_msg "${green}$(gettext "iniciando limpeza")"
 
-	umount -Rl /mnt/voidlinux 2>&1 | tee -i -a "$BOOTLOG" > "$LOGGER"
-	log_msg "${black}Unmounting FS  : ${orange}/mnt/voidlinux"
+	umount -Rl /mnt/voidlinux 2>&1 | tee -i -a "$BOOTLOG" >"$LOGGER"
+	log_msg "${black}$(gettext "Desmontando") FS  : ${orange}/mnt/voidlinux"
 
-	umount -Rl /dev/"$_vg"/* 2>&1 | tee -i -a "$BOOTLOG" > "$LOGGER"
-   log_msg "${black}Unmounting LVs : ${orange}/dev/$_vg/*"
+	umount -Rl /dev/"$_vg"/* 2>&1 | tee -i -a "$BOOTLOG" >"$LOGGER"
+	log_msg "${black}$(gettext "Desmontando") LVs : ${orange}/dev/$_vg/*"
 
-   lvremove -ff /dev/"$_vg"/* 2>&1 | tee -i -a "$BOOTLOG" > "$LOGGER"
-   log_msg "${black}Removing LVs   : ${orange}/dev/$_vg/*"
+	lvremove -ff /dev/"$_vg"/* 2>&1 | tee -i -a "$BOOTLOG" >"$LOGGER"
+	log_msg "${black}$(gettext "Removendo") LVs   : ${orange}/dev/$_vg/*"
 
-   vgremove -ff "$_vg" 2>&1 | tee -i -a "$BOOTLOG" > "$LOGGER"
-   log_msg "${black}Removing VG    : ${orange}$_vg"
+	vgremove -ff "$_vg" 2>&1 | tee -i -a "$BOOTLOG" >"$LOGGER"
+	log_msg "${black}$(gettext "Removendo") VG    : ${orange}$_vg"
 
-#	log_msg "${black}Removing PVs (Volumes Fisícos)";
-#	pvremove -ff ${AConfFde[partition]} 2>&1 | tee -i -a "$BOOTLOG" > "$LOGGER"
-	log_msg "${green}Skipping PVs removal (maybe want to recover something)"
-	log_msg "${green}Done.${white}"
-	vgs -v; echo; pvs -v; echo; lvs -v
+	#	log_msg "${black}$(gettext "Removendo") PVs (Volumes Fisícos)";
+	#	pvremove -ff ${AConfFde[partition]} 2>&1 | tee -i -a "$BOOTLOG" > "$LOGGER"
+	log_msg "${green}$(gettext "Ignorando a remoção dos Volumes Físicos, talvez queira recuperar algo")"
+	log_msg "${green}$(gettext "Feito.")${white}"
+	vgs -v
+	echo
+	pvs -v
+	echo
+	lvs -v
 
-:<<'REMARK'
+	: <<'REMARK'
 	log_msg "${black}Desmontando FS em       : ${orange}/mnt/voidlinux";
 		umount -Rl /mnt/voidlinux >/dev/null 2>&-
 	log_msg "${black}Desativando partições lógicas";
@@ -215,24 +214,66 @@ REMARK
 }
 
 sh_setenvironment
-OPTIONS=r:lfVnh
-LONGOPTIONS=remove:,list,force,version,nocolor,help
-opts=$(getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@")
-if [ $? -ne 0 ]; then
+OPTIONS=r:lvpfVnh
+LONGOPTIONS=remove:,vgs,pvs,lvs,force,version,nocolor,help
+
+# Processa as opções
+#opts=$(getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@")
+#if [ $? -ne 0 ]; then
+#	sh_usage
+#fi
+#eval set -- "$opts"
+
+if ! mapfile -t opts < <(getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@"); then
 	sh_usage
 fi
-eval set -- "$opts"
+eval set -- "${opts[*]}"
 
 while true; do
 	case "$1" in
-		-r|--remove)	_vg="$2"; shift 2;;
-		-l|--list)     sh_checkRoot; log_msg "Listing VGs ..."; echo -n "${cyan}";vgs --noheadings;exit $(( $# ? 0 : 1 ));;
-		-f|--force)    force=1;log_msg "Enabling force mode"; shift;;
-		-n|--nocolor)  sh_unsetvarcolors;shift;;
-		-V|--version)  sh_version;;
-		-h|--help)     sh_usage;;
-		--)            shift;break;;
-		*) 				sh_usage;;
+	-r | --remove)
+		log_msg "$(gettext "Modo remoção ...")"
+		_vg="$2"
+		shift 2
+		;;
+	-v | --vgs)
+		sh_checkRoot
+		log_msg "$(gettext "Listando VGs ...")"
+		echo -n "${cyan}"
+		vgs --noheadings
+		exit $(($# ? 0 : 1))
+		;;
+	-p | --pvs)
+		sh_checkRoot
+		log_msg "$(gettext "Listando PVs ...")"
+		echo -n "${cyan}"
+		pvs --noheadings
+		exit $(($# ? 0 : 1))
+		;;
+	-l | --lvs)
+		sh_checkRoot
+		log_msg "$(gettext "Listando LVs ...")"
+		echo -n "${cyan}"
+		lvs --noheadings
+		exit $(($# ? 0 : 1))
+		;;
+	-f | --force)
+		force=1
+		log_msg "$(gettext "Ligando force mode")"
+		shift
+		;;
+	-n | --nocolor)
+		log_msg "$(gettext "Desligando saida em cores")"
+		sh_unsetvarcolors
+		shift
+		;;
+	-V | --version) sh_version ;;
+	-h | --help) sh_usage ;;
+	--)
+		shift
+		break
+		;;
+	*) sh_usage ;;
 	esac
 done
 
@@ -242,18 +283,18 @@ fi
 sh_checkRoot
 VGs="$(vgs --noheadings)"
 echo "VGs available : "
-echo -n "${cyan}"; vgs --noheadings
+echo -n "${cyan}"
+vgs --noheadings
 echo "${reset}VG to remove : "
 echo "  ${yellow}$_vg"
 echo
-if grep -o -q "$_vg " <<< "$VGs"; then
-	if ! (( force )) ; then
+if grep -o -q "$_vg " <<<"$VGs"; then
+	if ! ((force)); then
 		if ! readnotconf "${red}CAREFUL! ${reset}This procedure is ${red}irreversible! ${reset}continue with the removal of ?"; then
 			die "Cancelled"
 		fi
 	fi
 	limpa_vm "$@"
 else
-	die "Cancelled! => '${yellow}$_vg${red}' not found!"
+	die "$(gettext "Cancelado!") => '${yellow}$_vg${red}' $(gettext "não encontrado!")"
 fi
-
