@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-#shellcheck disable=SC2034,SC2059,SC2145,SC2155
+#shellcheck disable=SC2034,SC2059,SC2145,SC2155,SC2005
 
 #  void-gitclone
 #  Created: 2023/01/27
-#  Altered: 2023/04/30
+#  Altered: 2023/10/16
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -28,6 +28,9 @@
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 #  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+export TEXTDOMAINDIR=/usr/share/locale
+export TEXTDOMAIN=void-gitclone
+
 #debug
 export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
@@ -37,9 +40,10 @@ set -o pipefail
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.1.02-20230430'
+readonly _VERSION_='0.2.00-20231016'
 readonly DEPENDENCIES=(git)
-trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
+declare Interrupted="$(gettext "Interrompido! Saindo...")"
+trap 'printf "\n${red}$Interrupted\n"; cleanup; exit 0' INT TERM HUP
 declare VERBOSE=0
 
 sh_ambiente() {
@@ -54,7 +58,7 @@ info_msg() {
 }
 
 cleanup() {
-	info_msg "Removing temporary files"
+	info_msg "$(gettext "Removendo arquivos temporários")"
 	rm -f "$BOOTLOG"
 	exit "$false"
 }
@@ -68,7 +72,7 @@ sh_diahora() {
 
 sh_checkroot() {
 	if [ "$(id -u)" != "0" ]; then
-		die "${red}error: you cannot perform this operation unless you are root.${reset}"
+		die "${red}error: $(gettext "você não pode executar esta operação a menos que seja root.")${reset}"
 	fi
 	return "$true"
 }
@@ -81,12 +85,13 @@ sh_checkDependencies() {
 	for d in "${DEPENDENCIES[@]}"; do
 		[[ -z $(command -v "$d") ]] && missing+=("$d") && errorFound=1 && printf "${red}ERROR: I couldn't find the command ${cyan}'$d'${reset}\n"
 	done
-	if (( errorFound )); then
-		echo -e "${yellow}-------------IMPOSSIBLE TO CONTINUE-----------------${reset}"
-		echo -e "This script needs the commands listed above" >&2
-		echo -e "Install them and/or make sure they are on your \$PATH" >&2
-		echo -e "${yellow}----------------------------------------------------${reset}"
-		die "${APP} aborted..."
+
+	if ((errorFound)); then
+		echo "${yellow}---------------$(gettext "IMPOSSÍVEL CONTINUAR")-------------${reset}"
+		echo "$(gettext "Este script precisa dos comandos listados acima")"
+		echo "$(gettext "Instale-os e/ou verifique se eles estão em seu") ${red}\$PATH${reset}"
+		echo "${yellow}---------------$(gettext "IMPOSSÍVEL CONTINUAR")-------------${reset}"
+		die "${APP} $(gettext "abortado...")"
 	fi
 	return "$true"
 }
@@ -122,18 +127,7 @@ sh_setvarcolors() {
 }
 
 sh_unsetvarcolors() {
-	reset=
-	bold=
-	italic=
-	underline=
-	red=
-	green=
-	yellow=
-	blue=
-	pink=
-	cyan=
-	gray=
-	white=
+	unset reset	bold italic	underline red green	yellow blue	pink cyan gray white
 	return 0
 }
 
@@ -143,7 +137,8 @@ DOT() {
 }
 
 die() {
-	local msg=$1; shift
+	local msg=$1
+	shift
 	printf "$(DOT)${bold}${red}$msg${reset}\n" >&2
 	exit "$false"
 }
@@ -158,48 +153,52 @@ sh_usage() {
 	echo -e "${pink}Usage: $0 [-h|--help] [-v|--version] [-V|--verbose] [-f|--file FILE]${reset}"
 	echo -e ""
 	echo -e "${yellow}Options:${reset}"
-	echo -e "  -h, --help       Display this help message and exit."
-	echo -e "  -v, --version    Display version information and exit."
-	echo -e "  -V, --verbose    Enable verbose output."
-	echo -e "  -n, --nocolor    colorless output."
-	echo -e "  -f, --file FILE  Use FILE as repository entry."
+	echo -e "  -h, --help       $(gettext "Exiba esta mensagem de ajuda")"
+	echo -e "  -V, --version    $(gettext "Exibir informações da versão")"
+	echo -e "  -v, --verbose    $(gettext "Habilitar saída detalhada")"
+	echo -e "  -n, --nocolor    $(gettext "Suprimir saída colorida")"
+	echo -e "  -f, --file FILE  $(gettext "Usar FILE como lista de entradas de repositório")"
 	exit 0
 }
 
-sh_git_clone_read(){
+sh_git_clone_read() {
 	echo "Insira o(s) repositório(s) que deseja clonar (separados por espaço):"
 	read -r repos
 
 	# Converte a string de repositórios em um array
-	IFS=' ' read -r -a repos_array <<< "$repos"
+	IFS=' ' read -r -a repos_array <<<"$repos"
 
 	for repo in "${repos_array[@]}"; do
-	    echo "Clonando o repositório $repo..."
-	    git clone "$repo"
+		echo "$(gettext "Clonando repositório") $repo..."
+		git clone "$repo"
 	done
 }
 
 sh_git_clone_file() {
+	msg_neg="$(gettext "algo deu errado - para maiores informações, veja:")"
+	msg_ok="$(gettext "repositório clonado com sucesso - para maiores informações, veja")"
+
 	# Lê os repositórios do arquivo de texto e clona cada um deles
-	while read -r repo
-	do
+	while read -r repo; do
 		if ! git clone "$repo" >>"$BOOTLOG" 2>&1; then
-			info_msg "${red}git error (result=${PIPESTATUS[0]}) -> $repo : Something went wrong! url?! - See $BOOTLOG for more info.${reset}"
+			info_msg "${red}git error (result=${PIPESTATUS[0]}) - $REPLY : $msg_neg : $BOOTLOG${reset}"
 		else
-			info_msg "${green}git clone OK (result=${PIPESTATUS[0]}) -> $REPLY : repository successfully cloned! - See $BOOTLOG for more info.${reset}"
+			info_msg "${green}git clone OK (result=${PIPESTATUS[0]}) - $REPLY : $msg_ok : $BOOTLOG${reset}"
 		fi
-	done < "$FILE"
+	done <"$FILE"
 }
 
-sh_gitclone(){
-	while read -r -p "Insert a git repository, enter to exit: "
-	do
+sh_gitclone() {
+	msg_neg="$(gettext "algo deu errado - para maiores informações, veja:")"
+	msg_ok="$(gettext "repositório clonado com sucesso - para maiores informações, veja")"
+
+	while read -r -p "$(gettext "Entre um repositório git, digite enter para sair"): "; do
 		[ "${REPLY^}" == "" ] && return $false
-		echo "${REPLY}" >> "$BOOTLOG"
+		echo "${REPLY}" >>"$BOOTLOG"
 		if ! git clone "${REPLY}" >>"$BOOTLOG" 2>&1; then
-			info_msg "${red}git error (result=${PIPESTATUS[0]}) -> $REPLY : Something went wrong! url?! - See $BOOTLOG for more info.${reset}"
+			info_msg "${red}git error (result=${PIPESTATUS[0]}) - $REPLY : $msg_neg : $BOOTLOG${reset}"
 		else
-			info_msg "${green}git clone OK (result=${PIPESTATUS[0]}) -> $REPLY : repository successfully cloned! - See $BOOTLOG for more info.${reset}"
+			info_msg "${green}git clone OK (result=${PIPESTATUS[0]}) - $REPLY : $msg_ok : $BOOTLOG${reset}"
 		fi
 		echo
 	done
@@ -209,11 +208,14 @@ sh_gitclone(){
 sh_setvarcolors
 sh_ambiente
 sh_checkDependencies
-[[ "$1" = @(-V|--version) ]] && { sh_version; exit $(( $# ? 0 : 1 ));}
+[[ "$1" = @(-V|--version) ]] && {
+	sh_version
+	exit $(($# ? 0 : 1))
+}
 
 # Função para tratamento de erros
 handle_error() {
-	echo "${red}Error: Failed to parse arguments." >&2
+	echo "${red}Error: $(gettext "Falha ao analisar argumentos")" >&2
 	sh_usage >&2
 }
 
@@ -222,37 +224,54 @@ OPTIONS=f:vhVn
 LONGOPTIONS=file:,version,verbose,help,nocolor
 
 # Processa as opções
-if ! (( opts=$(getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@") )); then
-	sh_usage
+if ! mapfile -t opts < <(getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@"); then
+    sh_usage
 fi
-eval set -- "$opts"
+eval set -- "${opts[*]}"
 
 # Processa cada argumento
 while true; do
 	case "$1" in
-		-f|--file) 		FILE="$2";shift 2;;
-		-V|--version)	sh_version;exit 0;;
-		-v|--verbose)	VERBOSE=1;shift;;
-		-h|--help)		sh_usage;;
-		-n|--nocolor)	sh_unsetvarcolors;shift;;
-		--)				shift;break;;
-		:) echo "Option -$OPTARG requires an argument" >&2; handle_error;;
-		*) handle_error;;
-  esac
+	-f | --file)
+		FILE="$2"
+		shift 2
+		;;
+	-V | --version)
+		sh_version
+		exit 0
+		;;
+	-v | --verbose)
+		VERBOSE=1
+		shift
+		;;
+	-h | --help) sh_usage ;;
+	-n | --nocolor)
+		sh_unsetvarcolors
+		shift
+		;;
+	--)
+		shift
+		break
+		;;
+	:)
+		echo "-$OPTARG $(gettext "requer um argumento")" >&2
+		handle_error
+		;;
+	*) handle_error ;;
+	esac
 done
 
-if (( VERBOSE )); then
+if ((VERBOSE)); then
 	info_msg "${green}verbose mode on${reset}"
 fi
 
 # Verifica se o arquivo existe
 if [ -n "$FILE" ]; then
 	if [ ! -f "$FILE" ]; then
-	  die "Arquivo de repositórios não encontrado."
+		die "$(gettext "Arquivo de repositórios não encontrado")"
 	else
 		sh_git_clone_file "$@"
 		exit 0
 	fi
 fi
 sh_gitclone "$@"
-
