@@ -39,30 +39,12 @@
 		exit 1
 	}
 
-.rwxr-xr-x  19k vcatafesta vcatafesta 15 out 14:54  /lixo/void-clonedisk
-.rwxr-xr-x 7,4k vcatafesta vcatafesta 16 out 12:15  /lixo/void-gitclone
-.rwxr-xr-x 153k vcatafesta vcatafesta  6 set 17:21  /lixo/void-install
-.rwxr-xr-x 5,5k vcatafesta vcatafesta  9 out 01:48  /lixo/void-maketar
-.rwxr-xr-x  21k vcatafesta vcatafesta  6 set 15:14  /lixo/void-mirror
-.rwxr-xr-x 8,9k vcatafesta vcatafesta 16 out 13:29  /lixo/void-remove-vg
-.rwxr-xr-x  17k vcatafesta vcatafesta 15 out 10:38  /lixo/void-services
-.rwxr-xr-x  20k vcatafesta vcatafesta 16 out 20:32  /lixo/void-testmirror
-.rwxr-xr-x 9,0k vcatafesta vcatafesta 15 out 16:32  /lixo/void-wifi
-.rwxr-xr-x 7,7k vcatafesta vcatafesta 15 out 09:04  /lixo/void-xrandr
-
-
-
-
-
-
-
-
 	umask 0022
 	url="https://raw.githubusercontent.com/voidlinux-br/void-installer/master"
 	url_blob="https://github.com/voidlinux-br/void-installer/blob/master"
 	declare -a files_bin=('void-install' 'void-maketar' 'void-mirror' 'void-services' 'void-testmirror' 'void-wifi' 'void-remove-vg' 'void-clonedisk' 'void-xrandr' 'void-runimage' 'void-gitclone')
 	declare -a files_home=('ChangeLog.txt' 'INSTALL' 'LICENSE' 'MAINTAINERS' 'Makefile' 'README.md' 'bashrc.sh' '.dircolors' 'install.sh')
-	declare -a files_lang=('void-clonedisk' 'void-gitclone' 'void-install' 'void-maketar' 'void-mirror' 'void-remove-vg' 'void-services' 'void-testmirror' 'void-wifi' 'void-xrandr')
+	declare -a files_lang=('void-clonedisk' 'void-gitclone' 'void-install' 'void-maketar' 'void-mirror' 'void-remove-vg' 'void-services' 'void-testmirror' 'void-wifi' 'void-xrandr' 'void-runimage')
 	declare -a files_blob=('void-x86_64-base-custom-current.tar.xz')
 	declare -a idioma=(bg cs da de el en es et fi fr he hr hu is it ja ko nl no pl pt-PT pt-BR ro ru sk sv tr uk zh fa hi ar)
 	tmpDir=~/void-installer
