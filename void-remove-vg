@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2023/04/25
-#  Altered: 2023/10/16
+#  Altered: 2023/10/18
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -39,7 +39,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.1.00-20231016'
+readonly _VERSION_='0.1.01-20231018'
 
 sh_diahora() {
 	DIAHORA=$(date +"%d%m%Y-%T" | sed 's/://g')
@@ -140,7 +140,7 @@ sh_version() {
 sh_usage() {
 	cat <<EOF
 ${black}${APP} v$_VERSION_ ${reset}
-Usage: ${red}$0 -r|--remove <VG> [-l|--list] [-f|--force] [-V|--version] [-n|--nocolor] [-h|--help]
+Usage: ${red}$0 -r|--remove <VG> [-v|--vgs] [-p|--pvs] [-l|--lvs] [-f|--force] [-V|--version] [-n|--nocolor] [-h|--help]
 
 ${cyan}[<operations>] ${reset}
    ${red}-v  --vgs${cyan}           $(gettext "#listar VGs (grupo de volumes)")
