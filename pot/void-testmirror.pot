@@ -1,0 +1,206 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-10-16 20:39-0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: void-testmirror:44
+msgid "Interrompido! Saindo..."
+msgstr ""
+
+#: void-testmirror:90
+msgid "Checando caminho"
+msgstr ""
+
+#: void-testmirror:110
+msgid "Removendo arquivos temporários..."
+msgstr ""
+
+#: void-testmirror:167
+msgid "Testando internet em"
+msgstr ""
+
+#: void-testmirror:171
+msgid "Sem rota para o servidor"
+msgstr ""
+
+#: void-testmirror:171
+msgid "verifique sua internet"
+msgstr ""
+
+#: void-testmirror:347
+msgid "O repositório recomendado"
+msgstr ""
+
+#: void-testmirror:349 void-testmirror:351
+msgid "Tempo médio"
+msgstr ""
+
+#: void-testmirror:353
+msgid "Repositório"
+msgstr ""
+
+#: void-testmirror:354
+msgid "Região"
+msgstr ""
+
+#: void-testmirror:355
+msgid "Localização"
+msgstr ""
+
+#: void-testmirror:404
+msgid "escrevendo o resultado para"
+msgstr ""
+
+#: void-testmirror:565
+msgid "Atualizar"
+msgstr ""
+
+#: void-testmirror:565
+msgid "da internet?"
+msgstr ""
+
+#: void-testmirror:581
+msgid "Clonando"
+msgstr ""
+
+#: void-testmirror:587
+msgid "Configurando permissões e copiando arquivo"
+msgstr ""
+
+#: void-testmirror:591
+msgid "Copiando arquivo"
+msgstr ""
+
+#: void-testmirror:591
+msgid "para"
+msgstr ""
+
+#: void-testmirror:596
+msgid "Removendo arquivos temporários"
+msgstr ""
+
+#: void-testmirror:601
+msgid "atualizado com sucesso, aproveite!"
+msgstr ""
+
+#: void-testmirror:630
+msgid "Tentando usar a lista local em"
+msgstr ""
+
+#: void-testmirror:633
+msgid "Não é possível continuar. Lista de espelhos não encontrado no"
+msgstr ""
+
+#: void-testmirror:651
+msgid "Buscando nova lista de espelhos em"
+msgstr ""
+
+#: void-testmirror:654
+msgid "Não foi possível buscar a nova lista de espelhos de"
+msgstr ""
+
+#: void-testmirror:655
+msgid "Verifique sua internet!"
+msgstr ""
+
+#: void-testmirror:679
+msgid "ERRO"
+msgstr ""
+
+#: void-testmirror:680
+msgid "não encontrei o comando"
+msgstr ""
+
+#: void-testmirror:681
+msgid "IMPOSSÍVEL CONTINUAR"
+msgstr ""
+
+#: void-testmirror:682
+msgid "Esse script precisa dos comandos listados acima"
+msgstr ""
+
+#: void-testmirror:683
+msgid "Instale-os e/ou verifique se estão no seu"
+msgstr ""
+
+#: void-testmirror:684
+msgid "Instalar o(s) comando(s)"
+msgstr ""
+
+#: void-testmirror:685
+msgid "Rode novamente o aplicativo"
+msgstr ""
+
+#: void-testmirror:686
+msgid "Erro na instalação dos comandos. Tente manualmente."
+msgstr ""
+
+#: void-testmirror:687
+msgid "Erro: você não pode realizar esta operação a menos que seja root."
+msgstr ""
+
+#: void-testmirror:702
+msgid "#usar ping para testar"
+msgstr ""
+
+#: void-testmirror:703
+msgid "#usar download do Curl para teste"
+msgstr ""
+
+#: void-testmirror:704
+msgid "#configurar automaticamente /etc/xbps.d/ com o resultado obtido"
+msgstr ""
+
+#: void-testmirror:705
+msgid "#saída resumida"
+msgstr ""
+
+#: void-testmirror:706
+msgid "#atualiza este aplicativo no repositório online. Precisa de Internet"
+msgstr ""
+
+#: void-testmirror:707
+msgid "#exibe a versão do aplicativo"
+msgstr ""
+
+#: void-testmirror:708
+msgid "#remove cores da saída"
+msgstr ""
+
+#: void-testmirror:709
+msgid "#esta ajuda"
+msgstr ""
+
+#: void-testmirror:753
+msgid "requer um argumento"
+msgstr ""
+
+#: void-testmirror:755
+msgid "operação não suportada"
+msgstr ""
+
+#: void-testmirror:755
+msgid "usar -h para ajuda"
+msgstr ""
+
+#: void-testmirror:787
+msgid "nenhuma operação especificada (usar -h para ajuda)"
+msgstr ""
+
+#: void-testmirror:788
+msgid "apenas uma operação pode ser usada por vez"
+msgstr ""

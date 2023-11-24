@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-#shellcheck disable=SC2155,SC2206,SC2016,SC2034,SC2154,SC2015
+#shellcheck disable=SC2155,SC2206,SC2016,SC2034,SC2154,SC2015,SC2207
 # void-testmirror
 # Require: xbps-install -S curl bc geoip geoip-data geoipupdate iputils
 
 #  Created: 2022/11/05
-#  Altered: 2023/05/17
+#  Altered: 2023/10/16
 #
 #  Copyright (c) 2022-2022, Vilmar Catafesta <vcatafesta@gmail.com>
 #
@@ -22,47 +22,51 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#debug
+export TEXTDOMAINDIR=/usr/share/locale
+export TEXTDOMAIN=void-testmirror
+
+# debug
 export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.3.101-20230517'
+readonly _VERSION_='0.4.01-20231016'
 readonly distro=$(uname -n)
-readonly DEPENDENCIES=(bc geoiplookup geoipupdate sed awk tput wget curl)
-readonly DEP_PACKAGES=(bc geoip geoip-data geoipupdate sed gawk ncurses wget curl)
+readonly DEPENDENCIES=(bc geoiplookup geoipupdate sed awk tput wget curl gettext)
+readonly DEP_PACKAGES=(bc geoip geoip-data geoipupdate sed gawk ncurses wget curl gettext)
 declare -i quiet=0 typetest=0 auto=0 nping=0 ncurl=0 update=0
 declare -a aHits=()
 declare -A mirrors=()
 declare -A Amirrors=()
 declare -A Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -A Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
-trap 'printf "\n${red}Interrupted! exiting...\n"; cleanup; exit 0' INT TERM HUP
+declare Interrupted="$(gettext "Interrompido! Saindo...")"
+trap 'printf "\n${red}$Interrupted\n"; cleanup; exit 0' INT TERM HUP
 
 sh_setambiente() {
-   readonly true=1
-   readonly false=0
-   readonly BOOTLOG="/tmp/$APP-$(sh_diahora).log"
-	readonly	COLS=$(tput cols)
+	readonly true=1
+	readonly false=0
+	readonly BOOTLOG="/tmp/$APP-$(sh_diahora).log"
+	readonly COLS=$(tput cols)
 
 	#paths/files/urls
 	APP_LOCAL="${0##*/}"
 	APP_REMOTE="void-testmirror"
 	URL_GOOGLE='https://google.com'
 	URL_GITHUB="https://raw.githubusercontent.com/vcatafesta/chili/master/${APP_REMOTE}"
-   : "${MIRRORPATH:=/usr/share/xmirror/}"
-   : "${MIRRORFILE:=mirrors.lst}"
-   : "${MIRRORURL:=https://xmirror.voidlinux.org/raw/$MIRRORFILE}"
-   : "${MIRRORURLROOT:=https://xmirror.voidlinux.org}"
-   : "${MIRRORLIST:=$MIRRORPATH$MIRRORFILE}"
+	: "${MIRRORPATH:=/usr/share/xmirror/}"
+	: "${MIRRORFILE:=mirrors.lst}"
+	: "${MIRRORURL:=https://xmirror.voidlinux.org/raw/$MIRRORFILE}"
+	: "${MIRRORURLROOT:=https://xmirror.voidlinux.org}"
+	: "${MIRRORLIST:=$MIRRORPATH$MIRRORFILE}"
 
 	# flag languages
-	: "${PT_BR=0}"
+	PT_BR=0
 	: "${EN_US=1}"
 	: "${DE_DE=2}"
 	: "${FR_FR=3}"
-	: "${LC_DEFAULT=$(sh_getlocale)}"
+	: "${LC_DEFAULT=$(sh_getLocale)}"
 
 	#conf adicionais
 	IFS=$' \t\n'
@@ -83,9 +87,9 @@ sh_setambiente() {
 }
 
 sh_check_mirror_path() {
-	log_info_msg "Checking path $MIRRORPATH"
+	log_info_msg "$(gettext "Checando caminho") $MIRRORPATH"
 	[[ ! -d "${MIRRORPATH}" ]] && {
-		mkdir -p "${MIRRORPATH}" >> "$BOOTLOG"
+		mkdir -p "${MIRRORPATH}" >>"$BOOTLOG"
 	}
 	evaluate_retval "0"
 	return 0
@@ -103,29 +107,40 @@ info_msg() {
 }
 
 cleanup() {
-	info_msg "Removing temporary files..."
+	info_msg "$(gettext "Removendo arquivos temporários...")"
 	rm -fv "$BOOTLOG"
 	exit 1
 }
 
 sh_setvarcolors() {
-	reset=$(tput sgr0);			green=$(tput setaf 2);	red=$(tput setaf 124);
-	pink=$(tput setaf 129);		bold=$(tput bold);		blue=$(tput setaf 33);
-	yellow=$(tput setaf 136);	cyan=$(tput setaf 37);	orange=$(tput setaf 166);
-	white=$(tput setaf 15);    violet=$(tput setaf 61); #  purple=$(tput setaf 125);
+	reset=$(tput sgr0)
+	green=$(tput setaf 2)
+	red=$(tput setaf 124)
+	pink=$(tput setaf 129)
+	bold=$(tput bold)
+	blue=$(tput setaf 33)
+	yellow=$(tput setaf 136)
+	cyan=$(tput setaf 37)
+	orange=$(tput setaf 166)
+	white=$(tput setaf 15)
+	violet=$(tput setaf 61)
+	purple=$(tput setaf 125);
 }
 
 sh_unsetvarcolors() {
-	reset='' green='' red='' pink='' bold='' blue='' yellow='' cyan='' orange='' white='' violet='' purple=''
-	NORMAL='' SUCCESS='' FAILURE='' BRACKET=''
-	sh_logprefix
+	unset reset green red pink bold blue yellow cyan orange white violet purple
+	unset NORMAL INFO BRACKET
+	unset BMPREFIX DOTPREFIX
+	unset SUCCESS SUCCESS_PREFIX SUCCESS_SUFFIX
+	unset FAILURE FAILURE_PREFIX FAILURE_SUFFIX
+	sh_logPrefix
 }
 
-sh_logprefix() {
+sh_logPrefix() {
 	NORMAL="${reset}"
 	SUCCESS="${green}"
 	FAILURE="${red}"
-	#INFO="${cyan}"
+	INFO="${cyan}"
 	BRACKET="${blue}"
 	BMPREFIX="     "
 	DOTPREFIX="  ${blue}::${reset} "
@@ -149,13 +164,13 @@ sh_checknet() {
 	local xurl="$1"
 
 	#have internet?
-	log_info_msg "Testing internet on ${xurl}"
+	log_info_msg "$(gettext "Testando internet em") ${xurl}"
 	curl --insecure "$xurl" >/dev/null 2>&1 ||
-	{
-		evaluate_retval "$?"
-		log_msg "No route to the server ($xurl) - Check your internet!"
-		return 1
-	}
+		{
+			evaluate_retval "$?"
+			log_msg "$(gettext "Sem rota para o servidor") ($xurl) - $(gettext "verifique sua internet")"
+			return 1
+		}
 	evaluate_retval "$?"
 	return $?
 }
@@ -184,19 +199,19 @@ log_failure_msg() {
 }
 
 msg() {
-   if ! ((quiet)); then
-      local msg=$1
-      shift
+	if ! ((quiet)); then
+		local msg=$1
+		shift
 		printf "%-75s\n" "$(DOT)${bold}${green}$msg${reset}"
-   fi
-   return
+	fi
+	return
 }
 
 msgr() {
 	if ! ((quiet)); then
 		local msg=$1
 		shift
-		printf "${green} -> %s${reset}\n"  "$msg"
+		printf "${green} -> %s${reset}\n" "$msg"
 	fi
 	return
 }
@@ -205,7 +220,7 @@ msgl() {
 	if ! ((quiet)); then
 		local msg=$1
 		shift
-		printf "%-*s" $((COLS/2)) "${DOT}$msg"
+		printf "%-*s" $((COLS / 2)) "${DOT}$msg"
 	fi
 	return 0
 }
@@ -245,47 +260,48 @@ log_error() {
 }
 
 erro() {
-   local msg=$1
-   shift
-   printf "%s\n" "$(DOT)${bold}${yellow}$msg${reset}" >&2
-   return
+	local msg=$1
+	shift
+	printf "%s\n" "$(DOT)${bold}${yellow}$msg${reset}" >&2
+	return
 }
 
 write() {
 	local msg=$1
 	shift
 	printf "%s" "$msg"
-   return
+	return
 }
 
 writeln() {
 	local msg=$1
 	shift
 	printf "%s\n" "$msg"
-	  return
+	return
 }
 
 die() {
-	local msg=$1; shift
+	local msg=$1
+	shift
 	msg "${red}$msg" "$@" >&2
 	exit 1
 }
 
 replicate() {
 	local Var
-	printf -v Var %"$2s" " "  #  Coloca em $Var $1 espaços
-	echo "${Var// /$1}"       #  Troca os espaços pelo caractere escolhido
+	printf -v Var %"$2s" " " #  Coloca em $Var $1 espaços
+	echo "${Var// /$1}"      #  Troca os espaços pelo caractere escolhido
 }
 
 padr() {
 	local text=$1
-	local	ncols=$2
+	local ncols=$2
 	local char=$3
 	if test $# -eq 1; then
 		ncols="$COLS"
 		char='='
 	fi
-	printf "%*s\n" "$ncols" "$text" |sed "s/ /$char/g"
+	printf "%*s\n" "$ncols" "$text" | sed "s/ /$char/g"
 }
 
 padl() {
@@ -296,7 +312,7 @@ padl() {
 		ncols="$COLS"
 		char='='
 	fi
-	printf "%-*s\n" "$ncols" "$text" |sed "s/ /$char/g"
+	printf "%-*s\n" "$ncols" "$text" | sed "s/ /$char/g"
 }
 
 sh_splitarray() {
@@ -305,12 +321,18 @@ sh_splitarray() {
 	local sep="${3:-'|'}"
 	local array
 
-	[[ $# -eq 3 && "$pos" = "|" && "$sep" =~ ^[0-9]+$ ]] && { sep="$2"; pos="$3";}
-	[[ $# -eq 2 && "$pos" = "$sep"                    ]] && { sep="$pos"; pos=1;}
-	[[ $# -eq 1 || ! "$pos" =~ ^[0-9]+$               ]] && { pos=1; }
+	[[ $# -eq 3 && "$pos" = "|" && "$sep" =~ ^[0-9]+$ ]] && {
+		sep="$2"
+		pos="$3"
+	}
+	[[ $# -eq 2 && "$pos" = "$sep" ]] && {
+		sep="$pos"
+		pos=1
+	}
+	[[ $# -eq 1 || ! "$pos" =~ ^[0-9]+$ ]] && { pos=1; }
 
-	IFS="$sep" read -r -a array <<< "$str"
-	echo "${array[pos-1]}"
+	IFS="$sep" read -r -a array <<<"$str"
+	echo "${array[pos - 1]}"
 }
 
 search_geo() {
@@ -318,23 +340,23 @@ search_geo() {
 	local geo
 
 	geo=$(geoiplookup "$frepo" | head -1 | sed 's/^.*: //')
-	if ! (( quiet )); then
+	if ! ((quiet)); then
 		replicate '=' 100
 	fi
 	quiet=0
-	msg "Recommended repo is : ${orange}$frepo${reset}($geo)"
-	if (( nping )); then
-		msg "Average time (ping) : ${red}$fping${reset}"
+	msg "$(gettext "O repositório recomendado"): ${orange}$frepo${reset}($geo)"
+	if ((nping)); then
+		msg "$(gettext "Tempo médio") (ping) : ${red}$fping${reset}"
 	else
-		msg "Average time (curl) : ${red}$fping${reset}"
+		msg "$(gettext "Tempo médio") (curl) : ${red}$fping${reset}"
 	fi
-	msg "Repository          : $(sh_splitarray "${Amirrors[$frepo]}" 1)"
-	msg "Region              : $(sh_splitarray "${Amirrors[$frepo]}" 2)"
-	msg "Location            : $(sh_splitarray "${Amirrors[$frepo]}" 3)"
+	msg "$(gettext "Repositório")        : $(sh_splitarray "${Amirrors[$frepo]}" 1)"
+	msg "$(gettext "Região")             : $(sh_splitarray "${Amirrors[$frepo]}" 2)"
+	msg "$(gettext "Localização")        : $(sh_splitarray "${Amirrors[$frepo]}" 3)"
 	quiet=$oldquiet
 }
 
-print_script()	{
+print_script() {
 	if ! ((quiet)); then
 		local contador=1
 		local chash=''
@@ -352,14 +374,14 @@ print_script()	{
 		writeln '############################################################################'
 
 		for list in "${Sorted[@]}"; do
-		   ctime=$( cut -d, -f1 <<< "$list")
-		   mirror=$( cut -d, -f2 <<< "$list")
+			ctime=$(cut -d, -f1 <<<"$list")
+			mirror=$(cut -d, -f2 <<<"$list")
 			writeln "# top $contador - result: $ctime"
 			if ((contador > 1)); then
 				chash='#'
 			fi
 			writeln "${chash}repository=${mirror}current"
-			if [[ $mirror = 'http://void.chililinux.com/voidlinux/' || $mirror = 'http://void.chilios.com.br/voidlinux/' ]] ; then
+			if [[ $mirror = 'http://void.chililinux.com/voidlinux/' || $mirror = 'http://void.chilios.com.br/voidlinux/' ]]; then
 				writeln "${chash}repository=${mirror}current/extras"
 			fi
 			writeln "${chash}repository=${mirror}current/nonfree"
@@ -373,17 +395,17 @@ print_script()	{
 	fi
 }
 
-write_script()	{
+write_script() {
 	if ((auto)); then
 		local cfile='/etc/xbps.d/00-repository-main.conf'
 		local contador=1
 		local chash=''
 
-		printf "\n%s\n" "${red}writing results to $cfile"
+		printf "\n%s\n" "${red}$(gettext "escrevendo o resultado para") $cfile"
 		[[ -d '/etc/xbps.d/' ]] || mkdir -p '/etc/xbps.d/'
-		[[ -e "$cfile"       ]] && mv "$cfile" "$cfile.old"
+		[[ -e "$cfile" ]] && mv "$cfile" "$cfile.old"
 
-		: >| "$cfile"
+		: >|"$cfile"
 		{
 			echo "# $cfile"
 			echo '############################################################################'
@@ -393,26 +415,26 @@ write_script()	{
 			echo '# https://chililinux.com'
 			echo "# on date: $(date)"
 			echo '############################################################################'
-		} >> "$cfile"
+		} >>"$cfile"
 
 		for list in "${Sorted[@]}"; do
-		   ctime=$( cut -d, -f1 <<< "$list")
-		   mirror=$( cut -d, -f2 <<< "$list")
-		   geo=$( cut -d, -f3- <<< "$list")
-			echo '' 															>> "$cfile"
-			echo "# top $contador - ($geo) - result: $ctime"	>> "$cfile"
+			ctime=$(cut -d, -f1 <<<"$list")
+			mirror=$(cut -d, -f2 <<<"$list")
+			geo=$(cut -d, -f3- <<<"$list")
+			echo '' >>"$cfile"
+			echo "# top $contador - ($geo) - result: $ctime" >>"$cfile"
 			if ((contador > 1)); then
 				chash='#'
 			fi
 			{
 				echo "${chash}repository=${mirror}current"
-				if [[ $mirror = 'http://void.chililinux.com/voidlinux/' || $mirror = 'http://void.chilios.com.br/voidlinux/' ]] ; then
+				if [[ $mirror = 'http://void.chililinux.com/voidlinux/' || $mirror = 'http://void.chilios.com.br/voidlinux/' ]]; then
 					echo "${chash}repository=${mirror}extras"
 				fi
 				echo "${chash}repository=${mirror}current/nonfree"
 				echo "${chash}repository=${mirror}current/multilib"
 				echo "${chash}repository=${mirror}current/multilib/nonfree"
-			} >> "$cfile"
+			} >>"$cfile"
 			((++contador))
 		done
 	fi
@@ -424,11 +446,11 @@ print_top_mirror() {
 		padl "TOP_10" 100 '='
 
 		for list in "${Sorted[@]}"; do
-		   ctime=$(  cut -d, -f1  <<< "$list")
-		   mirror=$( cut -d, -f2  <<< "$list")
-		   geo=$(    cut -d, -f3- <<< "$list")
+			ctime=$(cut -d, -f1 <<<"$list")
+			mirror=$(cut -d, -f2 <<<"$list")
+			geo=$(cut -d, -f3- <<<"$list")
 			printf "%4d %-20s %-65s %-s\n" "$contador" "$geo" "$mirror" "${green}$ctime${reset}"
-			if (( contador > 9 )); then
+			if ((contador > 9)); then
 				return
 			fi
 			((++contador))
@@ -449,12 +471,12 @@ main_test_mirror() {
 	frepo=0
 	contador=1
 
-	sorted_list=$(for key in "${!Amirrors[@]}"; { echo "$key|${Amirrors[$key]}"; } | sort -rt\| -k3)
+	sorted_list=$(for key in "${!Amirrors[@]}"; do echo "$key|${Amirrors[$key]}"; done | sort -rt\| -k3)
 	while IFS='|' LC_ALL=C read -r -a fields; do
 		repo="${fields[0]}"
 		filerepo="${fields[1]}"
 		geo=$(geoiplookup "$repo" | head -1 | sed 's/^.*: //')
-		if ! (( typetest )); then 	# ping
+		if ! ((typetest)); then # ping
 			msgl "Testing (ICMP) for ${orange}$repo${reset} ($geo)"
 			ping=$(ping -qnAc3 "$repo" | tail -1 | awk -F'/' '{print $5}')
 		else
@@ -464,13 +486,13 @@ main_test_mirror() {
 		[[ -n "$ping" ]] && {
 			msgr "${pink}Average time: ${red}$ping${reset}"
 			aHits+=("$ping,$filerepo,$geo")
-			if (( $(bc <<< "$ping<$fping") )); then
+			if (($(bc <<<"$ping<$fping"))); then
 				frepo="$repo"
 				fping="$ping"
 			fi
 			((++contador))
-			} || msgr "${pink}Average time: ${red}ERROR (not computed)${reset}"
-	done <<< "${sorted_list[@]}"
+		} || msgr "${pink}Average time: ${red}ERROR (not computed)${reset}"
+	done <<<"${sorted_list[@]}"
 
 	sh_sorted_array
 	search_geo
@@ -500,13 +522,13 @@ sh_checkDependencies() {
 			errorFound=1 && printf '%s\n' "${red}${cmsg_ERRO[$LC_DEFAULT]}${reset}: ${cmsg_CommandNotFound[$LC_DEFAULT]} ${cyan}'$d'${reset}"
 		}
 	done
-	if (( errorFound )); then
+	if ((errorFound)); then
 		echo "${yellow}--------------${cmsg_ImpossivelContinuar[$LC_DEFAULT]}-------------${reset}"
 		echo "${cmsg_ImpossivelContinuar1[$LC_DEFAULT]}" >&2
 		echo "${cmsg_ImpossivelContinuar2[$LC_DEFAULT]} \$PATH" >&2
 		echo "${yellow}-----------------------------------------------${reset}"
 
-		if [[ "$distro" = @(void|void-live|voidlinux) ]] ; then
+		if [[ "$distro" = @(void|void-live|voidlinux) ]]; then
 			echo
 			if readconf "${yellow}${cmsg_InstCommand[$LC_DEFAULT]} '${cyan}${missing[*]}${reset}' ?"; then
 				if xbps-install -S "${DEP_PACKAGES[@]}"; then
@@ -517,7 +539,7 @@ sh_checkDependencies() {
 			fi
 		fi
 		die "${cmsg_ERRO[$LC_DEFAULT]}: ${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..."
-   fi
+	fi
 }
 
 readconf() {
@@ -527,140 +549,88 @@ readconf() {
 		read -r -p "$* [Y/n]"
 	fi
 	[[ ${REPLY^} == "" ]] && return $false
-	[[ ${REPLY^} == N  ]] && return $true || return $false
+	[[ ${REPLY^} == N ]] && return $true || return $false
 }
 
 conf() {
 	read -r -p "$1 [Y/n]"
-	[[ ${REPLY^} == ""  ]] && return $true
+	[[ ${REPLY^} == "" ]] && return $true
 	[[ ${REPLY^} == "Y" ]] && return $true
-	[[ ${REPLY^} == N   ]] && return $false
+	[[ ${REPLY^} == N ]] && return $false
 	die "ERR: answer must be Y or N"
 }
 
-sh_selfupdate()
-{
+sh_selfupdate() {
 	echo
-   conf "Update ${APP_LOCAL} from internet?"
-   LAUTO=$?
+	conf "$(gettext "Atualizar") ${APP_LOCAL} $(gettext "da internet?")"
+	LAUTO=$?
 
-   if (( LAUTO )); then
-      local link="$URL_GITHUB"
-      local tmp_dir="/tmp/chili"
+	if ((LAUTO)); then
+		local link="$URL_GITHUB"
+		local tmp_dir="/tmp/chili"
 
-      #internet?
+		#internet?
 		sh_checknet "${URL_GITHUB}" || return 1
 
-      log_msg "Ok, let's do it..."
-      [[ -d "${tmp_dir}" ]] || {
-      	mkdir -p "${tmp_dir}"
-     	}
-      pushd "${tmp_dir}" >/dev/null 2>&- || return 1
+		log_msg "Ok, let's do it..."
+		[[ -d "${tmp_dir}" ]] || {
+			mkdir -p "${tmp_dir}"
+		}
+		pushd "${tmp_dir}" >/dev/null 2>&- || return 1
 
-      log_info_msg "${cyan}Clonando $link"
-      #Ok, Puxe o arquivo do repositorio agora!
-      curl --insecure --silent --remote-name "${link}"
-      evaluate_retval
+		log_info_msg "${cyan}$(gettext "Clonando") $link"
+		#Ok, Puxe o arquivo do repositorio agora!
+		curl --insecure --silent --remote-name "${link}"
+		evaluate_retval
 		popd >/dev/null 2>&- || return
 
-      log_info_msg "${cyan}Setting permissions and copying file"
-      chmod +x "${tmp_dir}/${APP_REMOTE}"
-      evaluate_retval
+		log_info_msg "${cyan}$(gettext "Configurando permissões e copiando arquivo")"
+		chmod +x "${tmp_dir}/${APP_REMOTE}"
+		evaluate_retval
 
-      log_info_msg "${cyan}Copying file ${yellow}${APP_REMOTE} ${red}to ${yellow}${0}"
-      mv "$0" "$0.old"
-      cp -apf "${tmp_dir}/${APP_REMOTE}" "$0"
-      evaluate_retval
+		log_info_msg "${cyan}$(gettext "Copiando arquivo") ${yellow}${APP_REMOTE} ${red}$(gettext "para") ${yellow}${0}"
+		mv "$0" "$0.old"
+		cp -apf "${tmp_dir}/${APP_REMOTE}" "$0"
+		evaluate_retval
 
-      log_info_msg "${cyan}Removing temporary files"
-      [[ -d "${tmp_dir}" ]] && {
-	      rm -r "${tmp_dir}"
-      }
-      evaluate_retval
-      log_info_msg "${violet}${0} updated successfully, enjoy!"
-      evaluate_retval
-      exit 0
-   fi
-   return 1
-}
-
-sh_usage() {
-   cat <<EOF
-${white}void-testmirror v$_VERSION_${reset}
-${orange}usage: void-testmirror [options] ${reset}
-
-[options] ${reset}
-   ${red}-p  --ping${cyan}          # Use ping for test
-   ${red}-c  --curl${cyan}          # Use Curl download for test
-   ${red}-a  --auto${cyan}          # automatically configure/write in /etc/xbps.d/ with result obtained results
-   ${red}-q  --quiet${cyan}         # Summmary output
-   ${red}-u  --update${cyan}        # update this application in the online repository. Need Internet
-   ${red}-V  --version${cyan}       # Show application version
-   ${red}-n  --nocolor${cyan}       # remove colors from output${reset}
-EOF
-}
-
-init() {
-	while test $# -gt 0; do
-      case $1 in
-	      -h | -H | --help)
-	         sh_usage
-	         exit $(($# ? 0 : 1))
-	         ;;
-	      -V | --version)
-	         sh_version
-	         exit $(($# ? 0 : 1))
-	         ;;
-	      -n | --nocolor)
-	         sh_unsetvarcolors
-	         ;;
-	      -q | --quiet)
-	         quiet=1
-	         ;;
-	      -a | --auto)
-	         auto=1
-				;;
-	      -p | -P | --ping)
-				nping=1
-				typetest=0
-				appexec+=('main_test_mirror')
-	         ;;
-	      -c | -C | --curl)
-				ncurl=1
-				typetest=1
-				appexec+=('main_test_mirror')
-	         ;;
-	      -u | -U | --update)
-				update=1
-				appexec+=('sh_selfupdate')
-	         ;;
-	      *) die "operação não suportada: $1 (use -h for help)" ;;
-      esac
-      shift
-   done
+		log_info_msg "${cyan}$(gettext "Removendo arquivos temporários")"
+		[[ -d "${tmp_dir}" ]] && {
+			rm -r "${tmp_dir}"
+		}
+		evaluate_retval
+		log_info_msg "${violet}${0} $(gettext "atualizado com sucesso, aproveite!")"
+		evaluate_retval
+		exit 0
+	fi
+	return 1
 }
 
 sh_getRegion() {
 	case "$1" in
-		AF) echo "Africa" ;;
-		AN) echo "Antarctica" ;;
-		AS) echo "Asia" ;;
-		EU) echo "Europe" ;;
-		NA) echo "North America" ;;
-		OC) echo "Oceania" ;;
-		SA) echo "South and Central America" ;;
-		World) echo "Globally Available" ;;
-		*) echo "$1" ;;
+	AF) echo "Africa" ;;
+	AN) echo "Antarctica" ;;
+	AS) echo "Asia" ;;
+	EU) echo "Europe" ;;
+	NA) echo "North America" ;;
+	OC) echo "Oceania" ;;
+	SA) echo "South and Central America" ;;
+	World) echo "Globally Available" ;;
+	*) echo "$1" ;;
 	esac
 }
 
 sh_getMirrors() {
-	local line region url location tier var
+	local line
+	local region
+	local url
+	local location
+	local tier
+	local var
 
-	log_info_msg "Attempt to use local list at $MIRRORLIST"
+	log_info_msg "$(gettext "Tentando usar a lista local em") $MIRRORLIST"
 	if ! test -e "$MIRRORLIST"; then
 		evaluate_retval 1
-		log_error "Unable to continue! Mirror list file not found in path: $MIRRORLIST"
+		log_error "$(gettext "Não é possível continuar. Lista de espelhos não encontrado no") path: $MIRRORLIST"
 		return 1
 	fi
 	evaluate_retval 0
@@ -672,100 +642,49 @@ sh_getMirrors() {
 			var="${var##https://}"
 			var="${var%%\/*}"
 			Amirrors+=(["$var"]="$url|$(sh_getRegion "$region")|$location|$tier")
-		done <<< "$line"
-	done < "$MIRRORLIST"
+		done <<<"$line"
+	done <"$MIRRORLIST"
 	return 0
 }
 
 sh_download_mirrors_list() {
-	log_info_msg "Fetching new mirror list at ${MIRRORURL}"
+	log_info_msg "$(gettext "Buscando nova lista de espelhos em") ${MIRRORURL}"
 	if ! wget --quiet -c "$MIRRORURL" -O "$MIRRORLIST" &>/dev/null; then
 		evaluate_retval "1"
-		log_error "Unable to fetch new mirror list from $MIRRORURL"
-		log_error "Check your internet!"
+		log_error "$(gettext "Não foi possível buscar a nova lista de espelhos de") $MIRRORURL"
+		log_error "$(gettext "Verifique sua internet!")"
 		return 1
 	fi
 	evaluate_retval "$?"
 	return 0
 }
 
-sh_getlocale() {
+sh_getLocale() {
 	local lc
 
-	LC_DEFAULT="${Aidioma[pt_BR]}"
+	LC_DEFAULT="${Alanguage[pt_BR]}"
 	LOCALE="pt_BR"
-	if lc=$(grep _ <(locale -a) | head -1 | cut -c1-5); then
-		LOCALE="$lc"
-		LC_DEFAULT="${Aidioma[$lc]}"
-	fi
+	#   if lc=$(grep _ <(locale -a) | head -1 | cut -c1-5); then
+	#       LOCALE="$lc"
+	#       LC_DEFAULT="${Alanguage[$lc]}"
+	#   fi
 }
 
-sh_setlanguage() {
-	langmsg=(
-		'lang=("pt_BR"
-			"en_US"
-			"de_DE"
-			"fr_FR"
-			"es_ES"
-			"it_IT")'
-     'cmsg_ERRO=("ERRO"
-         "ERROR"
-         "ERROR"
-         "ERREUR"
-         "ERROR"
-         "ERRORE")'
-   'cmsg_CommandNotFound=("não encontrei o comando"
-      "i didn t find the command"
-      "ich habe den Befehl nicht gefunden"
-      "je n ai pas trouvé la commande"
-      "no encontre el comando"
-      "non ho trovato il comando")'
-   'cmsg_ImpossivelContinuar=("IMPOSSÍVEL CONTINUAR"
-      "IMPOSSIBLE TO CONTINUE"
-      "UNMÖGLICH WEITER"
-      "IMPOSSIBLE DE CONTINUER"
-      "IMPOSIBLE CONTINUAR"
-      "IMPOSSIBILE CONTINUARE")'
-   'cmsg_ImpossivelContinuar1=("Esse script precisa dos comandos listados acima"
-      "This script needs the commands listed above"
-      "Dieses Skript benötigt die oben aufgeführten Befehle"
-      "Ce script a besoin des commandes listées ci-dessus"
-      "Este script necesita los comandos enumerados anteriormente"
-      "Questo script necessita dei comandi sopra elencati")'
-   'cmsg_ImpossivelContinuar2=("Instale-os e/ou verifique se estão no seu"
-      "Install them and/or make sure they are on your"
-      "Installieren Sie sie und/oder vergewissern Sie sich, dass sie sich auf Ihrem befinden"
-      "Installez-les et/ou assurez-vous qu ils sont sur votre"
-      "Instálelos y/o asegúrese de que estén en su"
-      "Installali e/o assicurati che siano sul tuo")'
-   'cmsg_InstCommand=("Instalar o(s) comando(s)"
-      "Install the command(s)"
-      "Befehl(e) installieren"
-      "Installez la ou les commandes"
-      "Instale los comandos"
-      "Installa i comandi")'
-   'cmsg_RunNew=("INFO: Rode novamente o aplicativo"
-      "INFO: Run the application again"
-      "INFO: Führen Sie die Anwendung erneut aus"
-      "INFO : Exécutez à nouveau l application"
-      "INFO: Vuelva a ejecutar la aplicación"
-      "INFORMAZIONI: eseguire nuovamente l applicazione")'
-   'cmsg_RunNewErro=("ERRO na instalação dos comandos. Tente manualmente."
-      "ERROR installing commands. Try manually."
-      "FEHLER beim Installieren von Befehlen. Versuchen Sie es manuell."
-      "ERREUR lors de l installation des commandes. Essayez manuellement."
-      "ERROR al instalar comandos. Prueba manualmente."
-      "ERRORE durante l installazione dei comandi. Prova manualmente.")'
-	'cmsg_operNotRoot=("erro: você não pode realizar esta operação a menos que seja root."
-         "error: you cannot perform this operation unless you are root."
-         "Fehler: Sie können diesen Vorgang nur ausführen, wenn Sie root sind."
-         "erreur: vous ne pouvez pas effectuer cette opération si vous n êtes pas root."
-         "error: no puede realizar esta operación a menos que sea root."
-         "errore: non puoi eseguire questa operazione se non sei root.")'
-	)
-	for xmsg in "${langmsg[@]}"; do eval "$xmsg"; done
+sh_setLanguage() {
+	#langmsg=('lang=("pt_BR"	"en_US"	"de_DE"	"fr_FR"	"es_ES"	"it_IT")')
+	#for xmsg in "${langmsg[@]}"; do eval "$xmsg"; done
 	#echo "lang       ${#lang[@]} ${lang[@]} ${lang[$PT_BR]} ${lang[$EN_US]}"
 	#echo "cmsg_ERRO ${#cmsg_ERRO[@]} ${cmsg_ERRO[@]} ${cmsg_ERRO[$PT_BR]} ${cmsg_ERRO[$EN_US]}"
+
+	cmsg_ERRO[pt_BR]="$(gettext "ERRO")"
+	cmsg_CommandNotFound[pt_BR]="$(gettext "não encontrei o comando")"
+	cmsg_ImpossivelContinuar[pt_BR]="$(gettext "IMPOSSÍVEL CONTINUAR")"
+	cmsg_ImpossivelContinuar1[pt_BR]="$(gettext "Esse script precisa dos comandos listados acima")"
+	cmsg_ImpossivelContinuar2[pt_BR]="$(gettext "Instale-os e/ou verifique se estão no seu")"
+	cmsg_InstCommand[pt_BR]="$(gettext "Instalar o(s) comando(s)")"
+	cmsg_RunNew[pt_BR]="$(gettext "Rode novamente o aplicativo")"
+	cmsg_RunNewErro[pt_BR]="$(gettext "Erro na instalação dos comandos. Tente manualmente.")"
+	cmsg_operNotRoot[pt_BR]="$(gettext "Erro: você não pode realizar esta operação a menos que seja root.")"
 }
 
 sh_checkroot() {
@@ -774,30 +693,99 @@ sh_checkroot() {
 	fi
 }
 
+sh_usage() {
+	cat <<-EOF
+		${white}void-testmirror v$_VERSION_${reset}
+		${orange}usage: void-testmirror [options] ${reset}
+
+		[options] ${reset}
+		    ${red}-p  --ping${cyan}          $(gettext "#usar ping para testar")
+		    ${red}-c  --curl${cyan}          $(gettext "#usar download do Curl para teste")
+		    ${red}-a  --auto${cyan}          $(gettext "#configurar automaticamente /etc/xbps.d/ com o resultado obtido")
+		    ${red}-q  --quiet${cyan}         $(gettext "#saída resumida")
+		    ${red}-u  --update${cyan}        $(gettext "#atualiza este aplicativo no repositório online. Precisa de Internet")
+		    ${red}-V  --version${cyan}       $(gettext "#exibe a versão do aplicativo")
+		    ${red}-n  --nocolor${cyan}       $(gettext "#remove cores da saída")
+		    ${red}-h  --help${cyan}          $(gettext "#esta ajuda")
+			${reset}
+	EOF
+}
+
+init() {
+	for opt in "${opts[@]}"; do
+    	case "$opt" in
+		-h | --help)
+			sh_usage
+			exit $(($# ? 0 : 1))
+			;;
+		-V | --version)
+			sh_version
+			exit $(($# ? 0 : 1))
+			;;
+		-n | --nocolor)
+			sh_unsetvarcolors
+			;;
+		-q | --quiet)
+			quiet=1
+			;;
+		-a | --auto)
+			auto=1
+			;;
+		-p | -P | --ping)
+			nping=1
+			typetest=0
+			appexec+=('main_test_mirror')
+			;;
+		-c | -C | --curl)
+			ncurl=1
+			typetest=1
+			appexec+=('main_test_mirror')
+			;;
+		-u | -U | --update)
+			update=1
+			appexec+=('sh_selfupdate')
+			;;
+		--)
+			shift
+			break
+			;;
+		:)
+			echo "-$OPTARG $(gettext "requer um argumento")" >&2
+			;;
+		*) die "$(gettext "operação não suportada"): $1 ($(gettext "usar -h para ajuda"))" ;;
+		esac
+		shift
+	done
+}
+
 sh_setvarcolors
 sh_setambiente
-sh_getlocale
-sh_setlanguage
-sh_logprefix
-[[ "$1" = @(-V|-v|version|-version|--version) ]] && {
-	sh_version; exit $(( $# ? 0 : 1 ));
-}
-[[ -z $1 ]] && {
-   sh_usage
-   exit $(($# ? 0 : 1))
-}
-sh_checkDependencies
-sh_checkroot
-init "$@"
-sh_check_mirror_path
-sh_checknet "${URL_GOOGLE}"
-sh_checknet "${MIRRORURLROOT}" || exit 1
-sh_download_mirrors_list
-sh_getMirrors || exit 1
+sh_getLocale
+sh_setLanguage
+sh_logPrefix
 
-# sanity checks
-case $(( update+nping+ncurl )) in
-      0) die 'no operation specified (use -h for help)' ;;
-   [^1]) die 'only one operation may be used at a time' ;;
-esac
-for x in "${appexec[@]}"; do $x; done
+OPTIONS=pcaquVnh
+LONGOPTIONS=ping,curl,auto,quiet,update,version,nocolor,help
+if ! opts=($(getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@")); then
+	sh_usage
+fi
+eval set -- "${opts[*]}"
+
+init "$@"
+
+if [[ "${#appexec[@]}" != 0 ]]; then
+	sh_checkDependencies
+	sh_checkroot
+	sh_check_mirror_path
+	sh_checknet "${URL_GOOGLE}"
+	sh_checknet "${MIRRORURLROOT}" || exit 1
+	sh_download_mirrors_list
+	sh_getMirrors || exit 1
+
+	# sanity checks
+	case $((update + nping + ncurl)) in
+		0) die "$(gettext "nenhuma operação especificada (usar -h para ajuda)")" ;;
+		[^1]) die "$(gettext "apenas uma operação pode ser usada por vez")" ;;
+	esac
+	for x in "${appexec[@]}"; do $x; done
+fi
