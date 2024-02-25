@@ -4,9 +4,9 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/10/10
+#  Altered: 2024/02/25
 #
-#  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
+#  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
 #                2023-2023, Dannylo Xavier Wanderley <github@danxavier.com.br>
 #  All rights reserved.
@@ -43,9 +43,9 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.0.17-20231010'
+readonly _VERSION_='2.3.25-20240225'
 readonly distro=$(uname -n)
-readonly DEPENDENCIES=(dialog awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
+readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
 #
 #readonly _TARBALL_ROOTFS=void-x86_64-base-minimal-current.tar.xz
@@ -71,27 +71,30 @@ declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
 declare -ga aArchiver=('xarchiver' 'unrar' 'zip' 'p7zip' 'unzip' 'bzip2')
 declare -ga aBrowser=('firefox' 'firefox-i18n-pt-BR' 'lynx')
-declare -ga aBackground=('gnome-backgrounds' 'mate-backgrounds')
 declare -ga aBluetooth=('bluez' 'bluez-alsa' 'bluedevil' 'blueman' 'bluez-cups')
 declare -ga aDisplaymanager=('lxdm' 'lxappearance' 'lxinput' 'lxrandr' 'lxtask')
 declare -ga aFilemanager=('Thunar' 'pcmanfm' 'octoxbps')
 declare -ga aFont=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font' 'noto-fonts-emoji' 'font-emoji-one-color' 'ttf-ubuntu-font-family' 'unicode-emoji')
-declare -ga aMedia=('pulseaudio' 'pavucontrol' 'pasystray' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
+declare -ga aPulseaudio=('pulseaudio' 'pavucontrol' 'pasystray' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
+declare -ga aPipewire=('pipewire' 'wireplumber' 'pulseaudio-utils' 'alsa-pipewire' 'libspa-bluetooth' 'libjack-pipewire')
 declare -ga aMicrode=('intel-ucode' 'linux-firmware-amd')
 declare -ga aNetwork=('NetworkManager' 'network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda' 'inetutils' 'iputils')
 declare -ga aPerfumery=('setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notification-daemon')
 declare -ga aPrinter=('cups' 'system-config-printer' 'system-config-printer-udev' 'splix' 'samsung-unified-driver' 'brother-brlaser' 'cups-pdf')
+declare -ga aMicrocode=('intel-ucode')
 declare -ga aTerminal=('lxterminal' 'rxvt-unicode' 'xfce4-terminal')
-declare -ga aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs')
+declare -ga aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs' 'xrdb')
 declare _ga aEditorTxt=('nano' 'vim')
 declare _ga aEditorX=('kate')
 declare _ga aDownloader=('wget' 'curl' 'git')
 declare _ga aUtility=('gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted')
-declare _PKGS='neofetch pfetch bc bat bash-completion vsv vpm xtools geoip geoip-data geoipupdate'
+#declare _PKGS='neofetch pfetch bc bat bash-completion vsv vpm xtools geoip geoipupdate geoip-data'
+declare _PKGS='neofetch pfetch bc bat bash-completion vsv vpm xtools geoip geoipupdate irqbalance'
 declare _EXTRAS='nano-syntax-highlighting'
 #
 declare _DEVICE='/dev/sdX'
 declare _FILESYSTEM='ext4'
+declare _AUDIOSERVER='Pulseaudio'
 declare _DISKTABLE=''
 declare _BOOTLOADER="$_DEVICE"
 declare _WINDOWMANAGER=('tty')
@@ -171,6 +174,7 @@ sh_setEnvironment() {
 	: "${LMIRROR=}"
 	: "${LSOURCE=}"
 	: "${LEXTRA=}"
+	: "${LAUDIO=}"
 	: "${LTIMEZONE=}"
 	: "${LFILE=}"
 
@@ -1359,6 +1363,19 @@ sh_activating_services() {
 	fi
 }
 
+sh_activating_pipewire() {
+	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} pipewire ${cmsg_Em[$LC_DEFAULT]} $dir_install"
+#	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+
+    #Autostart pipewire
+    sh_chroot_job "$last_msg" "ln -sf /usr/share/applications/pipewire.desktop /etc/xdg/autostart/pipewire.desktop" "$err_not_fatal"
+
+    #Configure
+    sh_chroot_job "$last_msg" "mkdir -p /etc/pipewire/pipewire.conf.d" "$err_not_fatal"
+    sh_chroot_job "$last_msg" "ln -sf /usr/share/examples/wireplumber/10-wireplumber.conf /etc/pipewire/pipewire.conf.d/" "$err_not_fatal"
+    sh_chroot_job "$last_msg" "ln -sf /usr/share/examples/pipewire/20-pipewire-pulse.conf /etc/pipewire/pipewire.conf.d/" "$err_not_fatal"
+}
+
 sh_mk_working_dir() {
 	local cdir
 	local adir=("$dir_install/boot"
@@ -1458,16 +1475,24 @@ sh_mount_fs() {
 
 sh_X11minimal() {
 	local apkgs=()
+	local aMedia=()
 	apkgs+=("${aXorg[@]}")
 	apkgs+=("${aFont[@]}")
 	apkgs+=("${aDisplaymanager[@]}")
 	apkgs+=("${aTerminal[@]}")
 	apkgs+=("${aFilemanager[@]}")
 	apkgs+=("${aBrowser[@]}")
-	apkgs+=("${aBackground[@]}")
 	apkgs+=("${aBluetooth[@]}")
 	apkgs+=("${aNetwork[@]}")
-	apkgs+=("${aMedia[@]}")
+
+    if [[ $_AUDIOSERVER = 'Pulseaudio' ]]; then
+	    apkgs+=("${aPulseaudio[@]}")
+	    aMedia+=("${aPulseaudio[@]}")
+    else
+	    apkgs+=("${aPipewire[@]}")
+	    aMedia+=("${aPipewire[@]}")
+    fi
+
 	apkgs+=("${aPrinter[@]}")
 	apkgs+=("${aPerfumery[@]}")
 	apkgs+=("${aMicrocode[@]}")
@@ -1480,7 +1505,6 @@ sh_X11minimal() {
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Terminal's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aTerminal[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} FileManager's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aFilemanager[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Browser's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aBrowser[*]}" "$err_not_fatal"
-	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Background's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aBackground[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Bluetooth's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aBluetooth[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Networks's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aNetwork[*]}"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Media's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${aMedia[*]}" "$err_not_fatal"
@@ -1517,38 +1541,13 @@ sh_plasmaminimal() {
 }
 
 sh_xfce4minimal() {
-	local apkgs=('xfce4'
-				 'xfce4-appfinder'
-				 'xfce4-battery-plugin'
-				 'xfce4-clipman-plugin'
-				 'xfce4-cpufreq-plugin'
-				 'xfce4-cpugraph-plugin'
-				 'xfce4-datetime-plugin'
-				 'xfce4-dict'
-				 'xfce4-diskperf-plugin'
-				 'xfce4-fsguard-plugin'
-				 'xfce4-genmon-plugin'
-				 'xfce4-mailwatch-plugin'
-				 'xfce4-mpc-plugin'
-				 'xfce4-netload-plugin'
-				 'xfce4-notifyd'
-				 'xfce4-panel'
-				 'xfce4-pulseaudio-plugin'
-				 'xfce4-power-manager'
-				 'xfce4-screensaver'
-				 'xfce4-session'
-				 'xfce4-settings'
-				 'xfce4-screenshooter'
-				 'xfce4-sensors-plugin'
-				 'xfce4-systemload-plugin'
-				 'xfce4-taskmanager'
-				 'xfce4-time-out-plugin'
-				 'xfce4-timer-plugin'
-				 'xfce4-verve-plugin'
-				 'xfce4-whiskermenu-plugin'
-				 'xfce4-weather-plugin'
-				 'xfce4-wavelan-plugin'
-				 'xfce4-xkb-plugin'
+	local apkgs=(xfce4 xfce4-appfinder xfce4-battery-plugin xfce4-clipman-plugin xfce4-cpufreq-plugin
+				 xfce4-cpugraph-plugin xfce4-datetime-plugin xfce4-dict xfce4-diskperf-plugin xfce4-fsguard-plugin
+				 xfce4-genmon-plugin xfce4-mailwatch-plugin xfce4-mpc-plugin xfce4-netload-plugin xfce4-notifyd
+				 xfce4-panel xfce4-pulseaudio-plugin xfce4-power-manager xfce4-screensaver xfce4-session xfce4-settings
+				 xfce4-screenshooter xfce4-sensors-plugin xfce4-systemload-plugin xfce4-taskmanager xfce4-time-out-plugin
+				 xfce4-timer-plugin xfce4-verve-plugin xfce4-whiskermenu-plugin xfce4-weather-plugin xfce4-wavelan-plugin
+				 xfce4-xkb-plugin
 				 )
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Xfce4 ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${apkgs[*]}"
 }
@@ -1559,7 +1558,7 @@ sh_gnomeminimal() {
 		gnome-games-collection gnome-klotski gnome-mahjongg gnome-mime-data gnome-multi-writer
 		gnome-nettool gnome-nibbles gnome-recipes gnome-robots gnome-sound-recorder gnome-sudoku
 		gnome-taquin gnome-terminal gnome-tetravex gnome-tweaks gnome-usage hitori iagno lightsoff
-		polari quadrapassel swell-foop sysprof tali)
+		polari quadrapassel swell-foop sysprof tali gnome-backgrounds)
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Gnome ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
@@ -1579,7 +1578,7 @@ sh_mateminimal() {
 	local apkgs=('mate' 'mate-extra' 'mate-applets' 'atril' 'caja-image-converter' 'caja-open-terminal' 'caja-sendto'
 		'caja-share' 'caja-wallpaper' 'caja-xattr-tags' 'engrampa' 'eom' 'mate-calc' 'mate-icon-theme-faenza'
 		'mate-media' 'mate-netbook' 'mate-power-manager' 'mate-screensaver' 'mate-sensors-applet' 'mate-system-monitor'
-		'mate-terminal' 'mate-utils' 'mozo' 'pluma')
+		'mate-terminal' 'mate-utils' 'mozo' 'pluma' 'mate-backgrounds')
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Mate ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${apkgs[*]}"
 }
 
@@ -1879,6 +1878,35 @@ sh_choosefstype() {
 	esac
 	LFS=$true
 	_FILESYSTEM=$mkfs
+	return 0
+}
+
+sh_chooseaudioserver() {
+	local exit_status
+	local array=()
+	local x
+	local caudio
+
+	array+=("Pulseaudio" "Pulseaudio" "on")
+	array+=("Pipewire" "Pipewire" "off")
+
+	caudio=$(${DIALOG} \
+		--title "${cmsg_DefinirAudioServer[$LC_DEFAULT]}" \
+		--default-item "$_AUDIOSERVER" \
+		--colors \
+		--cancel-label "${cmsg_ButtonBack[$LC_DEFAULT]}" \
+		--ok-label "${cmsg_Aceitar[$LC_DEFAULT]}" \
+		--radiolist "${cmsg_MENU[$LC_DEFAULT]}\n\n$cextra" \
+		12 70 0 "${array[@]}" 2>&1 >/dev/tty)
+
+	exit_status=$?
+	case $exit_status in
+	"$D_ESC" | "$D_CANCEL")
+		return 1
+		;;
+	esac
+	LAUDIO=$true
+	_AUDIOSERVER="$caudio"
 	return 0
 }
 
@@ -2949,7 +2977,8 @@ sh_checkInstall() {
 sh_grubInstall() {
 	local xuuidfde
 
-	echo "GRUB_THEME=/boot/grub/themes/void/theme.txt" >>"$dir_install/etc/default/grub"
+#	echo "GRUB_THEME=/boot/grub/themes/void/theme.txt" >>"$dir_install/etc/default/grub"
+	echo "GRUB_THEME=/boot/grub/themes/chili/theme.txt" >>"$dir_install/etc/default/grub"
 	if ((LOSPROBER)); then
 		echo "GRUB_DISABLE_OS_PROBER=false" >>"$dir_install/etc/default/grub"
 	else
@@ -2985,14 +3014,107 @@ sh_grubInstall() {
 	fi
 }
 
+confmulti() {
+    xtitle="$1"
+    shift
+    ${DIALOG} \
+        --colors \
+        --title "$xtitle" \
+        --backtitle "$ccabec" \
+		--yes-label "${cmsg_yeslabel[$LC_DEFAULT]}" \
+		--no-label "${cmsg_nolabel[$LC_DEFAULT]}" \
+        --yesno "$*" \
+        10 60
+    nchoice=$?
+    return $nchoice
+}
+
+sh_execcopia() {
+    ORIGEM="/run/rootfsbase/"
+    DESTINO="$dir_install/"
+    DEST="$dir_install"
+    PONT='|/—\' # Ponteiros de um hélice do lado direito
+    nVal=0
+
+    sizeof() { du -s "$1" 2>/dev/null | cut -f1; }
+    running() { ps "$1" | grep "$1" >/dev/null; }
+
+    TITLE="INSTALL"
+    #   INTERVALO=0.001
+    INTERVALO=0.5
+    #   PORCENTO=0
+    DIR_DESTINO="$DESTINO/${ORIGEM##*/}"
+    MSG="Aguarde, instalando... if=$ORIGEM of=$DESTINO"
+    #   MSG=$(eval echo "$MSG")
+    mensagem "Aguarde, computando arquivos para instalar"
+    #   TOTAL=$(unsquashfs -ll "$LIVE_DIR" | awk '{n+=$3} END {print n}')
+    #   TOTAL=$((TOTAL/1024))
+    #  TOTALGB=$((TOTAL/1024))
+    TOTAL=$(sizeof "$ORIGEM")
+    TOTALGB=$((TOTAL / 1024))
+    DISPONIVEL=$(df | grep "${DEST}" | awk '{print $4}' | head -1)
+    DISPONIVEL=$((DISPONIVEL / 1024))
+
+    if ((DISPONIVEL < TOTALGB)); then
+        if ! confmulti "*** WARNING ***" \
+            "\nTamanho da partição destino é menor que o necessário\n" \
+            "\nPartição destino   : ${part}" \
+            "\nTamanho disponível : ${DISPONIVEL}G" \
+            "\nTamanho necessário : ${TOTALGB}G" \
+            "\n\nSistema destino poderá não funcionar, continuar?"; then
+#           sh_stop_bind
+#           sh_stop_mount
+#           sh_main_menu "$@"
+            return 1
+        fi
+    fi
+
+    log="/tmp/${_APP_}.log"
+    [ -e "$log" ] && rm -f "$log"
+
+    rsync -crav "$ORIGEM" "$DESTINO" 1>&2 >"$log" &
+    export CPPID=$!
+
+    #  trap sh_trapErro 2 15
+    #trap "kill $CPPID" 2 15
+    (
+        while running "$CPPID"; do
+            ((nval >= 4)) && nval=0
+            COPIADO=$(sizeof "$DIR_DESTINO")
+            PERCENTAGEM=$((COPIADO * 100 / TOTAL))
+            COPIADOMB=$((COPIADO / 1024))
+            LASTFILE=$(tail -n1 "$log")
+            [[ "$PERCENTAGEM" -gt 100 ]] && PERCENTAGEM=100
+            ${DIALOG} --colors \
+                --title $TITLE \
+                --gauge "$MSG                                       \nFalta ${RED}${REVERSE}$((100 - PERCENTAGEM))%${RESET} para completar a tarefa \Zb\Z1${PONT:nval:1}\ZB\Zn \
+                                    \n\nDestino    : ${BLUE}${REVERSE}${AConfDisk[_DEVICE]}$dir_install${RESET}
+                                    \nDisponivel : ${DISPONIVEL}MB\
+                                    \nTotal      :  ${TOTALGB}MB\
+                                    \nCopiado    :  ${BLUE}${REVERSE}${COPIADOMB}MB${RESET}\
+                                    \nArquivo    : ${LASTFILE}\
+                                    \n" 13 130 0 <<<$PERCENTAGEM
+            ((nval++))
+            #           sleep $INTERVALO
+        done
+    )
+    return 0
+}
+
 sh_cp_rootfs() {
-	last_msg="${cmsg_Descompactando[$LC_DEFAULT]} rootfs ${cmsg_Em[$LC_DEFAULT]} $dir_install"
+    local lretval
+	last_msg="${cmsg_Descompactando[$LC_DEFAULT]} ISO ${cmsg_Em[$LC_DEFAULT]} $dir_install"
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	cp -Rpva /run/rootfsbase/* $dir_install 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-	evaluate_retval "${PIPESTATUS[0]}"
+#	cp -Rpva /run/rootfsbase/* $dir_install 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+#   lretval="${PIPESTATUS[0]}"
+#	evaluate_retval "$lretval"
+    sh_execcopia
+    lretval="$?"
+	evaluate_retval "$lretval"
+	clear
 	rm -f $dir_install/etc/issue
 	rm -f $dir_install/etc/motd
-	return "${PIPESTATUS[0]}"
+	return "$lretval"
 }
 
 sh_tar_rootfs() {
@@ -3068,29 +3190,31 @@ sh_install() {
 				if [[ "$_SOURCE" = "local" ]]; then
 					sh_chroot_job "${cmsg_AtualizandoRepositorio[$LC_DEFAULT]} $dir_install" "xbps-install -Suy"
 					sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-remove -oOy"
+        			sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${agrub[*]}"
 				fi
-			fi
-			sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${akernel[*]}"
-			sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${akernel[*]}" "$err_not_fatal"
-			sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${abase[*]} ${agrub[*]}"
-			sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install" "xbps-install -y $_PKGS" "$err_not_fatal" "$err_not_fatal"
-			sh_chroot_job "$(gettext "Instalando Editores de texto em") $dir_install" "xbps-install -y ${aEditorTxt[*]}" "$err_not_fatal" "$err_not_fatal"
-			sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install" "xbps-install -y ${aDownloader[*]}" "$err_not_fatal" "$err_not_fatal"
-			sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install" "xbps-install -y ${aUtility[*]}" "$err_not_fatal" "$err_not_fatal"
-#			sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y $_EXTRAS" "$err_not_fatal"
-			sh_grubInstall
-			sh_make_fstab
-			sh_update_bashrc
-			sh_make_user
-			sh_update_hostname
-			sh_update_rc_local
-			sh_update_sshd
-#			sh_update_timezone
-			sh_update_rc_conf
-			sh_update_locale
-			sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-reconfigure -f glibc-locales"
-#			sh_update_keymap
-			sh_update_wpa_suplicant
+			else
+    			sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${akernel[*]}"
+    			sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${akernel[*]}" "$err_not_fatal"
+    			sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${abase[*]} ${agrub[*]}"
+    			sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install" "xbps-install -y $_PKGS" "$err_not_fatal" "$err_not_fatal"
+    			sh_chroot_job "$(gettext "Instalando Editores de texto em") $dir_install" "xbps-install -y ${aEditorTxt[*]}" "$err_not_fatal" "$err_not_fatal"
+    			sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install" "xbps-install -y ${aDownloader[*]}" "$err_not_fatal" "$err_not_fatal"
+    			sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install" "xbps-install -y ${aUtility[*]}" "$err_not_fatal" "$err_not_fatal"
+#			    sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y $_EXTRAS" "$err_not_fatal"
+            fi
+    		sh_grubInstall
+    		sh_make_fstab
+    		sh_update_bashrc
+    		sh_make_user
+    		sh_update_hostname
+    		sh_update_rc_local
+    		sh_update_sshd
+#	    	sh_update_timezone
+    		sh_update_rc_conf
+    		sh_update_locale
+    		sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-reconfigure -f glibc-locales"
+#	    	sh_update_keymap
+    		sh_update_wpa_suplicant
 
 			_ONLY_TTY=$false
 			if [[ "${#_WINDOWMANAGER[@]}" -eq 1 ]]; then
@@ -3128,6 +3252,10 @@ sh_install() {
 				"lxqt") sh_lxqtminimal ;;
 				esac
 			done
+
+            if [[ $_AUDIOSERVER = 'Pipewire' ]]; then
+                sh_activating_pipewire
+            fi
 
 			sh_activating_services
 			if ((LVM)); then
@@ -3691,6 +3819,7 @@ sh_main_menu() {
 			"Timezone" "${cmsg_descTimezone[LC_DEFAULT]}" \
 			"Wm" "${cmsg_descWm[LC_DEFAULT]}" \
 			"Extra" "${cmsg_descExtra[LC_DEFAULT]}" \
+			"Audio" "${cmsg_DefinirAudioServer[LC_DEFAULT]}" \
 			"${cmsg_Instalar[$LC_DEFAULT]}" "${cmsg_descInstalar[$LC_DEFAULT]}" \
 			"Fde" "Full-Disk Encryption + Lvm (optional)" \
 			"Lvm" "Logical Volume Management (optional)" \
@@ -3714,7 +3843,8 @@ sh_main_menu() {
 		"${cmsg_Teclado[$LC_DEFAULT]}") sh_chooseKeymap && [ -n "$LKEYMAP" ] && DEFITEM="Timezone" ;;
 		"Timezone") sh_chooseTimezone && [ -n "$LTIMEZONE" ] && DEFITEM="Wm" ;;
 		"Wm") sh_choosewm && [ -n "$LWM" ] && DEFITEM="Extra" ;;
-		"Extra") sh_confadduser "$@" && [ -n "$LEXTRA" ] && DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}" ;;
+		"Extra") sh_confadduser       "$@" && [ -n "$LEXTRA" ] && DEFITEM="Audio" ;;
+		"Audio") sh_chooseaudioserver "$@" && [ -n "$LAUDIO" ] && DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}" ;;
 		"${cmsg_Instalar[$LC_DEFAULT]}") sh_install ;;
 		"Fde") sh_confLvm && [ -n "$LFDE" ] && DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}" ;;
 		"Lvm") sh_confLvm && [ -n "$LVM" ] && DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}" ;;
@@ -4410,6 +4540,7 @@ sh_setLanguage() {
 	cmsg_NotConfWm[pt_BR]=$(gettext "Gerenciador de Janelas não foi configurado!")
 	cmsg_NotConfWifi[pt_BR]=$(gettext "Rede wifi não foi configurado!")
 	cmsg_NotConfExtra[pt_BR]=$(gettext "Extra não foi configurado!")
+	cmsg_DefinirAudioServer[pt_BR]=$(gettext "Definir servidor de audio")
 }
 
 sh_setEnvironment

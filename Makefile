@@ -32,6 +32,7 @@ install:
 	@install -m 4755 void-runimage ${BINDIR}/void-runimage
 	@install -m 4755 void-maketar ${BINDIR}/void-maketar
 	@install -m 4755 void-parted ${BINDIR}/void-parted
+	@install -m 4755 void-chroot ${BINDIR}/void-chroot
 	@mkdir -p ${INFODIR}
 	@cp Makefile ChangeLog INSTALL LICENSE MAINTAINERS README.md ${DOCDIR}/
 	@cp Makefile ChangeLog INSTALL LICENSE MAINTAINERS README.md ${INFODIR}/
@@ -56,6 +57,7 @@ uninstall:
 	@rm ${BINDIR}/void-runimage
 	@rm ${BINDIR}/void-maketar
 	@rm ${BINDIR}/void-parted
+	@rm ${BINDIR}/void-chroot
 	@rm -fd ${BINDIR}
 	@rm -fd ${INFODIR}
 	@echo "${APP} foi removido."
