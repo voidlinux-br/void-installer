@@ -35,6 +35,9 @@
 export TEXTDOMAINDIR=/usr/share/locale
 export TEXTDOMAIN=void-install
 
+#todo
+#usermod -a -G bluetooth $USER
+
 #debug
 export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
@@ -43,7 +46,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.3.26-20240226'
+readonly _VERSION_='2.4.26-20240226'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -1292,7 +1295,11 @@ sh_make_fstab() {
 		last_msg="${cmsg_Gerando[$LC_DEFAULT]} fstab pass1 ${cmsg_Em[$LC_DEFAULT]} $dir_install"
 		msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
 
-		echo "tmpfs                                           /tmp           tmpfs            defaults,nosuid,nodev 0 0" >"$dir_install/etc/fstab"
+#		echo "tmpfs                                           /tmp           tmpfs            defaults,nosuid,nodev 0 0" >"$dir_install/etc/fstab"
+		echo "tmpfs                                           /tmp           tmpfs            defaults,nosuid,nodev,noatime,mode=1777 0 0" >"$dir_install/etc/fstab"
+        echo "tmpfs                                           /var/log       tmpfs            defaults,noatime,mode=0755 0 0" >"$dir_install/etc/fstab"
+        echo "proc                                            /proc          proc             nodev,noexec,nosuid 0 0" >"$dir_install/etc/fstab"
+
 		for i in "${!Amntpoint[@]}"; do
 			_part="$i"
 			mntpoint="$(sh_splitarray "${Amntpoint[$i]}" 1)"
@@ -1307,7 +1314,8 @@ sh_make_fstab() {
 				continue
 			fi
 			if [ -n "$mntpoint" ]; then
-				echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults 0 $fsorder" >>"$dir_install/etc/fstab"
+#				echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults 0 $fsorder" >>"$dir_install/etc/fstab"
+				echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults,noatime,discard,lazytime,errors=remount-ro 0 $fsorder" >>"$dir_install/etc/fstab"
 			fi
 		done
 		evaluate_retval "$?"
@@ -1334,7 +1342,8 @@ sh_make_fstab() {
 			format="$(sh_splitarray "${AmntpointFDE[$i]}" 3)"
 			size="$(sh_splitarray "${AmntpointFDE[$i]}" 4)"
 			mntpoint="$(sh_splitarray "${AmntpointFDE[$i]}" 5)"
-			echo "UUID=$(blkid -o value -s UUID "${_part}")	$mntpoint	${fstype,,}	defaults	0	0" >>"$dir_install/etc/fstab"
+#			echo "UUID=$(blkid -o value -s UUID "${_part}")	$mntpoint	${fstype,,}	defaults 0 0" >>"$dir_install/etc/fstab"
+			echo "UUID=$(blkid -o value -s UUID "${_part}")	$mntpoint	${fstype,,}	defaults,noatime,discard,lazytime,errors=remount-ro 0 0" >>"$dir_install/etc/fstab"
 		done
 		evaluate_retval "$?"
 	fi
