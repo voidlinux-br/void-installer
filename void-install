@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2024/02/25
+#  Altered: 2024/02/26
 #
 #  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -43,7 +43,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.3.25-20240225'
+readonly _VERSION_='2.3.26-20240226'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -2487,6 +2487,24 @@ sh_confadduser() {
 				sh_confadduser
 			fi
 
+            # Verificar se usuario começa com um número
+			if [[ "${AsUser[cuser]}" =~ ^[0-9] ]]; then
+				if ! conf "=== ${cmsg_Usuario[$LC_DEFAULT]^^} ===" "\n${cmsg_adduser5[$LC_DEFAULT]}"; then
+					die "$(gettext "=== USUÁRIO === ")" "${cmsg_adduserCancel[$LC_DEFAULT]}"
+					return 1
+				fi
+				sh_confadduser
+			fi
+
+            # Verificar se string1 começa com uma letra maiúscula
+			if [[ "${AsUser[cuser]}" =~ ^[A-Z] ]]; then
+				if ! conf "=== ${cmsg_Usuario[$LC_DEFAULT]^^} ===" "\n${cmsg_adduser6[$LC_DEFAULT]}"; then
+					die "$(gettext "=== USUÁRIO === ")" "${cmsg_adduserCancel[$LC_DEFAULT]}"
+					return 1
+				fi
+				sh_confadduser
+			fi
+
 			if [[ -z "${AsUser[cpass]}" ]]; then
 				if ! conf "=== ${cmsg_Usuario[$LC_DEFAULT]^^} ===" "\n${cmsg_adduser3[$LC_DEFAULT]}"; then
 					die "=== ${cmsg_Usuario[$LC_DEFAULT]^^} ===" "${cmsg_adduserCancel[$LC_DEFAULT]}"
@@ -4321,7 +4339,7 @@ sh_chooseVg() {
 	sorted_list=$(for key in "${!AARRAY_VG_DEVICES[@]}"; do echo "$key|${AARRAY_VG_DEVICES[$key]}"; done | sort -t\| -k2 -k1)
 
 	if [[ ${#sorted_list} -eq 0 ]]; then
-		alerta "=== VG ===" "${BOLD}${BLACK}${REVERSE}$(gettext "Info: Nenhum VG localizado no systema.")"
+		alerta "=== VG ===" "${BOLD}${BLACK}${REVERSE}$(gettext "Info: Nenhum VG localizado no sistema.")"
 		return 1
 	fi
 
@@ -4504,10 +4522,12 @@ sh_setLanguage() {
 	welcome[pt_BR]=$(gettext "Bem-vindo ao instalador $APP")
 	escolhaIdioma[pt_BR]=$(gettext "Escolha o idioma")
 	cmsg_Usuario[pt_BR]=$(gettext "Usuário")
-	cmsg_adduser1[pt_BR]=$(gettext "Usuário não pode estart root! Novamente?")
+	cmsg_adduser1[pt_BR]=$(gettext "Usuário não pode estar root! Novamente?")
 	cmsg_adduser2[pt_BR]=$(gettext "Usuário não pode estar vazio! Novamente?")
 	cmsg_adduser3[pt_BR]=$(gettext "Senha do usuário não pode estar vazia! Novamente?")
 	cmsg_adduser4[pt_BR]=$(gettext "Senha de root não pode estar vazia! Novamente?")
+	cmsg_adduser5[pt_BR]=$(gettext "Usuário não pode iniciar com números! Novamente?")
+	cmsg_adduser6[pt_BR]=$(gettext "Usuário não pode iniciar com letras maiúsculas! Novamente?")
 	cmsg_adduserCancel[pt_BR]=$(gettext "Cadastro de usuário cancelado")
 	cmsg_redewifi[pt_BR]=$(gettext "Rede wifi")
 	cmsg_senhawifi[pt_BR]=$(gettext "Senha wifi")
