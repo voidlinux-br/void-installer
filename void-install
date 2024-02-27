@@ -1296,9 +1296,9 @@ sh_make_fstab() {
 		msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
 
 #		echo "tmpfs                                           /tmp           tmpfs            defaults,nosuid,nodev 0 0" >"$dir_install/etc/fstab"
-		echo "tmpfs                                           /tmp           tmpfs            defaults,nosuid,nodev,noatime,mode=1777 0 0" >"$dir_install/etc/fstab"
-        echo "tmpfs                                           /var/log       tmpfs            defaults,noatime,mode=0755 0 0" >"$dir_install/etc/fstab"
-        echo "proc                                            /proc          proc             nodev,noexec,nosuid 0 0" >"$dir_install/etc/fstab"
+		echo "tmpfs                                           /tmp           tmpfs            defaults,nosuid,nodev,noatime,mode=1777 0 0"  >"$dir_install/etc/fstab"
+        echo "tmpfs                                           /var/log       tmpfs            defaults,noatime,mode=0755              0 0" >>"$dir_install/etc/fstab"
+        echo "proc                                            /proc          proc             nodev,noexec,nosuid                     0 0" >>"$dir_install/etc/fstab"
 
 		for i in "${!Amntpoint[@]}"; do
 			_part="$i"
@@ -1314,8 +1314,12 @@ sh_make_fstab() {
 				continue
 			fi
 			if [ -n "$mntpoint" ]; then
-#				echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults 0 $fsorder" >>"$dir_install/etc/fstab"
-				echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults,noatime,discard,lazytime,errors=remount-ro 0 $fsorder" >>"$dir_install/etc/fstab"
+			    if [ "$mntpoint" = '/boot/efi' ]; then
+				    echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults 0 2" >>"$dir_install/etc/fstab"
+                else
+#				    echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults 0 $fsorder" >>"$dir_install/etc/fstab"
+    				echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults,noatime,discard,lazytime,errors=remount-ro 0 $fsorder" >>"$dir_install/etc/fstab"
+		        fi
 			fi
 		done
 		evaluate_retval "$?"
