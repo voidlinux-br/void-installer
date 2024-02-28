@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2024/02/26
+#  Altered: 2024/02/28
 #
 #  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -46,7 +46,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.4.26-20240226'
+readonly _VERSION_='2.4.28-20240228'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -678,7 +678,7 @@ alerta() {
 		--backtitle "$ccabec" \
 		--ok-label "${cmsg_ok[$LC_DEFAULT]}" \
 		--msgbox "\n$2\n$3\n$4\n$5\n$6" \
-		10 60
+		10 81
 }
 
 readconf() {
@@ -2737,6 +2737,13 @@ sh_choosewm() {
 	declare -A aWm
 	local x
 
+    if [[ "$_SOURCE" = "local" ]]; then
+        alerta "$ccabec" "Instalação escolhida foi via local/ISO, não é necessário alterar nada aqui"
+       	_WINDOWMANAGER='tty'
+        LWM=$true
+        return
+    fi
+
 	aWm[tty]="${cmsg_tty[LC_DEFAULT]}"
 	aWm[awesome]="Awesome"
 	aWm[bspwm]="Bspwm"
@@ -3602,8 +3609,8 @@ sh_choosePartition() {
 			--default-item "$_DEVICE" \
 			--backtitle "$ccabec" \
 			--title "${cmsg_TitleFileSystem[LC_DEFAULT]}" \
-			--ok-label "${cmsg_Mudar[$LC_DEFAULT]}" \
-			--cancel-label "${cmsg_ButtonFeito[$LC_DEFAULT]}" \
+			--cancel-label "${cmsg_Mudar[$LC_DEFAULT]}" \
+			--ok-label     "${cmsg_ButtonFeito[$LC_DEFAULT]}" \
 			--colors \
 			--extra-button \
 			--extra-label "${cmsg_info_particao[$LC_DEFAULT]}" \
@@ -3615,7 +3622,7 @@ $(printf "%${nlen}s$sep%-11s$sep%6s$sep%-15s$sep%-20s$sep%-20s$sep%-8s$sep%s" "P
 		#    	dsk="${part%%?(p)+([0-9])}"
 		dsk="${part%%[p0-9]*([0-9])}"
 		case $exit_status in
-		"$D_ESC" | "$D_CANCEL")
+		"$D_ESC" | "$D_OK")
 			LFS=$true
 			LPARTITION=$true
 			return 0
