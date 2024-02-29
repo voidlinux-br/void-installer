@@ -4,7 +4,7 @@
 # Require: xbps-install -S curl bc geoip geoip-data geoipupdate iputils
 
 #  Created: 2022/11/05
-#  Altered: 2023/10/16
+#  Altered: 2024/02/29
 #
 #  Copyright (c) 2022-2022, Vilmar Catafesta <vcatafesta@gmail.com>
 #
@@ -31,7 +31,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.4.01-20231016'
+readonly _VERSION_='0.4.29-20240329'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(bc geoiplookup geoipupdate sed awk tput wget curl gettext)
 readonly DEP_PACKAGES=(bc geoip geoip-data geoipupdate sed gawk ncurses wget curl gettext)
@@ -478,7 +478,10 @@ main_test_mirror() {
 		geo=$(geoiplookup "$repo" | head -1 | sed 's/^.*: //')
 		if ! ((typetest)); then # ping
 			msgl "Testing (ICMP) for ${orange}$repo${reset} ($geo)"
-			ping=$(ping -qnAc3 "$repo" | tail -1 | awk -F'/' '{print $5}')
+			ping=
+			if ping -fc3 "$repo" >/dev/null 2>&-; then
+				ping=$(ping -qnAc3 "$repo" | tail -1 | awk -F'/' '{print $5}')
+			fi
 		else
 			msgl "Testing (HTTP) for ${orange}$repo${reset} ($geo)"
 			ping=$(curl -s -w '%{time_total}\n' -o /dev/null "$filerepo/current/x86_64-repodata")
@@ -491,7 +494,7 @@ main_test_mirror() {
 				fping="$ping"
 			fi
 			((++contador))
-		} || msgr "${pink}Average time: ${red}ERROR (not computed)${reset}"
+		} || msgr "${pink}Average time: ${red}ERROR unreachable (not computed)${reset}"
 	done <<<"${sorted_list[@]}"
 
 	sh_sorted_array
@@ -764,13 +767,17 @@ sh_getLocale
 sh_setLanguage
 sh_logPrefix
 
+if [[ "${#@}" -eq 0 ]]; then
+	sh_usage
+	exit 1
+fi
+
 OPTIONS=pcaquVnh
 LONGOPTIONS=ping,curl,auto,quiet,update,version,nocolor,help
 if ! opts=($(getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@")); then
 	sh_usage
 fi
 eval set -- "${opts[*]}"
-
 init "$@"
 
 if [[ "${#appexec[@]}" != 0 ]]; then
