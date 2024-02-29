@@ -3,7 +3,7 @@
 
 #  void-install
 #  Created: 2023/01/22
-#  Altered: 2023/09/06
+#  Altered: 2024/02/29
 #
 #  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -35,16 +35,16 @@ export TEXTDOMAIN=void-mirror
 #debug
 export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
-set -e
+#set -e
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='1.0.16-20230906'
+readonly _VERSION_='1.1.29-20240229'
 readonly DEPENDENCIES=(wget curl dialog cat sed grep printf)
-declare -A Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
-declare -A Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
-declare -A Amirrors
-declare -i quiet=0 grafico=1 ncontador=0
+declare -gA Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
+declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
+declare -gA Amirrors
+declare -gi quiet=0 grafico=1 ncontador=0
 declare _MIRROR="repo-fastly.voidlinux.org"
 declare BOOTLOG
 declare distro
@@ -542,7 +542,12 @@ sh_getRegion() {
 }
 
 sh_getMirrors() {
-	local line region url location tier var
+	local line
+	local region
+	local url
+	local location
+	local tier
+	local var
 
 	if ! test -e "$MIRRORLIST"; then
 		alerta "$(gettext "LISTA DE ESPELHOS")" "\n${RED}$(gettext "Não é possível continuar!")${RESET}" \
@@ -551,67 +556,17 @@ sh_getMirrors() {
 	fi
 
 	while read -r line; do
+	    first_field=$(echo "$line" | awk '{print $1}')  # Extrai o primeiro campo usando awk
 		[[ "$line" = '#'* ]] && continue
-		while IFS=$'\t' read -r region url location tier; do
+		while IFS=$'\t\n' LC_ALL=C read -r rg url location tier; do
+			region="$first_field"
 			var="${url##http://}"
 			var="${var##https://}"
 			var="${var%%\/*}"
-			Amirrors+=(["$var"]="$url|$(sh_getRegion "$region")|$location|$tier|")
-		done <<<"$line"
+			tier=$(echo "$tier" | tr -d '\r') # O caractere ^M representa a tecla Enter, ou seja, a quebra de linha no formato DOS/Windows
+			Amirrors+=(["$var"]="$url|$(sh_getRegion "$region")|$location|$tier")
+		done <<< "$line"
 	done <"$MIRRORLIST"
-	return 0
-}
-
-sh_download_mirrors_list() {
-	require_util() {
-		command -v "$1" >/dev/null 2>&1 || oops "você não tem '$1' instalado, que é preciso para $2"
-	}
-	if command -v curl >/dev/null 2>&1; then
-		cmdfetch() { curl --compressed --silent --continue-at - --insecure -L "$1" -o "$2"; return $?; }
-	elif command -v wget >/dev/null 2>&1; then
-		cmdfetch() { wget --quiet -c "$1" -O "$2"; return $?; }
-	else
-		require_util curl "downloader"
-		require_util wget "downloader"
-	fi
-
-	msg "$(gettext "BAIXAR LISTA DE ESPELHOS")" "$(gettext "buscando nova lista de espelhos em") ${MIRRORURL}"
-	if ! cmdfetch "$MIRRORURL" "$MIRRORLIST"; then
-		alerta "$(gettext "BAIXAR LISTA DE ESPELHOS")" \
-			"\n${RED}${REVERSE}$(gettext "Verifique sua conexão com a internet")${RESET}" \
-			"$(gettext "Incapaz de buscar uma nova lista de espelhos de") : ${BLUE}${REVERSE}$MIRRORURL${RESET}" \
-  			"$(gettext "Tentando usar a lista local")                     : ${BLUE}${REVERSE}$MIRRORLIST"
-		return 1
-	fi
-	return 0
-}
-
-sh_splitarray() {
-	local str="$1"
-	local pos="$2"
-	local sep="${3:-'|'}"
-	local array
-
-	[[ $# -eq 3 && "$pos" = "|" && "$sep" =~ ^[0-9]+$ ]] && {
-		sep="$2"
-		pos="$3"
-	}
-	[[ $# -eq 2 && "$pos" = "$sep" ]] && {
-		sep="$pos"
-		pos=1
-	}
-	[[ $# -eq 1 || ! "$pos" =~ ^[0-9]+$ ]] && { pos=1; }
-
-	IFS="$sep" read -r -a array <<<"$str"
-	echo "${array[pos - 1]}"
-}
-
-sh_sync_mirrors() {
-	xbps-install -S | $DIALOG \
-		--backtitle "$ccabec - ${cmsg_Atualizando[LC_DEFAULT]}" \
-		--title "${cmsg_Atualizando[LC_DEFAULT]}" \
-		--programbox 20 110
-	exit 0
 }
 
 sh_choosemirror() {
@@ -632,9 +587,7 @@ sh_choosemirror() {
 	local mirror2
 
 	Amirrors+=([void.chililinux.com_2]="https://void.chililinux.com/voidlinux/|South and Central America|Pimenta Bueno, Brazil|2|")
-	#	Amirrors+=([void.chilios.com.br]="https://void.chilios.com.br/voidlinux/|South and Central America|Pimenta Bueno, Brazil|2|")
-	#	Amirrors+=([void.chilios.com.br_2]="http://void.chilios.com.br/voidlinux/|South and Central America|Pimenta Bueno, Brazil|2|")
-
+	Amirrors+=([chililinux.com/void]="https://chililinux.com/void/|South and Central America|Hostinger, Brazil|2|")
 	while true; do
 		array=()
 		sorted_list=$(for key in "${!Amirrors[@]}"; do echo "$key|${Amirrors[$key]}"; done | sort -t\| -k5 -k3)
@@ -705,17 +658,70 @@ sh_choosemirror() {
 				{
 					echo repository="${url_mirror}current"
 					[[ "$clocation" =~ .*Pimenta* ]] && echo repository="${url_mirror}current/extras"
+					[[ "$clocation" =~ .*Hostinger* ]] && continue
 					echo repository="${url_mirror}current/nonfree"
 					echo repository="${url_mirror}current/multilib"
 					echo repository="${url_mirror}current/multilib/nonfree"
 					echo
 				} >>"${main_file}"
-				#				evaluate_retval "$?"
+				# evaluate_retval "$?"
 			done
 			sh_sync_mirrors
 		fi
 		return 0
 	done
+}
+
+sh_download_mirrors_list() {
+	require_util() {
+		command -v "$1" >/dev/null 2>&1 || oops "você não tem '$1' instalado, que é preciso para $2"
+	}
+	if command -v curl >/dev/null 2>&1; then
+		cmdfetch() { curl --compressed --silent --continue-at - --insecure -L "$1" -o "$2"; return $?; }
+	elif command -v wget >/dev/null 2>&1; then
+		cmdfetch() { wget --quiet -c "$1" -O "$2"; return $?; }
+	else
+		require_util curl "downloader"
+		require_util wget "downloader"
+	fi
+
+	msg "$(gettext "BAIXAR LISTA DE ESPELHOS")" "$(gettext "buscando nova lista de espelhos em") ${MIRRORURL}"
+	if ! cmdfetch "$MIRRORURL" "$MIRRORLIST"; then
+		alerta "$(gettext "BAIXAR LISTA DE ESPELHOS")" \
+			"\n${RED}${REVERSE}$(gettext "Verifique sua conexão com a internet")${RESET}" \
+			"$(gettext "Incapaz de buscar uma nova lista de espelhos de") : ${BLUE}${REVERSE}$MIRRORURL${RESET}" \
+  			"$(gettext "Tentando usar a lista local")                     : ${BLUE}${REVERSE}$MIRRORLIST"
+		return 1
+	fi
+	return 0
+}
+
+sh_splitarray() {
+	local str="$1"
+	local pos="$2"
+	local sep="${3:-'|'}"
+	local array
+
+	[[ $# -eq 3 && "$pos" = "|" && "$sep" =~ ^[0-9]+$ ]] && {
+		sep="$2"
+		pos="$3"
+	}
+	[[ $# -eq 2 && "$pos" = "$sep" ]] && {
+		sep="$pos"
+		pos=1
+	}
+	[[ $# -eq 1 || ! "$pos" =~ ^[0-9]+$ ]] && { pos=1; }
+
+	IFS="$sep" read -r -a array <<<"$str"
+	echo "${array[pos - 1]}"
+}
+
+sh_sync_mirrors() {
+	xbps-install -S | $DIALOG \
+		--backtitle "$ccabec - ${cmsg_Atualizando[LC_DEFAULT]}" \
+		--title "${cmsg_Atualizando[LC_DEFAULT]}" \
+		--programbox 20 110
+	exit 0
 }
 
 sh_language() {

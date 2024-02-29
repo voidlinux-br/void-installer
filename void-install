@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2024/02/28
+#  Altered: 2024/02/29
 #
 #  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -46,7 +46,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.4.28-20240228'
+readonly _VERSION_='2.4.29-20240229'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -892,6 +892,19 @@ sh_update_mirror() {
 		repository=${url_mirror}current/nonfree
 		repository=${url_mirror}current/multilib
 		repository=${url_mirror}current/multilib/nonfree
+
+		#repository=https://voidlinux.com.br/repo/current
+		#repository=https://voidlinux.com.br/repo/nonfree
+		#repository=https://voidlinux.com.br/repo/multilib
+		#repository=https://voidlinux.com.br/repo/multilib/nonfree
+
+		#repository=http://void.chililinux.com/voidlinux/current
+		#repository=http://void.chililinux.com/voidlinux/current/extras
+		#repository=http://void.chililinux.com/voidlinux/current/nonfree
+		#repository=http://void.chililinux.com/voidlinux/current/multilib
+		#repository=http://void.chililinux.com/voidlinux/current/multilib/nonfree
+
+		#repository=https://chililinux.com/void/current
 	EOF
 	evaluate_retval "$?"
 }
