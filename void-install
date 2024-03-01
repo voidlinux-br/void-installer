@@ -56,7 +56,8 @@ readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fd
 #readonly _TARBALL_ROOTFS=void-x86_64-base-system-current.tar.xz
 readonly _TARBALL_ROOTFS=void-x86_64-base-custom-current.tar.xz
 #
-declare -gi quiet=0 grafico=0 ncounter=0 njobs=60
+declare -gi ncounter=0 njobs=64
+declare -gi quiet=0 grafico=0
 declare -gi LAUTO=1 LINSTALL=0 LCHROOT=0 LBIND=0 LMKPART=0 LEFI=0 LBIOS=1 LMKPARTED=0 LOSPROBER=0 LFDE=0 LVM=0 LFS=0 LPARTITION=0 LTABLE=0
 declare -gA AsUser=([cpass]='void' [cpassroot]='voidlinux' [chostname]='voidlinux' [cgroups]='wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder')
 declare -gA Amntpoint
@@ -80,11 +81,10 @@ declare -ga aFilemanager=('Thunar' 'pcmanfm' 'octoxbps')
 declare -ga aFont=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font' 'noto-fonts-emoji' 'font-emoji-one-color' 'ttf-ubuntu-font-family' 'unicode-emoji')
 declare -ga aPulseaudio=('pulseaudio' 'pavucontrol' 'pasystray' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
 declare -ga aPipewire=('pipewire' 'wireplumber' 'pulseaudio-utils' 'alsa-pipewire' 'libspa-bluetooth' 'libjack-pipewire')
-declare -ga aMicrode=('intel-ucode' 'linux-firmware-amd')
+declare -ga aMicrocode=('intel-ucode' 'linux-firmware-amd')
 declare -ga aNetwork=('NetworkManager' 'network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda' 'inetutils' 'iputils')
 declare -ga aPerfumery=('setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notification-daemon')
 declare -ga aPrinter=('cups' 'system-config-printer' 'system-config-printer-udev' 'splix' 'samsung-unified-driver' 'brother-brlaser' 'cups-pdf')
-declare -ga aMicrocode=('intel-ucode')
 declare -ga aTerminal=('lxterminal' 'rxvt-unicode' 'xfce4-terminal')
 declare -ga aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs' 'xrdb')
 declare _ga aEditorTxt=('nano' 'vim')
@@ -111,6 +111,7 @@ declare Interrupted="$(gettext "Interrompido! Saindo...")"
 trap 'printf "\n${red}$Interrupted\n"; cleanup; exit 0' INT TERM HUP
 
 info_msg() {
+#	notify-send "$ccabec" "$@"
 	printf "\033[1m$@\n\033[m"
 }
 
@@ -506,6 +507,7 @@ msg() {
 	last_msg="$2"
 	logmessage="$ufmt $last_msg"
 	logmessage=${logmessage/INFO /}
+#	notify-send "${ccabec}" "${logmessage}"
 	printf "%s\n" "$(timespec) [ $cinfo ]$ufmt ${logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 
 	if ((grafico)); then
@@ -2723,15 +2725,17 @@ sh_parseconf() {
 
 sh_mkefiroaming() {
 	#Caminho de inicialização padrão/reserva
-	last_msg="${cmsg_CriandoDiretorios[$LC_DEFAULT]}: $dir_install/boot/efi/EFI/BOOT"
-	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	mkdir -p "$dir_install/boot/efi/EFI/BOOT" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-	evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
+	if [[ -e "$dir_install/boot/efi/EFI/$cnickefi/grubx64.efi" ]]; then
+		last_msg="${cmsg_CriandoDiretorios[$LC_DEFAULT]}: $dir_install/boot/efi/EFI/BOOT"
+		msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+		mkdir -p "$dir_install/boot/efi/EFI/BOOT" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+		evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
 
-	last_msg="${cmsg_CopiandoCaminhoReserva[$LC_DEFAULT]}: $dir_install/boot/efi/BOOT"
-	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	cp "$dir_install/boot/efi/EFI/$cnickefi/grubx64.efi" "$dir_install/boot/efi/EFI/BOOT/BOOTX64.EFI" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-	evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
+		last_msg="${cmsg_CopiandoCaminhoReserva[$LC_DEFAULT]}: $dir_install/boot/efi/BOOT"
+		msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+		cp "$dir_install/boot/efi/EFI/$cnickefi/grubx64.efi" "$dir_install/boot/efi/EFI/BOOT/BOOTX64.EFI" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+		evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
+	fi
 }
 
 sh_getBootEFI() {
@@ -3198,12 +3202,10 @@ sh_extract_root_fs() {
 }
 
 sh_install() {
-	#local abase=(base-system dbus lvm2 wireless_tools nano grub os-prober efivar efibootmgr grub-x86_64-efi
-	# 				  parted xz zstd wget curl dialog bash-completion git bc geoip geoip-data geoipupdate iputils)
-	local akernel=(linux dbus wifi-firmware)
+	local abase=(zstd xz cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd)
+	local akernel=(linux dbus)
 	local afirmware=(wifi-firmware)
-	local abase=(zstd cryptsetup lvm2 wireless_tools xz wpa_supplicant socklog-void openntpd)
-	local agrub=(grub os-prober)
+	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils)
 	local start_datetime
 	local end_datetime
 
@@ -3236,35 +3238,36 @@ sh_install() {
 			evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
 			sh_update_mirror
 			sh_checkNet "$url_mirror" || return 1
-			sh_chroot_job "${cmsg_Atualizando[$LC_DEFAULT]} xbps ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -Suy xbps"
-			if ((LSOURCE)); then
-				if [[ "$_SOURCE" = "local" ]]; then
-					sh_chroot_job "${cmsg_AtualizandoRepositorio[$LC_DEFAULT]} $dir_install" "xbps-install -Suy"
-					sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-remove -oOy"
-        			sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${agrub[*]}"
-				fi
-			else
-    			sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${akernel[*]}"
-    			sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${akernel[*]}" "$err_not_fatal"
-    			sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${abase[*]} ${agrub[*]}"
-    			sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install" "xbps-install -y $_PKGS" "$err_not_fatal" "$err_not_fatal"
-    			sh_chroot_job "$(gettext "Instalando Editores de texto em") $dir_install" "xbps-install -y ${aEditorTxt[*]}" "$err_not_fatal" "$err_not_fatal"
-    			sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install" "xbps-install -y ${aDownloader[*]}" "$err_not_fatal" "$err_not_fatal"
-    			sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install" "xbps-install -y ${aUtility[*]}" "$err_not_fatal" "$err_not_fatal"
-#			    sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y $_EXTRAS" "$err_not_fatal"
-            fi
-    		sh_grubInstall
+
+			# Go install
+			sh_chroot_job "${cmsg_Atualizando[$LC_DEFAULT]} xbps ${cmsg_Em[$LC_DEFAULT]} $dir_install"               "xbps-install -Suy xbps"
+			sh_chroot_job "${cmsg_AtualizandoRepositorio[$LC_DEFAULT]} $dir_install"                                 "xbps-install -Suy"
     		sh_make_fstab
     		sh_update_bashrc
     		sh_make_user
     		sh_update_hostname
     		sh_update_rc_local
     		sh_update_sshd
-#	    	sh_update_timezone
     		sh_update_rc_conf
     		sh_update_locale
+
+			if [[ "$_SOURCE" = "local" ]]; then
+       			sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${agrub[*]}"
+	    		sh_grubInstall
+			else
+   				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -y ${akernel[*]}"
+   				sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} Grub ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${agrub[*]}"
+	    		sh_grubInstall
+   				sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"      "xbps-install -y ${abase[*]}"
+   				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Wifi Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "xbps-install -y ${afirmware[*]}"
+   				sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install"                        "xbps-install -y $_PKGS"            "$err_not_fatal" "$err_not_fatal"
+   				sh_chroot_job "$(gettext "Instalando Editores texto em") $dir_install"                                "xbps-install -y ${aEditorTxt[*]}"  "$err_not_fatal" "$err_not_fatal"
+   				sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install"                                   "xbps-install -y ${aDownloader[*]}" "$err_not_fatal" "$err_not_fatal"
+   				sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install"                                   "xbps-install -y ${aUtility[*]}"    "$err_not_fatal" "$err_not_fatal"
+#		    	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -y $_EXTRAS" "$err_not_fatal"
+            fi
+			sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-remove -oOy"
     		sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-reconfigure -f glibc-locales"
-#	    	sh_update_keymap
     		sh_update_wpa_suplicant
 
 			_ONLY_TTY=$false
