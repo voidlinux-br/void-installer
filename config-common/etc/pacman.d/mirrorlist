@@ -1,0 +1,32 @@
+##
+## Manjaro Linux Lista de espelho padrão
+## Gerado em 2024-02-15 21:34
+##
+## Por favor, use 'pacman-mirrors -f [Número] [Número]' Para modificar a lista espelhada
+## (Use 0 para todos os espelhos)
+##
+
+## Country : Brazil
+Server = https://manjaro.c3sl.ufpr.br/stable/$repo/$arch
+
+## Country : Brazil
+Server = https://linorg.usp.br/manjaro/stable/$repo/$arch
+
+## Country : Global
+Server = https://mirrors.cicku.me/manjaro/stable/$repo/$arch
+
+## Country : United_States
+Server = https://nocix.mm.fcix.net/manjaro/stable/$repo/$arch
+
+## Country : Austria
+Server = https://mirror.alwyzon.net/manjaro/stable/$repo/$arch
+
+## Country : Georgia
+Server = http://manjaro.grena.ge/stable/$repo/$arch
+
+## Country : Russia
+Server = https://mirror.truenetwork.ru/manjaro/stable/$repo/$arch
+
+## Country : China
+Server = https://mirrors.sjtug.sjtu.edu.cn/manjaro/stable/$repo/$arch
+

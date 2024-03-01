@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2024/02/29
+#  Altered: 2024/03/01
 #
 #  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -46,7 +46,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.4.29-20240229'
+readonly _VERSION_='2.5.01-20240301'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -73,6 +73,7 @@ declare -gA AConfMirror=([_SOURCE]='network' [_MIRROR]='repo-fastly.voidlinux.or
 declare -gA AConfWifi=([_NETWORK]='wifi_ssid' [_PASSWORD]='wifi_password')
 declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
+# begin packages
 declare -ga aArchiver=('xarchiver' 'unrar' 'zip' 'p7zip' 'unzip' 'bzip2')
 declare -ga aBrowser=('firefox' 'firefox-i18n-pt-BR' 'lynx')
 declare -ga aBluetooth=('bluez' 'bluez-alsa' 'bluedevil' 'blueman' 'bluez-cups')
@@ -91,9 +92,9 @@ declare _ga aEditorTxt=('nano' 'vim')
 declare _ga aEditorX=('kate')
 declare _ga aDownloader=('wget' 'curl' 'git')
 declare _ga aUtility=('gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted')
-#declare _PKGS='neofetch pfetch bc bat bash-completion vsv vpm xtools geoip geoipupdate geoip-data'
-declare _PKGS='neofetch pfetch bc bat bash-completion vsv vpm xtools geoip geoipupdate irqbalance'
+declare _PKGS='neofetch pfetch bc bat bash-completion vsv vpm xtools geoip geoipupdate irqbalance #geoip-data'
 declare _EXTRAS='nano-syntax-highlighting'
+# end packages
 #
 declare _DEVICE='/dev/sdX'
 declare _FILESYSTEM='ext4'
@@ -553,8 +554,16 @@ log_info_msg() {
 	last_msg="$*"
 
 	if ! ((quiet)); then
-#		echo -n -e "${BMPREFIX}${@}"
 		echo -n -e "${BMPREFIX}${*}"
+	fi
+	return 0
+}
+
+log_info_msg_level() {
+	last_msg="$*"
+
+	if ! ((quiet)); then
+		echo -n -e "   ${BMPREFIX}${*}"
 	fi
 	return 0
 }
@@ -562,6 +571,13 @@ log_info_msg() {
 log_error() {
 	if ! ((quiet)); then
 		echo -e "   ${FAILURE_PREFIX}${*}"
+	fi
+	return 0
+}
+
+log_msg_tab() {
+	if ! ((quiet)); then
+		echo -e "   ${DOTPREFIX}${*}"
 	fi
 	return 0
 }
@@ -577,6 +593,7 @@ evaluate_retval() {
 	local error_value="$?"
 	local error_fatal="$2"
 	local cmsgdie="$3"
+	local level="$4"
 
 	[[ -z "$error_fatal" ]] && error_fatal=$true
 
@@ -585,9 +602,17 @@ evaluate_retval() {
 	fi
 
 	if [[ "${error_value}" = 0 ]]; then
-		log_success_msg ''
+		if [[ -n "${level}" ]]; then
+			log_success_msg_level ''
+		else
+			log_success_msg ''
+		fi
 	else
-		log_failure_msg ''
+		if [[ -n "${level}" ]]; then
+			log_failure_msg_level ''
+		else
+			log_failure_msg ''
+		fi
 	fi
 
 	if ((error_value)); then
@@ -598,6 +623,28 @@ evaluate_retval() {
 		fi
 	fi
 	return "${error_value}"
+}
+
+log_failure_msg_level() {
+	if ! ((quiet)) && ! ((grafico)); then
+		echo -n -e "   ${BMPREFIX}${@}"
+		echo -e "   ${CURS_ZERO}${FAILURE_PREFIX}${SET_COL}${FAILURE_SUFFIX}"
+	fi
+	logmessage=${last_msg/$bold$red$green$yellow/}
+	printf "%s\n" "$(timespec) [ FAIL ]${logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	replicate "#" "100" | tee -i -a "$BOOTLOG" >$LOGGER
+	return 0
+}
+
+log_success_msg_level() {
+	if ! ((quiet)) && ! ((grafico)); then
+		echo -n -e "   ${BMPREFIX}${@}"
+		echo -e "   ${CURS_ZERO}${SUCCESS_PREFIX}${SET_COL}${SUCCESS_SUFFIX}"
+	fi
+	logmessage=$(unfmt "$last_msg")
+	printf "%s\n" "$(timespec) [  OK  ]${logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	replicate "#" "100" | tee -i -a "$BOOTLOG" >$LOGGER
+	return 0
 }
 
 log_failure_msg() {
@@ -1021,16 +1068,25 @@ sh_update_rc_conf() {
 	sh_chroot_job "${cmsg_Ajustando[$LC_DEFAULT]} timezone pass2 ${cmsg_Em[$LC_DEFAULT]} $dir_install" "ln -sf /usr/share/zoneinfo/${AConfLocale[_TIMEZONE]} /etc/localtime" "$err_not_fatal"
 }
 
+install_skel_user() {
+    local aname='config-common'
+
+    #skel
+	for path in "${aname[@]}"; do
+		if [[ -d "$path" ]]; then
+			cp -RLf $path/. "$dir_install/" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+        fi
+    done
+	cp -RLf $path/etc/skel/. "$dir_install/root/" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+    return 0
+}
+
 sh_update_bashrc() {
 	local user="${AsUser[cuser]}"
+
 	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} bashrc ${cmsg_Em[$LC_DEFAULT]} $dir_install"
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	[[ ! -e $dir_install/etc/bash/bashrc.d/bashrc.sh ]] && >|$dir_install/etc/bash/bashrc.d/bashrc.sh
-	if [[ -f $dir_install/etc/bash/bashrc.d/bashrc.sh ]]; then
-		[[ -e bashrc.sh ]] && cp bashrc.sh $dir_install/etc/bash/bashrc.d/bashrc.sh
-		[[ -e .dircolors ]] && cp .dircolors $dir_install/root/.dircolors
-		[[ -e .dircolors ]] && cp .dircolors $dir_install/etc/skel/.dircolors
-	fi
+	install_skel_user
 	evaluate_retval "$?" "$err_not_fatal"
 }
 
@@ -1248,10 +1304,15 @@ sh_chroot_job() {
 	local cmsg="$1"
 	local cjob="$2"
 	local erro_fatal="$3"
+	local level="$4"
 	local lretval=0
 
 	last_msg="$cmsg"
-	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+	if [[ -n "$level" ]]; then
+		msg "INFO" "$last_msg" "$(log_info_msg_level "$last_msg")"
+	else
+		msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+	fi
 	if ((grafico)); then
 		chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" |
 			dialog --colors --backtitle "$ccabec" --title "${YELLOW}Step:$ufmt ${RED}==> ${RESET}[$logmessage] ${BOLD}${WHITE}[$(sh_time_elapsed)]" --progressbox $(($MAXROW / 2)) $(($MAXCOL - 20))
@@ -1259,7 +1320,7 @@ sh_chroot_job() {
 		chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	fi
 	lretval="${PIPESTATUS[0]}"
-	evaluate_retval "$lretval" "$erro_fatal"
+	evaluate_retval "$lretval" "$erro_fatal" "" "$level"
 	shell='/bin/sh'
 	return "$lretval"
 }
@@ -1379,14 +1440,21 @@ sh_activating_services() {
 	local aServicesTTY=('agetty-tty1' 'agetty-tty2' 'dhcpcd' 'wpa_supplicant' 'udevd' 'uuidd' 'dmeventd' 'sshd' 'dbus' 'socklog-unix' 'nanoklogd' 'openntpd')
 	local aServicesX=('lxdm' 'NetworkManager')
 	local service
+	local level=2
 
 	for service in "${aServicesTTY[@]}"; do
-		sh_chroot_job "${cmsg_AtivandoServico[$LC_DEFAULT]} $service ${cmsg_Em[$LC_DEFAULT]} $dir_install" "ln -sf /etc/sv/$service /etc/runit/runsvdir/current/" "$err_not_fatal"
+		sh_chroot_job 	"${cmsg_AtivandoServico[$LC_DEFAULT]} $service ${cmsg_Em[$LC_DEFAULT]} $dir_install" \
+						"ln -sf /etc/sv/$service /etc/runit/runsvdir/current/" \
+						"$err_not_fatal" \
+						"$level"
 	done
 
 	if [[ $_ONLY_TTY -eq $false ]]; then
 		for service in "${aServicesX[@]}"; do
-			sh_chroot_job "${cmsg_AtivandoServico[$LC_DEFAULT]} $service ${cmsg_Em[$LC_DEFAULT]} $dir_install" "ln -sf /etc/sv/$service /etc/runit/runsvdir/current/" "$err_not_fatal"
+			sh_chroot_job 	"${cmsg_AtivandoServico[$LC_DEFAULT]} $service ${cmsg_Em[$LC_DEFAULT]} $dir_install" \
+							"ln -sf /etc/sv/$service /etc/runit/runsvdir/current/" \
+							"$err_not_fatal" \
+							"$level"
 		done
 	fi
 }
@@ -2891,14 +2959,27 @@ sh_chmod_tmp() {
 }
 
 sh_copy_scripts() {
-	local cfiles=('void-install' 'void-wifi' 'void-mirror' 'void-testmirror' 'void-services' 'void-gitclone')
+	local cfiles=(	void-chroot
+					void-clonedisk
+					void-gitclone
+					void-install
+					void-maketar
+					void-mirror
+					void-parted
+					void-remove-vg
+					void-runimage
+					void-services
+					void-testmirror
+					void-wifi
+					void-xrandr
+					)
 	local script
 
 	last_msg="${cmsg_Copiando[$LC_DEFAULT]} scripts ${cmsg_Para[$LC_DEFAULT]} $dir_install"
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
 	for script in "${cfiles[@]}"; do
 		if [[ -e "$script" ]]; then
-			cp "$script" "$dir_install/usr/bin/" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+			cp -f "$script" "$dir_install/usr/bin/" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 		fi
 	done
 	evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
@@ -3205,7 +3286,7 @@ sh_install() {
 	local abase=(zstd xz cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd)
 	local akernel=(linux dbus)
 	local afirmware=(wifi-firmware)
-	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils)
+	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils grub-terminus)
 	local start_datetime
 	local end_datetime
 
@@ -3255,16 +3336,16 @@ sh_install() {
        			sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${agrub[*]}"
 	    		sh_grubInstall
 			else
-   				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -y ${akernel[*]}"
-   				sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} Grub ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${agrub[*]}"
+  				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -y ${akernel[*]}"
+  				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Grub ${cmsg_Em[$LC_DEFAULT]} $dir_install"             "xbps-install -y ${agrub[*]}"
 	    		sh_grubInstall
    				sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"      "xbps-install -y ${abase[*]}"
-   				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Wifi Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "xbps-install -y ${afirmware[*]}"
+#  				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Wifi Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "xbps-install -y ${afirmware[*]}"
    				sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install"                        "xbps-install -y $_PKGS"            "$err_not_fatal" "$err_not_fatal"
    				sh_chroot_job "$(gettext "Instalando Editores texto em") $dir_install"                                "xbps-install -y ${aEditorTxt[*]}"  "$err_not_fatal" "$err_not_fatal"
    				sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install"                                   "xbps-install -y ${aDownloader[*]}" "$err_not_fatal" "$err_not_fatal"
    				sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install"                                   "xbps-install -y ${aUtility[*]}"    "$err_not_fatal" "$err_not_fatal"
-#		    	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -y $_EXTRAS" "$err_not_fatal"
+#		    	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -yU $_EXTRAS" "$err_not_fatal"
             fi
 			sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-remove -oOy"
     		sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-reconfigure -f glibc-locales"
@@ -3313,12 +3394,10 @@ sh_install() {
 
 			sh_activating_services
 			if ((LVM)); then
-				#		sh_chroot_job "Certificando que todos pacotes estejam configurados corretamente em $dir_install" "xbps-reconfigure -f dracut"
 				sh_chroot_job "Certificando que todos pacotes estejam configurados corretamente em $dir_install" "xbps-reconfigure -fa"
-				#		sh_chroot_job "Removendo pacote bootstrap em $dir_install" "xbps-remove -y base-voidstrap" "$err_not_fatal"
 			fi
 			sh_chmod_tmp
-			sh_copy_scripts
+#			sh_copy_scripts # instalado pelo skel
 			sh_umount_fs
 			end_datetime=$(date)
 			alerta "$APP" "${cmsg_FinalizadaComSucesso[LC_DEFAULT]}\n" \
@@ -3736,7 +3815,7 @@ sh_chooseperfumery() {
 	local x
 
 	Aperfumery[bash]=$(gettext "Ativar o bash para o usuario root")
-	Aperfumery[bashrc]=$(gettext "Instalar bashr.sh personalizado")
+	Aperfumery[bashrc]=$(gettext "Instalar bashrc.sh personalizado")
 	Aperfumery[console]=$(gettext "Usar um terminal gráfico para o Carregador de Inicialização (GRUB)")
 	Aperfumery[sshd]=$(gettext "Configurar servidor ssh")
 	Aperfumery[sudo]=$(gettext "Enable sudo for login user")
