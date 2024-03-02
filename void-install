@@ -46,7 +46,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.5.01-20240301'
+readonly _VERSION_='2.5.03-20240301'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -68,7 +68,7 @@ declare -gA AARRAY_PART_DEVICES
 declare -gA AARRAY_VG_DEVICES
 declare -gA AConfFde=([partition]='' [vg]='voidvm' [passphrase]='voidlinux' [verifypassphrase]='voidlinux' [lvroot]='25%' [lvswap]='2%' [lvvar]='' [lvhome]='100%')
 declare -gA AConfDisk=([_DEVICE]='/dev/sdX' [_FILESYSTEM]='ext4' [_DISKTABLE]='' [_BOOTLOADER]='/dev/sdX' [_OSPROBER]=0)
-declare -gA AConfLocale=([_TIMEZONE]='America/Sao_Paulo' [_KEYMAP]='br-abnt2' [_CLOCK]='UTC' [_FONT]='Lat2-Terminus16')
+declare -gA AConfLocale=([_TIMEZONE]='America/Sao_Paulo' [_KEYMAP]='br-abnt2' [_CLOCK]='UTC' [_FONT]='default8x16' [_FONT_OLD]='Lat2-Terminus16')
 declare -gA AConfMirror=([_SOURCE]='network' [_MIRROR]='repo-fastly.voidlinux.org' [url_mirror]='https://repo-fastly.voidlinux.org' [location]='Fastly Global CDN')
 declare -gA AConfWifi=([_NETWORK]='wifi_ssid' [_PASSWORD]='wifi_password')
 declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
@@ -91,7 +91,7 @@ declare -ga aXorg=('xorg-minimal' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogi
 declare _ga aEditorTxt=('nano' 'vim')
 declare _ga aEditorX=('kate')
 declare _ga aDownloader=('wget' 'curl' 'git')
-declare _ga aUtility=('gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted')
+declare _ga aUtility=('gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted' 'rsync')
 declare _PKGS='neofetch pfetch bc bat bash-completion vsv vpm xtools geoip geoipupdate irqbalance #geoip-data'
 declare _EXTRAS='nano-syntax-highlighting'
 # end packages
@@ -1394,7 +1394,7 @@ sh_make_fstab() {
 				    echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults 0 2" >>"$dir_install/etc/fstab"
                 else
 #				    echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults 0 $fsorder" >>"$dir_install/etc/fstab"
-    				echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults,noatime,discard,lazytime,errors=remount-ro 0 $fsorder" >>"$dir_install/etc/fstab"
+    				echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults,noatime,discard,lazytime 0 $fsorder" >>"$dir_install/etc/fstab"
 		        fi
 			fi
 		done
@@ -1423,7 +1423,7 @@ sh_make_fstab() {
 			size="$(sh_splitarray "${AmntpointFDE[$i]}" 4)"
 			mntpoint="$(sh_splitarray "${AmntpointFDE[$i]}" 5)"
 #			echo "UUID=$(blkid -o value -s UUID "${_part}")	$mntpoint	${fstype,,}	defaults 0 0" >>"$dir_install/etc/fstab"
-			echo "UUID=$(blkid -o value -s UUID "${_part}")	$mntpoint	${fstype,,}	defaults,noatime,discard,lazytime,errors=remount-ro 0 0" >>"$dir_install/etc/fstab"
+			echo "UUID=$(blkid -o value -s UUID "${_part}")	$mntpoint	${fstype,,}	defaults,noatime,discard,lazytime 0 0" >>"$dir_install/etc/fstab"
 		done
 		evaluate_retval "$?"
 	fi
@@ -3286,7 +3286,7 @@ sh_install() {
 	local abase=(zstd xz cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd)
 	local akernel=(linux dbus)
 	local afirmware=(wifi-firmware)
-	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils grub-terminus)
+	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils grub-terminus grub-btrfs-runit)
 	local start_datetime
 	local end_datetime
 
@@ -3702,13 +3702,13 @@ sh_choosePartition() {
 		((nlen += 6))
 		part=$(${DIALOG} \
 			--default-item "$_DEVICE" \
-			--backtitle "$ccabec" \
-			--title "${cmsg_TitleFileSystem[LC_DEFAULT]}" \
-			--cancel-label "${cmsg_Mudar[$LC_DEFAULT]}" \
-			--ok-label     "${cmsg_ButtonFeito[$LC_DEFAULT]}" \
+			--backtitle    "$ccabec" \
+			--title        "${cmsg_TitleFileSystem[LC_DEFAULT]}" \
+			--ok-label     "${cmsg_Mudar[$LC_DEFAULT]}" \
+			--cancel-label "${cmsg_ButtonFeito[$LC_DEFAULT]}" \
 			--colors \
 			--extra-button \
-			--extra-label "${cmsg_info_particao[$LC_DEFAULT]}" \
+			--extra-label  "${cmsg_info_particao[$LC_DEFAULT]}" \
 			--menu "${cmsg_MENU[$LC_DEFAULT]}\n\n\
 $(printf "%${nlen}s$sep%-11s$sep%6s$sep%-15s$sep%-20s$sep%-20s$sep%-8s$sep%s" "PARTITION" "FSTYPE" "SIZE" "LABEL" "TYPENAME" "MOUNTPOINT" "NEWFSTYPE" "FORMAT?")" \
 			0 0 25 "${array[@]}" 2>&1 >/dev/tty)
@@ -3716,8 +3716,9 @@ $(printf "%${nlen}s$sep%-11s$sep%6s$sep%-15s$sep%-20s$sep%-20s$sep%-8s$sep%s" "P
 		exit_status=$?
 		#    	dsk="${part%%?(p)+([0-9])}"
 		dsk="${part%%[p0-9]*([0-9])}"
+
 		case $exit_status in
-		"$D_ESC" | "$D_OK")
+		"$D_ESC" | "$D_CANCEL")
 			LFS=$true
 			LPARTITION=$true
 			return 0
@@ -3794,6 +3795,7 @@ $(gettext "Você deseja criar um novo sistema de arquivos em") $part?" 8 75
 		else
 			continue
 		fi
+
 		Amntpoint+=(["$part"]="$mntpoint|$newfstype|$fsformat")
 		case $newfstype in
 		"swap") Amkfs+=(["swap"]="mkswap") ;;
