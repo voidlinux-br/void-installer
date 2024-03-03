@@ -69,7 +69,7 @@ declare -gA AARRAY_VG_DEVICES
 declare -gA AConfFde=([partition]='' [vg]='voidvm' [passphrase]='voidlinux' [verifypassphrase]='voidlinux' [lvroot]='25%' [lvswap]='2%' [lvvar]='' [lvhome]='100%')
 declare -gA AConfDisk=([_DEVICE]='/dev/sdX' [_FILESYSTEM]='ext4' [_DISKTABLE]='' [_BOOTLOADER]='/dev/sdX' [_OSPROBER]=0)
 declare -gA AConfLocale=([_TIMEZONE]='America/Sao_Paulo' [_KEYMAP]='br-abnt2' [_CLOCK]='UTC' [_FONT]='default8x16' [_FONT_OLD]='Lat2-Terminus16')
-declare -gA AConfMirror=([_SOURCE]='network' [_MIRROR]='repo-fastly.voidlinux.org' [url_mirror]='https://repo-fastly.voidlinux.org' [location]='Fastly Global CDN')
+declare -gA AConfMirror=([_SOURCE]='network' [_MIRROR]='repo - fastly.voidlinux.org' [url_mirror]='https://repo-fastly.voidlinux.org' [location]='Fastly Global CDN')
 declare -gA AConfWifi=([_NETWORK]='wifi_ssid' [_PASSWORD]='wifi_password')
 declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
@@ -94,7 +94,7 @@ declare -ga aEditorX=('kate' 'mousepad')
 declare -ga aDownloader=('wget' 'curl' 'git' 'lynx')
 declare -ga aUtility=('dialog' 'gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted' 'rsync' 'duf' 'dfc' 'tmate')
 declare -ga aDaemons=('acpi' 'acpid' 'gpm' 'connman' 'irqbalance' 'avahi')
-declare -ga _PKGS='neofetch pfetch bc bat bash-completion vsv vpm xtools geoip geoipupdate #geoip-data'
+declare -ga _PKGS='neofetch pfetch bc bat fzf bash-completion vsv vpm xtools geoip geoipupdate #geoip-data'
 declare -ga _EXTRAS='nano-syntax-highlighting'
 ## end packages
 #
@@ -143,6 +143,12 @@ sh_setEnvironment() {
 	: "${DIALOG=${DIALOG:-dialog}}"
 	: ${ARCH:=x86_64}
 	: ${CACHEDIR:="$(pwd -P)"/xbps-cachedir-${ARCH}}
+	: ${XBPS_INSTALL_CMD:=xbps-install}
+	: ${XBPS_REMOVE_CMD:=xbps-remove}
+	: ${XBPS_QUERY_CMD:=xbps-query}
+	: ${XBPS_RINDEX_CMD:=xbps-rindex}
+	: ${XBPS_UHELPER_CMD:=xbps-uhelper}
+	: ${XBPS_RECONFIGURE_CMD:=xbps-reconfigure}
 
 	# flag disk info
 	: "${DSK_NAME=1}"
@@ -374,6 +380,12 @@ sh_checkIntegrityTarball() {
 		return 0
 	fi
 	return "${PIPESTATUS[0]}"
+}
+
+sh_checkcommand() {
+	local cmd="$1"
+	command -v "$1" > /dev/null 2>&-
+	return $?
 }
 
 sh_checkDependencies() {
@@ -1899,12 +1911,18 @@ sh_chooseSource() {
 			AConfMirror[_SOURCE]='local'
 		else
 			Aflag["network"]='on'
-			cextra="${cmsg_ExtraNotIso[$LC_DEFAULT]}"
 			_SOURCE='network'
 			AConfMirror[_SOURCE]='network'
+			if ! sh_checkcommand "${XBPS_INSTALL_CMD}"; then
+				cextra="${cmsg_ExtraNotIso[$LC_DEFAULT]}\n${cmsg_ExtraNotHostVoid[$LC_DEFAULT]}"
+			else
+				cextra="${cmsg_ExtraNotIso[$LC_DEFAULT]}"
+			fi
 		fi
 		array+=("$x" "${Asource[$x]}" "${Aflag[$x]}")
 	done
+while true;
+do
 
 	src=$(${DIALOG} --title "=== ${cmsg_Source[LC_DEFAULT]^^} ===" \
 		--default-item "$_SOURCE" \
@@ -1913,7 +1931,7 @@ sh_chooseSource() {
 		--cancel-label "${cmsg_ButtonBack[$LC_DEFAULT]}" \
 		--ok-label "${cmsg_Aceitar[$LC_DEFAULT]}" \
 		--radiolist "${cmsg_MENU[$LC_DEFAULT]}\n\n$cextra" \
-		12 75 0 "${array[@]}")
+		12 0 0 "${array[@]}")
 
 	exit_status=$?
 	case $exit_status in
@@ -1921,6 +1939,13 @@ sh_chooseSource() {
 		return 1
 		;;
 	"$D_OK")
+		if [[ "$src" = "networkFull" ]]; then
+			if ! sh_checkcommand "${XBPS_INSTALL_CMD}"; then
+				alerta "=== ${cmsg_Source[LC_DEFAULT]^^} ===" \
+					"\n${BOLD}$(gettext "Aparentemente, o VOID Linux NÃO está sendo usado como host.\nEscolha network ou ISO")"
+				continue
+			fi
+		fi
 		if [[ "$src" = "local" ]]; then
 			if ! sh_getIso; then
 				info "$ccabec" "\n\n$cextra"
@@ -1938,6 +1963,7 @@ sh_chooseSource() {
 	_SOURCE=$src
 	AConfMirror[_SOURCE]=$src
 	return 0
+done
 }
 
 sh_choosefstype() {
@@ -4601,8 +4627,8 @@ sh_setLanguage() {
 	cmsg_AcompanheInstalacao[pt_BR]=$(gettext "Acompanhe a evolução da instalação            ")
 	cmsg_OuPeloTerminal[pt_BR]=$(gettext "e/ou pelo terminal tty8        ")
 	cmsg_PacotesDaImagemIso[pt_BR]=$(gettext "Utilizar os pacotes da imagem ISO")
-	cmsg_BaixadoDoRepositorioOficial[pt_BR]=$(gettext "Utilizar um tarball e baixar outros pacotes do repositório (Qualquer host Linux)")
-	cmsg_BaixadoDoRepositorioOficialFull[pt_BR]=$(gettext "Baixar todos os pacotes do repositório - (host Void")
+	cmsg_BaixadoDoRepositorioOficial[pt_BR]=$(gettext     "Utilizar tarball base e atualizar pela internet (qualquer host Linux)")
+	cmsg_BaixadoDoRepositorioOficialFull[pt_BR]=$(gettext "Baixar todos os pacotes da internet (requer host Void Linux)")
 	cmsg_DefinirInstalacaoDeOrigem[pt_BR]=$(gettext "Definir fonte da instalação")
 	cmsg_Definicoes[pt_BR]=$(gettext "Definições")
 	cmsg_naodefinido[pt_BR]=$(gettext "não definido")
@@ -4714,7 +4740,8 @@ sh_setLanguage() {
 	cmsg_ExtraEfi[pt_BR]=$(gettext "Detectado boot via EFI ↓ é recomendável instalar EFI ↓")
 	cmsg_ExtraNotEfi[pt_BR]=$(gettext "EFI não detectado ↓ é recomendável GPT_BIOS ou MBR_BIOS ↓")
 	cmsg_ExtraIso[pt_BR]=$(gettext "Detectado boot via ISO ↓ é recomendável instalar ↓")
-	cmsg_ExtraNotIso[pt_BR]=$(gettext "ISO não detectado ↓ é recomendável NETWORK ↓")
+	cmsg_ExtraNotIso[pt_BR]=$(gettext "ISO não detectado ↓ é recomendável NETWORK ou NETWORKFULL↓")
+	cmsg_ExtraNotHostVoid[pt_BR]=$(gettext "Host VOID não detectado ↓ é recomendável NETWORK↓")
 	welcome[pt_BR]=$(gettext "Bem-vindo ao instalador $APP")
 	escolhaIdioma[pt_BR]=$(gettext "Escolha o idioma")
 	cmsg_Usuario[pt_BR]=$(gettext "Usuário")
