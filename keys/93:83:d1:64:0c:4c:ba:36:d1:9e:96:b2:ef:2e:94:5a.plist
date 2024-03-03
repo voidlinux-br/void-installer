@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>public-key</key>
+	<data>LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFxZ2dkU1JGVmR3aGlwbTQzUnI4cQpoblZNcks3RmlkQ2hTVnlPeHVnZTROeUZSZ1J4UVhxcS9nc2RubWloZTl4bTYrYkxRZnVpM3JCdjJlbkJONUF0CkRtTW5WR05kZm0vNko3OEt5TmpNZTY5WVFYeGp1SlpEQm5zZXZyV0xScHdnQUc1ZnNZdHo1bG1nTmgwQXpCSTEKYSttWGZYMFJHbTdHY0lSRjVvUkJlOEhZSVNKdEUrTjFuTlRmK2J3YldZVncrUUEzVmxhcFc1WFBmQ0d2bnJqUwplUjZnOEF1ZTZnNUNnTmxrc0licEUxOTFsa2tYbm1seDJlNFJFL2JuakZEVmFUU1hDUXFoQ2FaMFIrUTJiRUJICmFMalBMVjZkWEF5UDRPRmxUUGt1RkNlb1lQaE1GZHVTQlRrb3g5MEtIQUlScm42eWZCcFVQaGFvd3FrZXBUem4KQndJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==</data>
+	<key>public-key-size</key>
+	<integer>2048</integer>
+	<key>signature-by</key>
+	<string>Vilmar Catafesta &lt;vcatafesta@gmail.com&gt;</string>
+</dict>
+</plist>
