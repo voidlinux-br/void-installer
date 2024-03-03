@@ -56,7 +56,7 @@ readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fd
 #readonly _TARBALL_ROOTFS=void-x86_64-base-system-current.tar.xz
 readonly _TARBALL_ROOTFS=void-x86_64-base-custom-current.tar.xz
 #
-declare -gi ncounter=0 njobs=64
+declare -gi ncounter=0 njobs=73
 declare -gi quiet=0 grafico=0
 declare -gi LAUTO=1 LINSTALL=0 LCHROOT=0 LBIND=0 LMKPART=0 LEFI=0 LBIOS=1 LMKPARTED=0 LOSPROBER=0 LFDE=0 LVM=0 LFS=0 LPARTITION=0 LTABLE=0
 declare -gA AsUser=([cpass]='void' [cpassroot]='voidlinux' [chostname]='voidlinux' [cgroups]='wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder')
@@ -75,27 +75,32 @@ declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
 #
 ## begin packages
-declare -ga aArchiver=('xarchiver' 'unrar' 'zip' 'p7zip' 'unzip' 'bzip2')
+## X11
+declare -ga aXorg=('xorg' 'xinit' 'xterm' 'xorg-fonts' 'dbus' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs' 'xrdb')
+declare -ga aArchiverX=('xarchiver')
 declare -ga aBrowser=('firefox' 'firefox-i18n-pt-BR')
 declare -ga aBluetooth=('bluez' 'bluez-alsa' 'bluedevil' 'blueman' 'bluez-cups' 'bluez-deprecated' 'blueberry' 'gnome-bluetooth1')
-declare -ga aDisplaymanager=('lxdm' 'lxappearance' 'lxinput' 'lxrandr' 'lxtask')
+declare -ga aDisplaymanager=('lxdm' 'lxdm-theme-vdojo')
 declare -ga aFilemanager=('Thunar' 'pcmanfm' 'octoxbps')
 declare -ga aFont=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font' 'noto-fonts-emoji' 'font-emoji-one-color' 'ttf-ubuntu-font-family' 'unicode-emoji')
 declare -ga aPulseaudio=('pulseaudio' 'pavucontrol' 'pasystray' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
 declare -ga aPipewire=('pipewire' 'wireplumber' 'pulseaudio-utils' 'alsa-pipewire' 'libspa-bluetooth' 'libjack-pipewire')
-declare -ga aMicrocode=('intel-ucode' 'linux-firmware-amd')
-declare -ga aNetwork=('NetworkManager' 'network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda' 'inetutils' 'iputils')
 declare -ga aPerfumery=('setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notification-daemon')
 declare -ga aPrinter=('cups' 'system-config-printer' 'system-config-printer-udev' 'splix' 'samsung-unified-driver' 'brother-brlaser' 'cups-pdf')
-declare -ga aTerminal=('rxvt-unicode' 'xfce4-terminal')
-declare -ga aXorg=('xorg' 'xinit' 'xterm' 'xorg-fonts' 'dbus' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs' 'xrdb')
-declare -ga aEditorTxt=('nano')
+declare -ga aTerminal=('rxvt-unicode' 'xfce4-terminal' 'cool-retro-term')
 declare -ga aEditorX=('kate' 'mousepad')
-declare -ga aDownloader=('wget' 'curl' 'git' 'lynx')
-declare -ga aUtility=('dialog' 'gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted' 'rsync' 'duf' 'dfc' 'tmate')
-declare -ga aDaemons=('acpi' 'acpid' 'gpm' 'connman' 'irqbalance' 'avahi')
-declare -ga _PKGS='neofetch pfetch bc bat fzf bash-completion vsv vpm xtools geoip geoipupdate #geoip-data'
-declare -ga _EXTRAS='nano-syntax-highlighting'
+declare -ga aMicrocode=('intel-ucode' 'linux-firmware-amd')
+declare -ga aNetworkX=('network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda')
+## tty
+declare -ga aDaemons=('NetworkManager' 'acpi' 'acpid' 'gpm' 'connman' 'irqbalance' 'avahi')
+declare -ga aArchiverTty=('unrar' 'zip' 'p7zip' 'unzip' 'bzip2')
+declare -ga aDownloader=('curl' 'wget' 'git' 'lynx')
+declare -ga aEditorTxt=('nano')
+declare -ga aUtility=('dialog' 'gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted' 'rsync' 'duf' 'dfc' 'tmate' 'inetutils' 'iputils')
+			aUtility+=('cifs-utils' 'ntfs-3g' 'btop' 'htop' 'parallel' 'evtest' 'bubblewrap' 'pacman' 'fakeroot' 'bsdtar')
+declare -ga _PKGS='neofetch pfetch bc bat fzf bash-completion vpm vsv xtools geoip geoipupdate #geoip-data'
+#--repository=https://chililinux.com/void/current
+declare -ga _EXTRAS='nano-syntax-highlighting grub-void-theme'
 ## end packages
 #
 declare _DEVICE='/dev/sdX'
@@ -382,6 +387,7 @@ sh_checkIntegrityTarball() {
 	return "${PIPESTATUS[0]}"
 }
 
+#dom 03 mar 2024 17:00:23 -04
 sh_checkcommand() {
 	local cmd="$1"
 	command -v "$1" > /dev/null 2>&-
@@ -1600,7 +1606,7 @@ sh_X11minimal() {
 	apkgs+=("${aFilemanager[@]}")
 	apkgs+=("${aBrowser[@]}")
 	apkgs+=("${aBluetooth[@]}")
-	apkgs+=("${aNetwork[@]}")
+	apkgs+=("${aNetworkX[@]}")
 
     if [[ $_AUDIOSERVER = 'Pulseaudio' ]]; then
 	    apkgs+=("${aPulseaudio[@]}")
@@ -1613,9 +1619,10 @@ sh_X11minimal() {
 	apkgs+=("${aPrinter[@]}")
 	apkgs+=("${aPerfumery[@]}")
 	apkgs+=("${aMicrocode[@]}")
-	apkgs+=("${aArchiver[@]}")
+	apkgs+=("${aArchiverX[@]}")
 	apkgs+=("${aEditorX[@]}")
 
+#	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"               "LC_ALL=C xbps-install -y ${apkgs[*]}"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Xorg ${cmsg_Em[$LC_DEFAULT]} $dir_install"          "LC_ALL=C xbps-install -y ${aXorg[*]}"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Font's ${cmsg_Em[$LC_DEFAULT]} $dir_install"        "LC_ALL=C xbps-install -y ${aFont[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} DM's ${cmsg_Em[$LC_DEFAULT]} $dir_install"          "LC_ALL=C xbps-install -y ${aDisplaymanager[*]}"
@@ -1623,13 +1630,12 @@ sh_X11minimal() {
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} FileManager's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${aFilemanager[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Browser's ${cmsg_Em[$LC_DEFAULT]} $dir_install"     "LC_ALL=C xbps-install -y ${aBrowser[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Bluetooth's ${cmsg_Em[$LC_DEFAULT]} $dir_install"   "LC_ALL=C xbps-install -y ${aBluetooth[*]}" "$err_not_fatal"
-	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Networks's ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "LC_ALL=C xbps-install -y ${aNetwork[*]}"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Networks's ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "LC_ALL=C xbps-install -y ${aNetworkX[*]}"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Media's ${cmsg_Em[$LC_DEFAULT]} $dir_install"       "LC_ALL=C xbps-install -y ${aMedia[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Printer's ${cmsg_Em[$LC_DEFAULT]} $dir_install"     "LC_ALL=C xbps-install -y ${aPrinter[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Perfumery's ${cmsg_Em[$LC_DEFAULT]} $dir_install"   "LC_ALL=C xbps-install -y ${aPerfumery[*]}" "$err_not_fatal"
-	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Microde's ${cmsg_Em[$LC_DEFAULT]} $dir_install"     "LC_ALL=C xbps-install -y ${aMicrocode[*]}" "$err_not_fatal"
-	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Archivers's ${cmsg_Em[$LC_DEFAULT]} $dir_install"   "LC_ALL=C xbps-install -y ${aArchiver[*]}" "$err_not_fatal"
-	#	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"
+#	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Microde's ${cmsg_Em[$LC_DEFAULT]} $dir_install"     "LC_ALL=C xbps-install -y ${aMicrocode[*]}" "$err_not_fatal"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Archivers's ${cmsg_Em[$LC_DEFAULT]} $dir_install"   "LC_ALL=C xbps-install -y ${aArchiverX[*]}" "$err_not_fatal"
 }
 
 #dom 03 mar 2024 09:35:25 -04
@@ -1675,7 +1681,7 @@ sh_xfce4minimal() {
 }
 
 sh_gnomeminimal() {
-	local apkgs=(xorg gnome dconf-editor devhelp Endeavour evolution five-or-more four-in-a-row geary
+	local apkgs=(gnome dconf-editor devhelp Endeavour evolution five-or-more four-in-a-row geary
 		gedit ghex glade3 gnome-boxes gnome-builder gnome-chess gnome-connections
 		gnome-games-collection gnome-klotski gnome-mahjongg gnome-mime-data gnome-multi-writer
 		gnome-nettool gnome-nibbles gnome-recipes gnome-robots gnome-sound-recorder gnome-sudoku
@@ -1685,7 +1691,7 @@ sh_gnomeminimal() {
 }
 
 sh_i3minimal() {
-	local apkgs=(i3 dmenu i3status i3lock geany volumeicon mc scrot ImageMagick gnome-themes-standard axel mps-youtube youtube-dl mpv xarchiver cava mate-themes)
+	local apkgs=(i3 dmenu i3status i3lock geany volumeicon mc scrot ImageMagick gnome-themes-standard axel mps-youtube youtube-dl mpv cava mate-themes)
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} I3 ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"
 }
 
@@ -1724,7 +1730,7 @@ sh_dwmminimal() {
 }
 
 sh_lxdeminimal() {
-	local apkgs=('lxde' 'lxterminal')
+	local apkgs=('lxde' 'lxterminal' 'lxrandr' 'lxtask' 'lxinput' 'lxappearance')
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Lxde ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"
 }
 
@@ -1939,6 +1945,7 @@ do
 		return 1
 		;;
 	"$D_OK")
+		#dom 03 mar 2024 17:00:23 -04
 		if [[ "$src" = "networkFull" ]]; then
 			if ! sh_checkcommand "${XBPS_INSTALL_CMD}"; then
 				alerta "=== ${cmsg_Source[LC_DEFAULT]^^} ===" \
@@ -3443,12 +3450,13 @@ sh_install() {
 	    		sh_grubInstall
    				sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"      "xbps-install -y ${abase[*]}"
 #  				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Wifi Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "xbps-install -y ${afirmware[*]}"
-   				sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install"                        "xbps-install -y $_PKGS"            "$err_not_fatal" "$err_not_fatal"
-   				sh_chroot_job "$(gettext "Instalando Daemons em") $dir_install"                                       "xbps-install -y ${aDaemons[*]}"    "$err_not_fatal" "$err_not_fatal"
-   				sh_chroot_job "$(gettext "Instalando Editores texto em") $dir_install"                                "xbps-install -y ${aEditorTxt[*]}"  "$err_not_fatal" "$err_not_fatal"
-   				sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install"                                   "xbps-install -y ${aDownloader[*]}" "$err_not_fatal" "$err_not_fatal"
-   				sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install"                                   "xbps-install -y ${aUtility[*]}"    "$err_not_fatal" "$err_not_fatal"
-#		    	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -yU $_EXTRAS" "$err_not_fatal"
+   				sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install"                        "xbps-install -y $_PKGS"             "$err_not_fatal" "$err_not_fatal"
+   				sh_chroot_job "$(gettext "Instalando Daemons em") $dir_install"                                       "xbps-install -y ${aDaemons[*]}"     "$err_not_fatal" "$err_not_fatal"
+   				sh_chroot_job "$(gettext "Instalando Editores texto em") $dir_install"                                "xbps-install -y ${aEditorTxt[*]}"   "$err_not_fatal" "$err_not_fatal"
+   				sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install"                                   "xbps-install -y ${aDownloader[*]}"  "$err_not_fatal" "$err_not_fatal"
+   				sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install"                                   "xbps-install -y ${aUtility[*]}"     "$err_not_fatal" "$err_not_fatal"
+   				sh_chroot_job "$(gettext "Instalando Archiver's tty em") $dir_install"                                "xbps-install -y ${aArchiverTty[*]}" "$err_not_fatal" "$err_not_fatal"
+#		    	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -yU $_EXTRAS"          "$err_not_fatal"
             fi
 			sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-remove -oOy"
     		sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-reconfigure -f glibc-locales"
