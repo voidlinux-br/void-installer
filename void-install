@@ -97,7 +97,7 @@ declare -ga aArchiverTty=('unrar' 'zip' 'p7zip' 'unzip' 'bzip2')
 declare -ga aDownloader=('curl' 'wget' 'git' 'lynx')
 declare -ga aEditorTxt=('nano')
 declare -ga aUtility=('dialog' 'gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted' 'rsync' 'duf' 'dfc' 'tmate' 'inetutils' 'iputils')
-			aUtility+=('cifs-utils' 'ntfs-3g' 'btop' 'htop' 'parallel' 'evtest' 'bubblewrap' 'pacman' 'fakeroot' 'bsdtar')
+			aUtility+=('cifs-utils' 'ntfs-3g' 'btop' 'htop' 'parallel' 'evtest' 'bubblewrap' 'pacman' 'fakeroot' 'bsdtar' 'exa')
 declare -ga _PKGS='neofetch pfetch bc bat fzf bash-completion vpm vsv xtools geoip geoipupdate #geoip-data'
 #--repository=https://chililinux.com/void/current
 declare -ga _EXTRAS='nano-syntax-highlighting grub-void-theme'
@@ -117,6 +117,10 @@ declare _ONLY_TTY=1
 #declare Interrupted="$(gettext "Interrompido!") $(pgettext "context" "Saindo...")"
 declare Interrupted="$(gettext "Interrompido! Saindo...")"
 trap 'printf "\n${red}$Interrupted\n"; cleanup; exit 0' INT TERM HUP
+
+errorbeep() {
+	printf '\a' # beep
+}
 
 info_msg() {
 #	notify-send "$ccabec" "$@"
@@ -1719,8 +1723,7 @@ sh_awesomeminimal() {
 }
 
 sh_bspwmminimal() {
-	local apkgs=('bspwm')
-	apkgs+=(polybar picom feh dmenu lua sxhkd wmctrl compton mpd)
+	local apkgs=(bspwm dk polybar picom feh dmenu lua sxhkd wmctrl compton mpd)
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Bspwm ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"
 }
 
@@ -2877,7 +2880,7 @@ sh_choosewm() {
 
 	aWm[tty]="${cmsg_tty[LC_DEFAULT]}"
 	aWm[awesome]="Awesome"
-	aWm[bspwm]="Bspwm"
+	aWm[bspwm]="Tiling window manager based on binary space partitioning"
 	aWm[dwm]="Dwm"
 	aWm[blackbox]="Blackbox"
 	aWm[fluxbox]="Fluxbox"
@@ -2906,7 +2909,7 @@ sh_choosewm() {
 		--cancel-label "${cmsg_ButtonBack[$LC_DEFAULT]}" \
 		--ok-label "${cmsg_Aceitar[$LC_DEFAULT]}" \
 		--checklist "${cmsg_MENU[$LC_DEFAULT]}" \
-		0 70 17 \
+		0 0 0 \
 		tty "${aWm[tty]}" "${aFlag[tty]}" \
 		awesome "${aWm[awesome]}" "${aFlag[awesome]}" \
 		bspwm "${aWm[bspwm]}" "${aFlag[bspwm]}" \
@@ -4099,7 +4102,8 @@ sh_main_menu() {
 		"Wifi") sh_confWifi "$@" && [ -n "$LWIFI" ] && DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}" ;;
 		"${cmsg_Servicos[$LC_DEFAULT]}") sh_voidServices ;;
 		"${cmsg_Sair[$LC_DEFAULT]}") die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..." ;;
-		*) ${DIALOG} --clear \
+		*)  errorbeep
+			${DIALOG} --clear \
 			--title "$ccabecmin" \
 			--colors \
 			--yes-label "${cmsg_yeslabel[$LC_DEFAULT]}" \
