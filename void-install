@@ -1098,7 +1098,7 @@ sh_update_rc_conf() {
 }
 
 install_skel_user() {
-    local aname='config-common' 'config-xfce-custom'
+    local aname=('config-common' 'config-xfce-custom')
 
     #skel
 	for path in "${aname[@]}"; do
