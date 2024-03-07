@@ -4,4 +4,5 @@ void-x86_64-base-system-current.tar.xz
 void-x86_64-base-voidstrap-current.tar.xz
 xbps-cachedir*
 *.po
+*.gz
 
