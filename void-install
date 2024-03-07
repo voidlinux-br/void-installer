@@ -1686,6 +1686,7 @@ sh_xfce4minimal() {
 				 xfce4-panel xfce4-pulseaudio-plugin xfce4-power-manager xfce4-screensaver xfce4-session xfce4-settings
 				 xfce4-screenshooter xfce4-sensors-plugin xfce4-systemload-plugin xfce4-taskmanager xfce4-time-out-plugin
 				 xfce4-timer-plugin xfce4-verve-plugin xfce4-whiskermenu-plugin xfce4-weather-plugin xfce4-wavelan-plugin
+				 plank
 				 xfce4-xkb-plugin
 				 void-wallpapers-xfce
 				 void-xfce-skel
