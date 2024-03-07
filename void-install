@@ -1723,7 +1723,7 @@ sh_awesomeminimal() {
 }
 
 sh_bspwmminimal() {
-	local apkgs=(bspwm dk polybar picom feh dmenu lua sxhkd wmctrl compton mpd)
+	local apkgs=(bspwm polybar picom feh dmenu lua sxhkd wmctrl compton mpd)
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Bspwm ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"
 }
 
