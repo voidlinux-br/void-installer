@@ -1,0 +1,7 @@
+[Icon Theme]
+Name=Yaru-bark-dark
+Comment=A desktop adaptation of the Ubuntu mobile icons.
+Inherits=Yaru-bark,Yaru-dark,Humanity,hicolor
+Example=folder
+Directories=
+

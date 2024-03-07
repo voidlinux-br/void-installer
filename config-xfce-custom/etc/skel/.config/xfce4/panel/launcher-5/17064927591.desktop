@@ -1,0 +1,30 @@
+[Desktop Entry]
+Name[pt_BR]=Peek
+Name=Peek
+Exec=peek
+GenericName[pt_BR]=Gravador de GIF animado
+GenericName=Animated GIF recorder
+Comment[pt_BR]=Grave pequenas GIFs animadas a partir da sua tela
+Comment=Record short animated GIF images from your screen
+Keywords[pt_BR]=screencast;gravação de tela;captura de tela;GIF;WebM;APNG;
+Keywords=screencast;screen recorder;screen capture;GIF;WebM;APNG;
+Icon=com.uploadedlobster.peek
+Type=Application
+Categories=GTK;GNOME;Graphics;2DGraphics;AudioVideo;Video;Recorder;
+StartupNotify=true
+Terminal=false
+DBusActivatable=true
+Actions=SoftwareRender;NvidiaRender;IntegratedRender;
+X-XFCE-Source=file:///usr/share/applications/com.uploadedlobster.peek.desktop
+
+[Desktop Action SoftwareRender]
+Name=Software Render
+Exec=SoftwareRender peek
+
+[Desktop Action NvidiaRender]
+Name=Nvidia Render
+Exec=NvidiaRender peek
+
+[Desktop Action IntegratedRender]
+Name=Integrated Render
+Exec=IntegratedRender peek

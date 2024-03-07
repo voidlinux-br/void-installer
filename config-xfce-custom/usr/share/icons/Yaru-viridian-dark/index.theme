@@ -1,0 +1,7 @@
+[Icon Theme]
+Name=Yaru-viridian-dark
+Comment=A desktop adaptation of the Ubuntu mobile icons.
+Inherits=Yaru-viridian,Yaru-dark,Humanity,hicolor
+Example=folder
+Directories=
+

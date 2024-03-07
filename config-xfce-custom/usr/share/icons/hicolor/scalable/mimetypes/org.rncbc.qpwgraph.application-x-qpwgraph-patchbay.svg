@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32" height="32" version="1.0" viewBox=".5 25.1 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <linearGradient id="linearGradient3251">
+      <stop offset="0"/>
+      <stop stop-opacity="0" offset="1"/>
+    </linearGradient>
+    <linearGradient id="linearGradient3405" x1="80.5" x2="229.87" y1="506" y2="357.6" gradientTransform="matrix(.62919 0 0 .62919 -.48738 11.006)" gradientUnits="userSpaceOnUse">
+      <stop stop-opacity=".23529" offset="0"/>
+      <stop stop-color="#969696" stop-opacity="0" offset="1"/>
+    </linearGradient>
+    <linearGradient id="linearGradient3597" x1="368.37" x2="389.52" y1="115.67" y2="95.825" gradientTransform="matrix(.62919 0 0 .62919 -.31794 10.836)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff" offset="0"/>
+      <stop stop-color="#969696" offset="1"/>
+    </linearGradient>
+    <linearGradient id="linearGradient3257" x1="348.04" x2="394.2" y1="139.48" y2="83.419" gradientTransform="matrix(.62919 0 0 .62919 -.31794 10.836)" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient1547" x1="28" x2="26" y1="315.53" y2="312.53" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient1545" x1="28" x2="26" y1="306.03" y2="303.03" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient1543" x1="28" x2="26" y1="296.53" y2="293.53" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient1541" x1="6" x2="4" y1="315.53" y2="312.53" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient1539" x1="6" x2="4" y1="306.03" y2="303.03" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient1537" x1="6" x2="4" y1="296.53" y2="293.53" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient3229" x1="26" x2="28" y1="312.53" y2="315.53" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient3227" x1="26" x2="28" y1="303.03" y2="306.03" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient3225" x1="26" x2="28" y1="293.53" y2="296.53" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient3223" x1="4" x2="6" y1="312.53" y2="315.53" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient3221" x1="4" x2="6" y1="303.03" y2="306.03" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient3219" x1="4" x2="6" y1="293.53" y2="296.53" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient4877" x1="28" x2="27" y1="315.53" y2="314.03" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient4875" x1="28" x2="27" y1="306.03" y2="304.53" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient4873" x1="28" x2="27" y1="296.53" y2="295.03" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient4871" x1="6" x2="5" y1="315.53" y2="314.03" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient4869" x1="6" x2="5" y1="306.03" y2="304.53" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient4867" x1="6" x2="5" y1="296.53" y2="295.03" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient3261" x1="30" x2="10" y1="30" y2="10" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient2775" x1="30" x2="2" y1="30" y2="2" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient1509" x1="29.8" x2="1.8" y1="29.8" y2="1.8" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+    <linearGradient id="linearGradient1159" x1="272.25" x2="201.71" y1="72.13" y2="122.51" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient3251"/>
+  </defs>
+  <g transform="matrix(.096275 0 0 .098511 .97778 22.948)" stroke="#000" stroke-linejoin="bevel" stroke-opacity=".2">
+    <path d="m52.166 42.151-0.2513 294.52h230.91s0.47764-152.39 0.42481-198.46c-0.0136-11.876-0.16044-18.115-7.3719-25.894-33.24-35.855-53.348-51.87-66.597-64.319-3.7183-3.4936-5.3777-6.5829-18.354-6.7084-18.227-0.17632-76.872 0.7385-138.76 0.85601z" fill="none" stroke-width="10.268" style="paint-order:stroke fill markers"/>
+    <path transform="matrix(.60095 0 0 .6099 7.4053 12.545)" d="m65.84 40.221-0.41817 482.9h384.23s0.79481-249.85 0.7069-325.39c-0.0227-19.473-0.26699-29.701-12.267-42.456-55.312-58.789-88.772-85.046-110.82-105.46-6.1873-5.7281-8.9486-10.793-30.542-10.999-30.33-0.2891-127.92 1.2109-230.89 1.4035z" fill-opacity=".2" fill-rule="evenodd" stroke-width="8.4806" style="paint-order:stroke fill markers"/>
+    <path d="m46.972 37.075-0.2513 294.52h230.91s0.47764-152.39 0.42482-198.46c-0.0136-11.876-0.16045-18.115-7.3719-25.894-33.24-35.855-53.348-51.87-66.597-64.319-3.7183-3.4936-5.3776-6.5829-18.354-6.7084-18.227-0.17632-76.872 0.7385-138.76 0.85601z" fill-opacity=".2" fill-rule="evenodd" stroke-linecap="round" stroke-width="10.268" style="paint-order:stroke fill markers"/>
+  </g>
+  <g transform="matrix(.099246 0 0 .099246 .48056 22.941)">
+    <path d="m50.332 35.437v293.77h223.99s0.28117-152.22 0.23056-197.42c-0.013-11.651-1.951-20.747-9.2223-28.037-35.777-35.866-43.504-43.408-56.203-55.62-3.5637-3.4272-9.7188-12.106-20.772-12.691-17.47-0.03146-78.713-0.11528-138.02 0z" fill="#d7e3f4" fill-rule="evenodd" stroke="#000" stroke-width=".25168"/>
+    <rect x="50.332" y="122.51" width="166.5" height="206.7" fill="url(#linearGradient3405)" stroke-width="0"/>
+    <path d="m206.75 117.47c30.228-5.038 47.843-7.2551 61.724-3.5024 6.1724 1.6687 6.176 1.8328 6.0767 17.816-0.50827-13.887-1.951-20.747-9.2223-28.037-35.777-35.866-43.504-43.408-56.203-55.62-10.25-11.036-15.246-12.399-20.772-12.691 16.953 1.3218 18.397 31.655 18.397 82.034z" fill="url(#linearGradient1159)" fill-rule="evenodd"/>
+    <path d="m217.21 99.685c14.99 0.595 39.584 4.6336 48.866 11.08 3.9278 2.7277 8.5792 5.0371 8.4799 21.02-0.50827-13.887-1.951-20.747-9.2223-28.037-35.777-35.866-43.504-43.408-56.203-55.62-10.25-11.036-15.246-12.399-20.772-12.691 16.953 1.3218 25.129 17.979 28.851 64.248z" fill="url(#linearGradient3597)" fill-rule="evenodd" stroke="url(#linearGradient3257)" stroke-width=".25168"/>
+  </g>
+  <g transform="matrix(.55455 0 0 .55455 26.495 30.349)" stroke-linecap="round" stroke-linejoin="bevel">
+    <g transform="translate(-23.3 -276.23)" fill="none" stroke="url(#linearGradient1509)" stroke-opacity=".2">
+      <path transform="translate(0 288.53)" d="m5.5 5s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h4c4.5 6 3.5 6.5 3.5 6.5h-7.5s-1.5 0-1.5 1.5c0 2 1.5 1.5 1.5 1.5h7.5s1 0.5-3.5 6.5h-4s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h5c9.5-11 1.5-11 11 0h5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-4c-4.5-6-3.5-6.5-3.5-6.5h7.5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-7.5s-1-0.5 3.5-6.5h4s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-5c-9.5 11-1.5 11-11 0z" stroke-width="1.6" style="paint-order:stroke fill markers"/>
+      <path transform="translate(0 288.53)" d="m5.5 5s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h4c4.5 6 3.5 6.5 3.5 6.5h-7.5s-1.5 0-1.5 1.5c0 2 1.5 1.5 1.5 1.5h7.5s1 0.5-3.5 6.5h-4s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h5c9.5-11 1.5-11 11 0h5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-4c-4.5-6-3.5-6.5-3.5-6.5h7.5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-7.5s-1-0.5 3.5-6.5h4s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-5c-9.5 11-1.5 11-11 0z" stroke-width="1.2" style="paint-order:stroke fill markers"/>
+    </g>
+    <g transform="translate(-23.5 -276.43)" stroke-opacity=".2">
+      <path transform="translate(0 288.53)" d="m5.5 5s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h4c4.5 6 3.5 6.5 3.5 6.5h-7.5s-1.5 0-1.5 1.5c0 2 1.5 1.5 1.5 1.5h7.5s1 0.5-3.5 6.5h-4s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h5c9.5-11 1.5-11 11 0h5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-4c-4.5-6-3.5-6.5-3.5-6.5h7.5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-7.5s-1-0.5 3.5-6.5h4s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-5c-9.5 11-1.5 11-11 0z" fill="#fff" fill-rule="evenodd" stroke="#000" stroke-width=".8" style="paint-order:stroke fill markers"/>
+      <g fill="none">
+        <g stroke="url(#linearGradient2775)">
+          <path transform="translate(0 288.53)" d="m5.5 5s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h4c4.5 6 3.5 6.5 3.5 6.5h-7.5s-1.5 0-1.5 1.5c0 2 1.5 1.5 1.5 1.5h7.5s1 0.5-3.5 6.5h-4s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h5c9.5-11 1.5-11 11 0h5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-4c-4.5-6-3.5-6.5-3.5-6.5h7.5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-7.5s-1-0.5 3.5-6.5h4s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-5c-9.5 11-1.5 11-11 0z" stroke-width=".6" style="paint-order:stroke fill markers"/>
+          <path transform="translate(0 288.53)" d="m5.5 5s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h4c4.5 6 3.5 6.5 3.5 6.5h-7.5s-1.5 0-1.5 1.5c0 2 1.5 1.5 1.5 1.5h7.5s1 0.5-3.5 6.5h-4s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h5c9.5-11 1.5-11 11 0h5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-4c-4.5-6-3.5-6.5-3.5-6.5h7.5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-7.5s-1-0.5 3.5-6.5h4s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-5c-9.5 11-1.5 11-11 0z" style="paint-order:stroke fill markers"/>
+          <path transform="translate(0 288.53)" d="m5.5 5s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h4c4.5 6 3.5 6.5 3.5 6.5h-7.5s-1.5 0-1.5 1.5c0 2 1.5 1.5 1.5 1.5h7.5s1 0.5-3.5 6.5h-4s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h5c9.5-11 1.5-11 11 0h5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-4c-4.5-6-3.5-6.5-3.5-6.5h7.5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-7.5s-1-0.5 3.5-6.5h4s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-5c-9.5 11-1.5 11-11 0z" stroke-width="1.4" style="paint-order:stroke fill markers"/>
+        </g>
+        <path transform="translate(0 288.53)" d="m5.5 5s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h4c4.5 6 3.5 6.5 3.5 6.5h-7.5s-1.5 0-1.5 1.5c0 2 1.5 1.5 1.5 1.5h7.5s1 0.5-3.5 6.5h-4s-1.5 0-1.5 1.5 1.5 1.5 1.5 1.5h5c9.5-11 1.5-11 11 0h5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-4c-4.5-6-3.5-6.5-3.5-6.5h7.5s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-7.5s-1-0.5 3.5-6.5h4s1.5 0 1.5-1.5-1.5-1.5-1.5-1.5h-5c-9.5 11-1.5 11-11 0z" stroke="url(#linearGradient3261)" stroke-width="1.8" style="paint-order:stroke fill markers"/>
+      </g>
+    </g>
+    <g transform="translate(-23.4 -276.33)" stroke="#000" stroke-opacity=".2">
+      <g stroke-width="2.8">
+        <ellipse cx="27" cy="314.03" rx="1.5" ry="1.5" fill="url(#linearGradient4877)" style="paint-order:stroke fill markers"/>
+        <ellipse cx="27" cy="304.53" rx="1.5" ry="1.5" fill="url(#linearGradient4875)" style="paint-order:stroke fill markers"/>
+        <ellipse cx="27" cy="295.03" rx="1.5" ry="1.5" fill="url(#linearGradient4873)" style="paint-order:stroke fill markers"/>
+        <ellipse cx="5" cy="314.03" rx="1.5" ry="1.5" fill="url(#linearGradient4871)" style="paint-order:stroke fill markers"/>
+        <ellipse cx="5" cy="304.53" rx="1.5" ry="1.5" fill="url(#linearGradient4869)" style="paint-order:stroke fill markers"/>
+        <ellipse cx="5" cy="295.03" rx="1.5" ry="1.5" fill="url(#linearGradient4867)" style="paint-order:stroke fill markers"/>
+      </g>
+      <g stroke-width="2.4">
+        <ellipse cx="27" cy="314.03" rx="1.5" ry="1.5" fill="url(#linearGradient3229)" style="paint-order:stroke fill markers"/>
+        <ellipse cx="27" cy="304.53" rx="1.5" ry="1.5" fill="url(#linearGradient3227)" style="paint-order:stroke fill markers"/>
+        <ellipse cx="27" cy="295.03" rx="1.5" ry="1.5" fill="url(#linearGradient3225)" style="paint-order:stroke fill markers"/>
+        <ellipse cx="5" cy="314.03" rx="1.5" ry="1.5" fill="url(#linearGradient3223)" style="paint-order:stroke fill markers"/>
+        <ellipse cx="5" cy="304.53" rx="1.5" ry="1.5" fill="url(#linearGradient3221)" style="paint-order:stroke fill markers"/>
+        <ellipse cx="5" cy="295.03" rx="1.5" ry="1.5" fill="url(#linearGradient3219)" style="paint-order:stroke fill markers"/>
+      </g>
+    </g>
+    <g transform="translate(-23.5 -276.43)" fill="none" stroke-opacity=".19524" stroke-width="2">
+      <ellipse cx="27" cy="314.03" rx="1.5" ry="1.5" stroke="url(#linearGradient1547)" style="paint-order:stroke fill markers"/>
+      <ellipse cx="27" cy="304.53" rx="1.5" ry="1.5" stroke="url(#linearGradient1545)" style="paint-order:stroke fill markers"/>
+      <ellipse cx="27" cy="295.03" rx="1.5" ry="1.5" stroke="url(#linearGradient1543)" style="paint-order:stroke fill markers"/>
+      <ellipse cx="5" cy="314.03" rx="1.5" ry="1.5" stroke="url(#linearGradient1541)" style="paint-order:stroke fill markers"/>
+      <ellipse cx="5" cy="304.53" rx="1.5" ry="1.5" stroke="url(#linearGradient1539)" style="paint-order:stroke fill markers"/>
+      <ellipse cx="5" cy="295.03" rx="1.5" ry="1.5" stroke="url(#linearGradient1537)" style="paint-order:stroke fill markers"/>
+    </g>
+    <g transform="translate(-23.5 -276.43)" fill="none" stroke="#fff" stroke-width="1.2">
+      <ellipse cx="27" cy="314.03" rx="1.5" ry="1.5" style="paint-order:stroke fill markers"/>
+      <ellipse cx="27" cy="304.53" rx="1.5" ry="1.5" style="paint-order:stroke fill markers"/>
+      <ellipse cx="27" cy="295.03" rx="1.5" ry="1.5" style="paint-order:stroke fill markers"/>
+      <ellipse cx="5" cy="314.03" rx="1.5" ry="1.5" style="paint-order:stroke fill markers"/>
+      <ellipse cx="5" cy="304.53" rx="1.5" ry="1.5" style="paint-order:stroke fill markers"/>
+      <ellipse cx="5" cy="295.03" rx="1.5" ry="1.5" style="paint-order:stroke fill markers"/>
+    </g>
+  </g>
+</svg>

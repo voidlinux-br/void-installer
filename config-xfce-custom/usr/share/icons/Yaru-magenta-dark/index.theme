@@ -1,0 +1,7 @@
+[Icon Theme]
+Name=Yaru-magenta-dark
+Comment=A desktop adaptation of the Ubuntu mobile icons.
+Inherits=Yaru-magenta,Yaru-dark,Humanity,hicolor
+Example=folder
+Directories=
+

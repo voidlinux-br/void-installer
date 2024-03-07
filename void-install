@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2024/03/03
+#  Altered: 2024/03/07
 #
 #  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
@@ -46,7 +46,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.6.03-20240303'
+readonly _VERSION_='2.6.07-20240307'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -91,13 +91,15 @@ declare -ga aTerminal=('rxvt-unicode' 'xfce4-terminal' 'cool-retro-term')
 declare -ga aEditorX=('kate' 'mousepad')
 declare -ga aMicrocode=('intel-ucode' 'linux-firmware-amd')
 declare -ga aNetworkX=('network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda')
+declare -ga aUtilityX=('mate-calc' 'xkill' 'menulibre' 'mugshot' 'ocs-url' 'remmina' 'remmina-kwallet')
 ## tty
 declare -ga aDaemons=('NetworkManager' 'acpi' 'acpid' 'gpm' 'connman' 'irqbalance' 'avahi')
 declare -ga aArchiverTty=('unrar' 'zip' 'p7zip' 'unzip' 'bzip2')
 declare -ga aDownloader=('curl' 'wget' 'git' 'lynx')
 declare -ga aEditorTxt=('nano')
 declare -ga aUtility=('dialog' 'gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted' 'rsync' 'duf' 'dfc' 'tmate' 'inetutils' 'iputils')
-			aUtility+=('cifs-utils' 'ntfs-3g' 'btop' 'htop' 'parallel' 'evtest' 'bubblewrap' 'pacman' 'fakeroot' 'bsdtar' 'exa')
+			aUtility+=('cifs-utils' 'ntfs-3g' 'btop' 'htop' 'parallel' 'evtest' 'bubblewrap' 'pacman' 'fakeroot' 'bsdtar' 'exa' 'cmatrix')
+			aUtility+=('nvme-cli')
 declare -ga _PKGS='neofetch pfetch bc bat fzf bash-completion vpm vsv xtools geoip geoipupdate #geoip-data'
 #--repository=https://chililinux.com/void/current
 declare -ga _EXTRAS='nano-syntax-highlighting grub-void-theme'
@@ -1468,7 +1470,7 @@ sh_make_fstab() {
 
 sh_activating_services() {
 	local aServicesTTY=(agetty-tty1 agetty-tty2 agetty-tty3 agetty-tty4 agetty-tty5 agetty-tty6 udevd dhcpcd gpm acpid connmand)
-		  aServicesTTY+=(wpa_supplicant uuidd dmeventd sshd dbus socklog-unix nanoklogd openntpd irqbalance avahi-daemon)
+		  aServicesTTY+=(wpa_supplicant uuidd dmeventd sshd dbus socklog-unix openntpd irqbalance avahi-daemon)
 	local aServicesX=(NetworkManager dbus elogind lxdm polkitd bluetoothd)
 	local service
 	local level=2
@@ -1611,6 +1613,7 @@ sh_X11minimal() {
 	apkgs+=("${aBrowser[@]}")
 	apkgs+=("${aBluetooth[@]}")
 	apkgs+=("${aNetworkX[@]}")
+	apkgs+=("${aUtilityX[@]}")
 
     if [[ $_AUDIOSERVER = 'Pulseaudio' ]]; then
 	    apkgs+=("${aPulseaudio[@]}")
@@ -1635,6 +1638,7 @@ sh_X11minimal() {
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Browser's ${cmsg_Em[$LC_DEFAULT]} $dir_install"     "LC_ALL=C xbps-install -y ${aBrowser[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Bluetooth's ${cmsg_Em[$LC_DEFAULT]} $dir_install"   "LC_ALL=C xbps-install -y ${aBluetooth[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Networks's ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "LC_ALL=C xbps-install -y ${aNetworkX[*]}"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Utility's ${cmsg_Em[$LC_DEFAULT]} $dir_install"     "LC_ALL=C xbps-install -y ${aUtilityX[*]}"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Media's ${cmsg_Em[$LC_DEFAULT]} $dir_install"       "LC_ALL=C xbps-install -y ${aMedia[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Printer's ${cmsg_Em[$LC_DEFAULT]} $dir_install"     "LC_ALL=C xbps-install -y ${aPrinter[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Perfumery's ${cmsg_Em[$LC_DEFAULT]} $dir_install"   "LC_ALL=C xbps-install -y ${aPerfumery[*]}" "$err_not_fatal"
@@ -1680,6 +1684,8 @@ sh_xfce4minimal() {
 				 xfce4-screenshooter xfce4-sensors-plugin xfce4-systemload-plugin xfce4-taskmanager xfce4-time-out-plugin
 				 xfce4-timer-plugin xfce4-verve-plugin xfce4-whiskermenu-plugin xfce4-weather-plugin xfce4-wavelan-plugin
 				 xfce4-xkb-plugin
+				 void-wallpapers-xfce
+				 void-xfce-skel
 				 )
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Xfce4 ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"
 }
@@ -3357,6 +3363,21 @@ EOF
 </dict>
 </plist>
 EOF
+
+	cat > keys/cc:e6:28:46:ff:19:07:a2:f0:4b:14:15:4f:89:1b:bc.plist <<-EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>public-key</key>
+	<data>LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQm9qQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FZOEFNSUlCaWdLQ0FZRUEzcXVPbTNUNnc4RXN1ZnY2cnJIZwp6VTQ0S090dXF1M01HMS81Smd2UmJvb1hzS0swdW8wQkpzOFJaY2RLOWZRRWFNbUtHRUxvQVBiVEVQaGlZc0EzCnNkNy95QUR4bFNVcWR2VUl6Unh3M3E1VXFHNjQ5aFJjNnVHMjdxS2pZL0pxSXF5bGV5bmlaNUR0ejI5cm5Mc2wKTUFyT0YrNElsUk5LMnFHMy85RytETmVsVXFDeFRHQTVUd21DUlN5OXRQZ2dPQ3RnYmRuZjdCbHg4anB4MHo4MAo2RHl2ZDhPZ0ZRWEE4R3l5K2Mzc1N3Tm02Y1ZVUTV2clEzcGhCTnVuSzJDbHJzeE5iRGhzQnNXSklGd1JEeFJnCnpYQlJrSmxxL2M1L0crZTV2d0p1TWl6M09WYlh6TWo4WCtNYk5wMExkVzFVRU5tbmRYU1h3aForUllDQTRNMCsKSm1ZV0VRY0xKdnBIelB5cUZnaVhucnFMOUU0Tm4xK2t3TXZYOWEvTVhQcCtjRk12ajBUd01icWRDTTFGeGl2aQpUNkpCbUxOZG0vOXpQbUs5Yzg2UHRGVWNaaCtaV0NRMHBjTmRSWm5NZzJxVmdHUUdkeXFNQVN4QldpeVZrSHdHClkzSUcwZ3VaeVNJVnZmU0cyc0ZsQmZDWk9yK0pqNHNEbWhITXlNdlpoZGdGQWdNQkFBRT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==</data>
+	<key>public-key-size</key>
+	<integer>3072</integer>
+	<key>signature-by</key>
+	<string>Vilmar Catafesta &lt;vcatafesta@gmail.com&gt;</string>
+</dict>
+</plist>
+EOF
 }
 
 #dom 03 mar 2024 09:35:25 -04
@@ -3392,7 +3413,7 @@ sh_extract_root_fs() {
 
 
 sh_install() {
-	local abase=(zstd xz pigz porg cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd)
+	local abase=(zstd xz pigz cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd)
 	local akernel=(linux dbus)
 	local afirmware=(wifi-firmware)
 	local awallpapers=(void-wallpapers-xfce void-xfce-skel)
@@ -3435,21 +3456,14 @@ sh_install() {
 			# Go install
 			sh_chroot_job "${cmsg_Atualizando[$LC_DEFAULT]} xbps ${cmsg_Em[$LC_DEFAULT]} $dir_install"               "LC_ALL=C xbps-install -S -u xbps -y"
 			sh_chroot_job "${cmsg_AtualizandoRepositorio[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"         "LC_ALL=C xbps-install -S -u -y"
-    		sh_make_fstab
-    		sh_update_bashrc
-    		sh_make_user
-    		sh_update_hostname
-    		sh_update_rc_local
-    		sh_update_sshd
-    		sh_update_rc_conf
-    		sh_update_locale
-
 			if [[ "$_SOURCE" = "local" ]]; then
        			sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${agrub[*]}"
+	    		sh_update_bashrc
 	    		sh_grubInstall
 			else
   				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -y ${akernel[*]}"
   				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Grub ${cmsg_Em[$LC_DEFAULT]} $dir_install"             "xbps-install -y ${agrub[*]}"
+	    		sh_update_bashrc
 	    		sh_grubInstall
    				sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"      "xbps-install -y ${abase[*]}"
 #  				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Wifi Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "xbps-install -y ${afirmware[*]}"
@@ -3459,8 +3473,16 @@ sh_install() {
    				sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install"                                   "xbps-install -y ${aDownloader[*]}"  "$err_not_fatal" "$err_not_fatal"
    				sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install"                                   "xbps-install -y ${aUtility[*]}"     "$err_not_fatal" "$err_not_fatal"
    				sh_chroot_job "$(gettext "Instalando Archiver's tty em") $dir_install"                                "xbps-install -y ${aArchiverTty[*]}" "$err_not_fatal" "$err_not_fatal"
-#		    	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -yU $_EXTRAS"          "$err_not_fatal"
+		    	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -y $_EXTRAS"           "$err_not_fatal"
             fi
+    		sh_make_fstab
+    		sh_make_user
+    		sh_update_hostname
+    		sh_update_rc_local
+    		sh_update_sshd
+    		sh_update_rc_conf
+    		sh_update_locale
+
 			sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-remove -oOy"
     		sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-reconfigure -f glibc-locales"
     		sh_update_wpa_suplicant

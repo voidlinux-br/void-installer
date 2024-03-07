@@ -1,0 +1,29 @@
+[Desktop Entry]
+Version=1.0
+Name=Remote Desktop RustDesk
+Name[pt]=Acesso remoto RustDesk
+Exec=rustdesk %u
+Icon=rustdesk
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=Network;
+Keywords=internet;remote;access;remoto;anydesk;teamviewer;
+Actions=new-window;SoftwareRender;NvidiaRender;IntegratedRender;
+X-Desktop-File-Install-Version=0.23
+X-XFCE-Source=file:///usr/share/applications/rustdesk.desktop
+
+[Desktop Action new-window]
+Name=Open a New Window
+
+[Desktop Action SoftwareRender]
+Name=Software Render
+Exec=SoftwareRender rustdesk %u
+
+[Desktop Action NvidiaRender]
+Name=Nvidia Render
+Exec=NvidiaRender rustdesk %u
+
+[Desktop Action IntegratedRender]
+Name=Integrated Render
+Exec=IntegratedRender rustdesk %u

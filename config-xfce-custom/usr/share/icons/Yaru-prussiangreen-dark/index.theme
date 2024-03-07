@@ -1,0 +1,7 @@
+[Icon Theme]
+Name=Yaru-prussiangreen-dark
+Comment=A desktop adaptation of the Ubuntu mobile icons.
+Inherits=Yaru-prussiangreen,Yaru-dark,Humanity,hicolor
+Example=folder
+Directories=
+
