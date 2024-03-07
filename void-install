@@ -77,6 +77,7 @@ declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT
 ## begin packages
 ## X11
 declare -ga aXorg=('xorg' 'xinit' 'xterm' 'xorg-fonts' 'dbus' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs' 'xrdb')
+declare -ga aIcons=('adwaita-icon-theme')
 declare -ga aArchiverX=('xarchiver')
 declare -ga aBrowser=('firefox' 'firefox-i18n-pt-BR')
 declare -ga aBluetooth=('bluez' 'bluez-alsa' 'bluedevil' 'blueman' 'bluez-cups' 'bluez-deprecated' 'blueberry' 'gnome-bluetooth1')
@@ -1097,7 +1098,7 @@ sh_update_rc_conf() {
 }
 
 install_skel_user() {
-    local aname='config-common'
+    local aname='config-common' 'config-xfce-custom'
 
     #skel
 	for path in "${aname[@]}"; do
@@ -1614,6 +1615,7 @@ sh_X11minimal() {
 	apkgs+=("${aBluetooth[@]}")
 	apkgs+=("${aNetworkX[@]}")
 	apkgs+=("${aUtilityX[@]}")
+	apkgs+=("${aIcons[@]}")
 
     if [[ $_AUDIOSERVER = 'Pulseaudio' ]]; then
 	    apkgs+=("${aPulseaudio[@]}")
@@ -1632,6 +1634,7 @@ sh_X11minimal() {
 #	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"               "LC_ALL=C xbps-install -y ${apkgs[*]}"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Xorg ${cmsg_Em[$LC_DEFAULT]} $dir_install"          "LC_ALL=C xbps-install -y ${aXorg[*]}"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Font's ${cmsg_Em[$LC_DEFAULT]} $dir_install"        "LC_ALL=C xbps-install -y ${aFont[*]}" "$err_not_fatal"
+	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Icons's ${cmsg_Em[$LC_DEFAULT]} $dir_install"       "LC_ALL=C xbps-install -y ${aIcons[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} DM's ${cmsg_Em[$LC_DEFAULT]} $dir_install"          "LC_ALL=C xbps-install -y ${aDisplaymanager[*]}"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Terminal's ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "LC_ALL=C xbps-install -y ${aTerminal[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} FileManager's ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${aFilemanager[*]}" "$err_not_fatal"
@@ -1653,7 +1656,7 @@ sh_blackboxminimal() {
 }
 
 sh_fluxboxminimal() {
-	local apkgs=(fluxbox fbmenugen cairo galculator-gtk2 adwaita-icon-theme gtk2-engines gtk-engine-murrine)
+	local apkgs=(fluxbox fbmenugen cairo galculator-gtk2 gtk2-engines gtk-engine-murrine)
 	      apkgs+=(wicd qt5ct qt5-styleplugins leafpad dconf volumeicon feh viewnior compton arc-theme ffmpegthumbnailer)
 
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Fluxbox ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"

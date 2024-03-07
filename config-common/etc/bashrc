@@ -8,8 +8,8 @@ if [[ $- != *i* ]] ; then
     return
 fi
 
-if [ -d /etc/bash/bashrc.d/ ]; then
-    for f in /etc/bash/bashrc.d/*.sh; do
+if [ -d /etc/bashrc.d/ ]; then
+    for f in /etc/bashrc.d/*.sh; do
         [ -r "$f" ] && . "$f"
     done
     unset f
