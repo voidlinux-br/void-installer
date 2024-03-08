@@ -4,11 +4,9 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2024/03/07
+#  Altered: 2024/03/08
 #
 #  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
-#                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
-#                2023-2023, Dannylo Xavier Wanderley <github@danxavier.com.br>
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -46,7 +44,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.6.07-20240307'
+readonly _VERSION_='2.6.08-20240308'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -77,7 +75,7 @@ declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT
 ## begin packages
 ## X11
 declare -ga aXorg=('xorg' 'xinit' 'xterm' 'xorg-fonts' 'dbus' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs' 'xrdb')
-declare -ga aIconsAndThemes=('adwaita-icon-theme' 'chili-void-beauty-icons' 'chili-void-wallpapers-xfce' 'chili-void-gnome-professional-theme' 'xfwm-axiom-theme')
+declare -ga aIconsAndThemes=('Adapta' 'adwaita-icon-theme' 'chili-void-beauty-icons' 'chili-void-wallpapers-xfce' 'chili-void-gnome-professional-theme' 'xfwm-axiom-theme')
 declare -ga aArchiverX=('xarchiver')
 declare -ga aBrowser=('firefox' 'firefox-i18n-pt-BR')
 declare -ga aBluetooth=('bluez' 'bluez-alsa' 'bluedevil' 'blueman' 'bluez-cups' 'bluez-deprecated' 'blueberry' 'gnome-bluetooth1')
@@ -1670,7 +1668,9 @@ sh_fluxboxminimal() {
 }
 
 sh_openboxminimal() {
-	local apkgs=('openbox' 'obconf')
+	local apkgs=(openbox
+			 	 obconf
+			 	 )
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Openbox ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"
 }
 
@@ -1686,9 +1686,9 @@ sh_xfce4minimal() {
 				 xfce4-panel xfce4-pulseaudio-plugin xfce4-power-manager xfce4-screensaver xfce4-session xfce4-settings
 				 xfce4-screenshooter xfce4-sensors-plugin xfce4-systemload-plugin xfce4-taskmanager xfce4-time-out-plugin
 				 xfce4-timer-plugin xfce4-verve-plugin xfce4-whiskermenu-plugin xfce4-weather-plugin xfce4-wavelan-plugin
-				 plank
 				 xfce4-xkb-plugin
-				 void-xfce-skel
+				 plank
+				 chili-void-xfce-skel
 				 )
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Xfce4 ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"
 }
@@ -1709,7 +1709,7 @@ sh_i3minimal() {
 }
 
 sh_swayminimal() {
-	local apkgs=('sway')
+	local apkgs=(sway)
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Sway ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"
 }
 
@@ -1737,17 +1737,17 @@ sh_bspwmminimal() {
 }
 
 sh_dwmminimal() {
-	local apkgs=('dwm')
+	local apkgs=(dwm)
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Dwm ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"
 }
 
 sh_lxdeminimal() {
-	local apkgs=('lxde' 'lxterminal' 'lxrandr' 'lxtask' 'lxinput' 'lxappearance')
+	local apkgs=(lxde lxterminal lxrandr lxtask lxinput lxappearance)
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Lxde ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"
 }
 
 sh_lxqtminimal() {
-	local apkgs=('lxqt')
+	local apkgs=(lxqt)
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Lxqt ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install -y ${apkgs[*]}"
 }
 
@@ -3478,7 +3478,8 @@ sh_install() {
    				sh_chroot_job "$(gettext "Instalando Archiver's tty em") $dir_install"                                "xbps-install -y ${aArchiverTty[*]}" "$err_not_fatal" "$err_not_fatal"
 		    	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -y $_EXTRAS"           "$err_not_fatal"
             fi
-    		sh_make_fstab
+ 			sh_copy_scripts
+	   		sh_make_fstab
     		sh_make_user
     		sh_update_hostname
     		sh_update_rc_local
@@ -3537,7 +3538,6 @@ sh_install() {
 				sh_chroot_job "Certificando que todos pacotes estejam configurados corretamente em $dir_install" "xbps-reconfigure -fa"
 			fi
 			sh_chmod_tmp
-#			sh_copy_scripts # instalado pelo skel
 			sh_umount_fs
 			end_datetime=$(date)
 			alerta "$APP" "${cmsg_FinalizadaComSucesso[LC_DEFAULT]}\n" \
