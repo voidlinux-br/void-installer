@@ -38,12 +38,14 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.5.694-20240308'
+readonly _VERSION_='0.6.01-20240308'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog cat sed grep printf)
 declare -A Aidioma=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -A Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
-declare -i quiet=0 grafico=1 ncontador=0
+declare -i quiet=0
+declare -i grafico=1
+declare -i ncontador=0
 declare -i STEP_COUNT=10
 declare Interrupted="$(gettext "Interrompido! Saindo...")"
 trap 'printf "\n${red}$Interrupted\n"; cleanup; exit 0' INT TERM HUP
@@ -235,7 +237,7 @@ DOT() {
 }
 
 msg() {
-	((ncontador++))
+	((++ncontador))
 	logmessage=$(sed 's/\\\033[^a-zA-Z]*.//g' <<<"$last_msg")
 	printf "%s\n" "$(timespec) [ INFO ]${2}" >>"$BOOTLOG"
 
@@ -387,6 +389,19 @@ info() {
 		0 0
 }
 
+display_result() {
+    ${DIALOG} \
+        --colors \
+        --title "$2" \
+        --backtitle "$ccabec" \
+        --no-collapse \
+        --no-cr-wrap \
+        --no-nl-expand \
+        --ok-label "${cmsg_ok[$LC_DEFAULT]}" \
+        --msgbox "$1" \
+        15 100
+}
+
 alerta() {
 	log_success_msg "$@"
 	${DIALOG} \
@@ -461,10 +476,11 @@ scrend() {
 
 sh_setlanguage() {
 	#	langmsg=('lang=("pt_BR"	"en_US"	"de_DE"	"fr_FR"	"es_ES"	"it_IT")'
-	cmsg_LABEL1[pt_BR]="$(gettext "Usar as setas ↑ e ↓ para navegar.")"
-	cmsg_LABEL2[pt_BR]="$(gettext "Usar TAB para alternar entre os botões.")"
-	cmsg_LABEL3[pt_BR]="$(gettext "Usar ENTER ou BARRA DE ESPAÇO para selecionar e aceitar.")"
-	cmsg_MENU[pt_BR]="${cmsg_LABEL1[pt_BR]}\n${cmsg_LABEL2[pt_BR]}\n${cmsg_LABEL3[pt_BR]}"
+	cmsg_LABEL1[pt_BR]="$(gettext "Usar as setas ↑ e ↓ para navegar")"
+	cmsg_LABEL2[pt_BR]="$(gettext "Usar TAB para alternar entre os botões")"
+	cmsg_LABEL3[pt_BR]="$(gettext "Usar BARRA DE ESPAÇO para selecionar/marcar")"
+	cmsg_LABEL4[pt_BR]="$(gettext "Usar ENTER para aceitar/executar")"
+	cmsg_MENU[pt_BR]="${cmsg_LABEL1[pt_BR]}\n${cmsg_LABEL3[pt_BR]}\n${cmsg_LABEL2[pt_BR]}\n${cmsg_LABEL4[pt_BR]}"
 	cmsg_ERRO[pt_BR]="$(gettext "ERRO")"
 	cmsg_operRoot[pt_BR]="$(gettext "erro: você não pode realizar esta operação a menos que seja root.")"
 	cmsg_ImpossivelContinuar[pt_BR]="$(gettext "IMPOSSÍVEL CONTINUAR")"
@@ -474,6 +490,7 @@ sh_setlanguage() {
 	cmsg_RunNew[pt_BR]="$(gettext "INFO: Rode novamente o aplicativo")"
 	cmsg_RunNewErro[pt_BR]="$(gettext "ERRO na instalação dos comandos. Tente manualmente.")"
 	cmsg_InstalacaoAbortada[pt_BR]="$(gettext "Instalação abortada")"
+	cmsg_ok[pt_BR]="$(gettext "Ok")"
 	cmsg_yeslabel[pt_BR]="$(gettext "Sim")"
 	cmsg_nolabel[pt_BR]="$(gettext "Não")"
 	cmsg_descMirror[pt_BR]="$(gettext "Escolher espelho")"
@@ -487,6 +504,20 @@ sh_setlanguage() {
 	cmsg_Idioma[pt_BR]="$(gettext "Escolha idioma")"
 	cmsg_Desativar[pt_BR]="$(gettext "Desativar")"
 	cmsg_Ativar[pt_BR]="$(gettext "Ativar")"
+	cmsg_ParandoServico[pt_BR]="$(gettext "Parando serviço")"
+	cmsg_AtivandoServico[pt_BR]="$(gettext "Ativando serviço")"
+	cmsg_IniciandoServico[pt_BR]="$(gettext "Iniciando serviço")"
+	cmsg_DesativandoServico[pt_BR]="$(gettext "Desativando serviço")"
+}
+
+sh_disableServices() {
+	local service
+
+	grafico=0
+	for service in "${_SERVICES[@]}"; do
+		sh_cmd_job "${cmsg_ParandoServico[$LC_DEFAULT]} $service" "sv stop $service" "$err_not_fatal"
+		sh_cmd_job "${cmsg_DesativandoServico[$LC_DEFAULT]} $service" "rm -f /var/service/$service" "$err_not_fatal"
+	done
 
 	#	for xmsg in "${langmsg[@]}"; do eval "$xmsg"; done
 	#echo "lang       ${#lang[@]} ${lang[@]} ${lang[$PT_BR]} ${lang[$EN_US]}"
@@ -532,19 +563,28 @@ sh_cmd_job() {
 
 	msg "INFO" "$cmsg"
 	$cjob >>"$BOOTLOG" 2>&1
-	return "$?"
+	evaluate_retval "$?" "$err_not_fatal"
+#	return "$?"
 }
 
 sh_enableServices() {
 	local service
 
+	# To enable a service on a booted system, create a symlink to the service directory in /var/service/:
+	# ln -s /etc/sv/<service> /var/service/
+
+	# If the system is not currently running, the service can be linked directly into the default runsvdir:
+	# ln -s /etc/sv/<service> /etc/runit/runsvdir/default/
+	# This will automatically start the service. Once a service is linked it will always start on boot and restart if it stops, unless administratively downed.
+	# To prevent a service from starting at boot while allowing runit to manage it, create a file named down in its service directory:
+	# touch /etc/sv/<service>/down
+
 	for service in "${_SERVICES[@]}"; do
-		sh_cmd_job "${cmsg_ParandoServico[$LC_DEFAULT]} $service" "sv stop $service" "$err_not_fatal"
-		evaluate_retval "$@" "$err_not_fatal"
-		sh_cmd_job "${cmsg_AtivandoServico[$LC_DEFAULT]} $service" "ln -sf /etc/sv/$service /var/service/" "$err_not_fatal"
-		evaluate_retval "$@" "$err_not_fatal"
+		sh_cmd_job "${cmsg_ParandoServico[$LC_DEFAULT]} $service"   "sv stop $service" "$err_not_fatal"
+		sleep 1
+#		sh_cmd_job "${cmsg_AtivandoServico[$LC_DEFAULT]} $service"  "ln -sf /etc/sv/$service /var/service/" "$err_not_fatal"
+		sh_cmd_job "${cmsg_AtivandoServico[$LC_DEFAULT]} $service"  "ln -sf /etc/sv/$service /etc/runit/runsvdir/default/" "$err_not_fatal"
 		sh_cmd_job "${cmsg_IniciandoServico[$LC_DEFAULT]} $service" "sv start $service" "$err_not_fatal"
-		evaluate_retval "$@" "$err_not_fatal"
 		sleep 1
 	done
 }
@@ -553,11 +593,12 @@ sh_disableServices() {
 	local service
 
 	for service in "${_SERVICES[@]}"; do
-		sh_cmd_job "${cmsg_ParandoServico[$LC_DEFAULT]} $service" "sv stop $service" "$err_not_fatal"
-		evaluate_retval "$@" "$err_not_fatal"
-		sh_cmd_job "${cmsg_DesativandoServico[$LC_DEFAULT]} $service" "rm -f /var/service/$service" "$err_not_fatal"
-		evaluate_retval "$@" "$err_not_fatal"
+		sh_cmd_job "${cmsg_ParandoServico[$LC_DEFAULT]} $service"     "sv stop $service" "$err_not_fatal"
+#		sh_cmd_job "${cmsg_DesativandoServico[$LC_DEFAULT]} $service" "rm -f /var/service/$service" "$err_not_fatal"
+		sh_cmd_job "${cmsg_DesativandoServico[$LC_DEFAULT]} $service" "touch /etc/sv/$service/down" "$err_not_fatal"
+		sleep 1
 	done
+	display_result "$(sv status ${_SERVICES[@]})"
 }
 
 sh_chooseservices() {
@@ -614,7 +655,7 @@ sh_chooseservices() {
 			--ok-label "${cmsg_Ativar[$LC_DEFAULT]}" \
 			--extra-button --extra-label "${cmsg_Desativar[$LC_DEFAULT]}" \
 			--checklist "${cmsg_MENU[$LC_DEFAULT]}" \
-			25 0 25 "${array[@]}" 2>&1 >/dev/tty)
+			0 0 30 "${array[@]}" 2>&1 >/dev/tty)
 
 		exit_status=$?
 		_SERVICES=($(strtoarray "$service"))
