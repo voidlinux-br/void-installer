@@ -3,9 +3,9 @@
 
 #  void-install
 #  Created: 2023/04/25
-#  Altered: 2023/10/18
+#  Altered: 2024/03/08
 #
-#  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
+#  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
 #  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 #  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+############################################################################
 export TEXTDOMAINDIR=/usr/share/locale
 export TEXTDOMAIN=void-remove-vg
 
@@ -39,7 +39,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.1.01-20231018'
+readonly _VERSION_='1.0.01-20240308'
 
 sh_diahora() {
 	DIAHORA=$(date +"%d%m%Y-%T" | sed 's/://g')

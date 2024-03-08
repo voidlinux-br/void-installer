@@ -4,11 +4,9 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2023/10/14
+#  Altered: 2024/03/08
 #
-#  Copyright (c) 2022-2023, Vilmar Catafesta <vcatafesta@gmail.com>
-#                2022-2023, Felipe Nogueira <contato.fnog@gmail.com>
-#                2023-2023, Dannylo Xavier Wanderley <github@danxavier.com.br>
+#  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -30,7 +28,7 @@
 #  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 #  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+############################################################################
 #export LANGUAGE=pt_BR
 export TEXTDOMAINDIR=/usr/share/locale
 export TEXTDOMAIN=void-xrandr
@@ -43,7 +41,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='1.0.17-20231014'
+readonly _VERSION_='1.0.18-20240308'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(xrandr cvt tput dialog awk grep sed gettext)
 readonly sep='\xe2\x94\x82'

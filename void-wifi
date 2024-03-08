@@ -3,9 +3,9 @@
 
 #  void-wifi
 #  Created: 2023/01/16
-#  Altered: 2023/04/30
+#  Altered: 2024/03/08
 #
-#  Copyright (c) 2023-2023, Vilmar Catafesta <vcatafesta@gmail.com>
+#  Copyright (c) 2023-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
 #  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 #  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+############################################################################
 export TEXTDOMAINDIR=/usr/share/locale
 export TEXTDOMAIN=void-wifi
 
@@ -37,7 +37,7 @@ export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='0.4.799.20230430'
+readonly _VERSION_='0.4.800.20240308'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog sed)
 readonly BOOTLOG="/tmp/$APP-$(date +"%d%m%Y-%T" | sed 's/://g').log"
