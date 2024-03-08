@@ -3461,13 +3461,9 @@ sh_install() {
 			sh_chroot_job "${cmsg_AtualizandoRepositorio[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"         "LC_ALL=C xbps-install -S -u -y"
 			if [[ "$_SOURCE" = "local" ]]; then
        			sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-install -y ${agrub[*]}"
-	    		sh_update_bashrc
-	    		sh_grubInstall
 			else
   				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -y ${akernel[*]}"
   				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Grub ${cmsg_Em[$LC_DEFAULT]} $dir_install"             "xbps-install -y ${agrub[*]}"
-	    		sh_update_bashrc
-	    		sh_grubInstall
    				sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"      "xbps-install -y ${abase[*]}"
 #  				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Wifi Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "xbps-install -y ${afirmware[*]}"
    				sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install"                        "xbps-install -y $_PKGS"             "$err_not_fatal" "$err_not_fatal"
@@ -3476,8 +3472,10 @@ sh_install() {
    				sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install"                                   "xbps-install -y ${aDownloader[*]}"  "$err_not_fatal" "$err_not_fatal"
    				sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install"                                   "xbps-install -y ${aUtility[*]}"     "$err_not_fatal" "$err_not_fatal"
    				sh_chroot_job "$(gettext "Instalando Archiver's tty em") $dir_install"                                "xbps-install -y ${aArchiverTty[*]}" "$err_not_fatal" "$err_not_fatal"
-		    	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} extras ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "xbps-install -y $_EXTRAS"           "$err_not_fatal"
+		    	sh_chroot_job "$(gettext "Instalando Extras's em") $dir_install"                                      "xbps-install -y $_EXTRAS"           "$err_not_fatal"
             fi
+    		sh_update_bashrc
+    		sh_grubInstall
  			sh_copy_scripts
 	   		sh_make_fstab
     		sh_make_user
@@ -3487,7 +3485,6 @@ sh_install() {
     		sh_update_rc_conf
     		sh_update_locale
 
-			sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-remove -oOy"
     		sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-reconfigure -f glibc-locales"
     		sh_update_wpa_suplicant
 
@@ -3534,6 +3531,7 @@ sh_install() {
             fi
 
 			sh_activating_services
+			sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-remove -oOy"
 			if ((LVM)); then
 				sh_chroot_job "Certificando que todos pacotes estejam configurados corretamente em $dir_install" "xbps-reconfigure -fa"
 			fi
