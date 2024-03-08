@@ -75,7 +75,7 @@ declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT
 ## begin packages
 ## X11
 declare -ga aXorg=('xorg' 'xinit' 'xterm' 'xorg-fonts' 'dbus' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs' 'xrdb')
-declare -ga aIconsAndThemes=('Adapta' 'adwaita-icon-theme' 'chili-void-beauty-icons' 'chili-void-wallpapers-xfce' 'chili-void-gnome-professional-theme' 'xfwm-axiom-theme')
+declare -ga aIconsAndThemes=('Adapta' 'adwaita-icon-theme' 'chili-void-beauty-icons' 'chili-void-wallpapers' 'chili-void-gnome-professional-theme' 'xfwm-axiom-theme')
 declare -ga aArchiverX=('xarchiver')
 declare -ga aBrowser=('firefox' 'firefox-i18n-pt-BR')
 declare -ga aBluetooth=('bluez' 'bluez-alsa' 'bluedevil' 'blueman' 'bluez-cups' 'bluez-deprecated' 'blueberry' 'gnome-bluetooth1')
@@ -101,7 +101,7 @@ declare -ga aUtility=('dialog' 'gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'pa
 			aUtility+=('nvme-cli')
 declare -ga _PKGS='neofetch pfetch bc bat fzf bash-completion vpm vsv xtools geoip geoipupdate #geoip-data'
 #--repository=https://chililinux.com/void/current
-declare -ga _EXTRAS='nano-syntax-highlighting chili-grub-void-theme'
+declare -ga _EXTRAS='nano-syntax-highlighting chili-void-grub-theme'
 ## end packages
 #
 declare _DEVICE='/dev/sdX'
