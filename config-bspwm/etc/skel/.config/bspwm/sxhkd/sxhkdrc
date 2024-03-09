@@ -100,7 +100,8 @@ super + m
 
 #alacritty
 super + Return
-    alacritty
+#    alacritty
+    xfce4-terminal
 
 #Xkill
 super + Escape
@@ -109,7 +110,8 @@ super + Escape
 #Keyboard dependent
 #alacritty
 super + KP_Enter
-	alacritty
+#	alacritty
+	xfce4-terminal
 
 #################################################################
 # SUPER + SHIFT KEYS
@@ -211,11 +213,13 @@ ctrl + alt + s
 
 #alacritty
 ctrl + alt + Return
-    alacritty
+#    alacritty
+	xfce4-terminal
 
 #alacritty
 ctrl + alt + t
-    alacritty
+#    alacritty
+	xfce4-terminal
 
 #Vivaldi
 ctrl + alt + v

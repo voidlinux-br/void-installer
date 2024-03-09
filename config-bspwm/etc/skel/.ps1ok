@@ -1,0 +1,26 @@
+# Cores - Substitua pelos códigos ANSI do seu terminal, se necessário
+GREEN="\033[1;32m"   # Verde
+RED="\033[1;31m"     # Vermelho
+YELLOW="\033[1;33m"  # Amarelo
+BLUE="\033[1;34m"    # Azul
+MAGENTA="\033[1;35m" # Magenta
+CYAN="\033[1;36m"    # Ciano
+RESET="\033[0m"      # Resetar as cores
+
+# Função para obter o status do último comando
+function get_exit_status() {
+  local status="$?"
+  if [ $status -eq 0 ]; then
+    echo -e "${GREEN}✔"
+  else
+    echo -e "${RED}✘${MAGENTA}${status}"
+  fi
+}
+
+if (( EUID != 0 )); then
+#  export PS1="$green\u$yellow@$cyan\h$red in $reset\w\n#"
+   export PS1="${GREEN}\u${YELLOW}@${CYAN}\h${RED}:\w\$(get_exit_status) ${RESET}\$ "
+else
+#  export PS1="$red\u$yellow@$cyan\h$red in $reset\w\n#"
+   export PS1="${RED}\u${YELLOW}@${CYAN}\h${RED}:\w\$(get_exit_status) ${RESET}# "
+fi

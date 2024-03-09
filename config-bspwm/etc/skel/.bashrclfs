@@ -1,0 +1,131 @@
+#sudo ip link set enp2s0 up
+#sudo SYSTEMD_LOG_LEVEL=debug /lib/systemd/systemd-networkd
+
+#source /etc/bashrc
+#source ~/.bashrcfull
+#source /usr/share/fetch/core.sh
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/packages/scratchpkg:$PATH"
+#export PS1='${chroot:+($debian_chroot)}\u@\h:\$\[\033[01;34m\]\w\[\e[1;31m\]\$ \[\033[00m\]'
+#export PS1="\e[32;1m\u \e[33;1mâ†’ \e[36;1m\h \e[37;0m\w\n\e[35;1mâ# \e[m"
+#export PS1="[ $green\u$yellow@$cyan\h$yellow\w$magenta ] # "
+#export PS1="$green\u$yellow@$cyan\h$red in $reset\w\n#"
+
+#python setup.py install --prefix=/usr --root="$pkgdir" --optimize=1
+#DESTDIR=$pkgdir ninja install
+#make prefix=$repo/usr MANDIR=$repo/usr/share/man/man1  -f unix/Makefile install
+
+set +h
+umask 022
+#LFS=/mnt/lfs
+LFS=/packages
+LC_ALL=pt_BR.UTF8
+#LC_ALL=POSIX
+LFS_TGT=$(uname -m)-lfs-linux-gnu
+if [ ! -L /bin ]; then PATH=/bin:$PATH; fi
+CONFIG_SITE=$LFS/usr/share/config.site
+export LFS LC_ALL LFS_TGT CONFIG_SITE
+export MAKEFLAGS='-j8'
+alias dir="ls -la --color=auto"
+alias ed=nano
+alias ddel="find -name $1 | xargs rm -fvR"
+alias untar="tar -xvf"
+set +o noclobber    #liberar  substituicao de arquivo existente. operator >| ignore the noclobbeer
+alias dirt="la -h -ls -Sr -rt --color=auto"
+alias dirm="ls -h -ls -Sr --color=auto"
+alias ed=nano
+alias xcopy="cp -Rpva"
+alias cdg="cd /repo/"
+alias cdf="cd /var/cache/fetch/"
+alias cda="cd /var/cache/fetch/archives/"
+alias cds="cd /var/cache/fetch/search/"
+alias cls=clear
+alias md=mkdir
+alias del=rm
+export repo
+
+manzip() {
+	log_wait_msg "Gziping arquivos man files..."
+	pushd $repo
+	find $repo/usr/share/man/ -iname '*[0-9]' -type f -exec gzip -9 -f {} \;
+	popd
+}
+
+mk() {
+   LC_ALL=POSIX
+	BASE=$(basename $PWD)
+	PKG=$LFS/repo/$BASE-1-x86_64
+   repo=$PKG
+   mkdir -p $repo
+	make -j8 "$@"
+   make -j8 "$@" DESTDIR=$LFS install
+   make -j8 "$@" DESTDIR=$PKG install
+	pushd $PKG
+      log_wait_msg "Gziping arquivos man files..."
+      find $repo/usr/share/man/ -iname '*[0-9]' -type f -exec gzip -9 -f {} \;
+		fetch -Sg -f
+		fetch -C
+      cd ..
+      fetch -Sl $PKG --noconfirm
+	popd
+   LC_ALL=pt_BR.UTF8
+}
+
+mkb() {
+   LC_ALL=POSIX
+	pushd ..
+		BASE=$(basename $PWD)
+	popd
+	PKG=$LFS/repo/$BASE-1-x86_64
+   repo=$PKG
+	make -j8 "$@"
+   make -j8 "$@" DESTDIR=$LFS install
+   make -j8 "$@" DESTDIR=$PKG install
+	pushd $PKG
+      log_wait_msg "Gziping arquivos man files..."
+      find $repo/usr/share/man/ -iname '*[0-9]' -type f -exec gzip -9 -f {} \;
+		fetch -Sg -f
+		fetch -C
+      cd ..
+      fetch -Sl $PKG --noconfirm
+	popd
+   LC_ALL=pt_BR.UTF8
+}
+
+mki() {
+   LC_ALL=POSIX
+	BASE=$(basename $PWD)
+	PKG=$LFS/repo/$BASE-1-x86_64
+   repo=$PKG
+   mkdir -p $repo
+   make -j8 "$@" DESTDIR=$PKG install
+	pushd $PKG
+      log_wait_msg "Gziping arquivos man files..."
+      find $repo/usr/share/man/ -iname '*[0-9]' -type f -exec gzip -9 -f {} \;
+		fetch -Sg -f
+		fetch -C
+      cd ..
+      fetch -Sl $PKG --noconfirm
+	popd
+   LC_ALL=pt_BR.UTF8
+}
+
+mkbi() {
+   LC_ALL=POSIX
+	pushd ..
+		BASE=$(basename $PWD)
+	popd
+	PKG=$LFS/repo/$BASE-1-x86_64
+   repo=$PKG
+   make -j8 "$@" DESTDIR=$PKG install
+	pushd $PKG
+      log_wait_msg "Gziping arquivos man files..."
+      find $repo/usr/share/man/ -iname '*[0-9]' -type f -exec gzip -9 -f {} \;
+		fetch -Sg -f
+		fetch -C
+      cd ..
+      fetch -Sl $PKG --noconfirm
+	popd
+   LC_ALL=pt_BR.UTF8
+}
+
+#. ~/.bashrckali
