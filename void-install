@@ -1738,6 +1738,7 @@ sh_bspwmminimal() {
 	local apkgs=(bspwm polybar sxhkd dunst flameshot picom feh dmenu lua wmctrl compton mpd)
 	      apkgs+=(font-weather-icons font-awesome5 noto-fonts-cjk hsetroot lxappearance)
 	      apkgs+=(rofi gtk-engine-murrine gtk2-engines)
+	      apkgs+=(chili-void-bspwm-skel)
 
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Bspwm ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${apkgs[*]}"
 }
