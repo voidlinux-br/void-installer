@@ -1,0 +1,64 @@
+# Nome do workflow
+name: build-iso
+
+# Gatilhos para o workflow
+on:
+  workflow_dispatch:  # Permite a execução manual do workflow
+    inputs:
+      debug_enabled:  # Input para habilitar o modo de depuração
+        type: boolean
+        description: 'With TMATE'
+        required: false
+        default: false
+
+  schedule:  # Executa automaticamente toda sexta-feira às 05:00
+    - cron:  '0 5 * * 5'
+
+  repository_dispatch:  # Permite a execução através de eventos de webhook
+    types:
+      - webhook
+      - '**'
+
+# Jobs do workflow
+jobs:
+  # Job para preparar a release
+  prepare-release:
+    runs-on: ubuntu-20.04  # Define a máquina virtual a ser usada
+    steps:
+      - id: time
+        uses: nanzm/get-time-action@v1.1  # Ação para obter o tempo atual
+        with:
+          format: 'YYYY-MM-DD_HH-mm'
+    outputs:
+      release_tag: ${{ steps.time.outputs.time }}  # Saída do job
+
+  # Job para construir a release
+  build-release:
+    runs-on: ubuntu-20.04  # Define a máquina virtual a ser usada
+    needs: [prepare-release]  # Depende do job prepare-release
+    strategy:
+      matrix:
+        NAME: [biglinux] # Define o nome do SO
+        EDITION: [xfce] # Define a edição
+        MANJAROBRANCH: [testing] # Define a branch do Manjaro (stable, testing ou unstable)
+        BIGBRANCH: [testing] # Define a branch do Biglinux (stable ou testing)
+        KERNEL: [latest] # Define a versão do kernel (atualLts, latest)
+
+    steps:
+      - name: Build and Upload GitHub
+        uses: chililinux/chili-void-bspwm-skel@main  # Ação para construir e fazer upload da ISO
+        with:
+          name: ${{ matrix.name }}
+          edition: ${{ matrix.edition }}
+          manjarobranch: ${{ matrix.manjarobranch }}
+          bigbranch: ${{ matrix.bigbranch }}
+          kernel: ${{ matrix.kernel }}
+          extrarepo: ${{ matrix.extrarepo }}
+          iso-profiles-repo: 'https://github.com/talesam/iso-profiles'
+          release-tag: ${{ needs.prepare-release.outputs.release_tag }}
+          tmate: ${{ inputs.debug_enabled }}
+
+      # Configuração do TMATE para sessão de depuração
+      - name: Setup TMATE Session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
