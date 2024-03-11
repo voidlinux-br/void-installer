@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2024/03/08
+#  Altered: 2024/03/10
 #
 #  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -44,7 +44,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.6.08-20240308'
+readonly _VERSION_='2.7.10-20240310'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -56,7 +56,7 @@ readonly _TARBALL_ROOTFS=void-x86_64-base-custom-current.tar.xz
 #
 declare -gi ncounter=0 njobs=73
 declare -gi quiet=0 grafico=0
-declare -gi LAUTO=1 LINSTALL=0 LCHROOT=0 LBIND=0 LMKPART=0 LEFI=0 LBIOS=1 LMKPARTED=0 LOSPROBER=0 LFDE=0 LVM=0 LFS=0 LPARTITION=0 LTABLE=0
+declare -gi LAUTO=1 LINSTALL=0 LCHROOT=0 LBIND=0 LMKPART=0 LEFI=0 LBIOS=1 LMKPARTED=0 LOSPROBER=0 LFDE=0 LVM=0 LFS=0 LPARTITION=0 LTABLE=0 LCUSTOM=0
 declare -gA AsUser=([cpass]='void' [cpassroot]='voidlinux' [chostname]='voidlinux' [cgroups]='wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder')
 declare -gA Amntpoint
 declare -gA AmntpointFDE
@@ -71,41 +71,72 @@ declare -gA AConfMirror=([_SOURCE]='network' [_MIRROR]='repo - fastly.voidlinux.
 declare -gA AConfWifi=([_NETWORK]='wifi_ssid' [_PASSWORD]='wifi_password')
 declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
-#
-## begin packages
-## X11
-declare -ga aXorg=('xorg' 'xinit' 'xterm' 'xorg-fonts' 'dbus' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs' 'xrdb')
-declare -ga aIconsAndThemes=('Adapta' 'adwaita-icon-theme' 'chili-void-beauty-icons' 'chili-void-wallpapers' 'chili-void-gnome-professional-theme' 'xfwm-axiom-theme')
-declare -ga aArchiverX=('xarchiver')
-declare -ga aBrowser=('firefox' 'firefox-i18n-pt-BR' 'brave-bin')
-declare -ga aBluetooth=('bluez' 'bluez-alsa' 'bluedevil' 'blueman' 'bluez-cups' 'bluez-deprecated' 'gnome-bluetooth1' 'blueberry')
-declare -ga aDisplaymanager=('lxdm' 'lxdm-theme-vdojo')
-declare -ga aFilemanager=('Thunar' 'thunar-archive-plugin' 'thunar-volman' 'pcmanfm' 'octoxbps')
-declare -ga aFont+=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font' 'ttf-ubuntu-font-family' 'font-iosevka')
-			aFont+=('unicode-emoji' 'noto-fonts-emoji' 'font-emoji-one-color' 'unicode-emoji' 'nerd-fonts-symbols-ttf' 'font-hack-ttf')
-            aFont+=('font-awesome' 'font-awesome5' 'font-awesome6')
-declare -ga aPulseaudio=('pulseaudio' 'pavucontrol' 'pasystray' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
-declare -ga aPipewire=('pipewire' 'wireplumber' 'pulseaudio-utils' 'alsa-pipewire' 'libspa-bluetooth' 'libjack-pipewire')
-declare -ga aPerfumery=('conky' 'setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notification-daemon')
-declare -ga aPrinter=('cups' 'system-config-printer' 'system-config-printer-udev' 'splix' 'samsung-unified-driver' 'brother-brlaser' 'cups-pdf')
-declare -ga aTerminal=('rxvt-unicode' 'xfce4-terminal' 'cool-retro-term')
-declare -ga aEditorX=('kate' 'mousepad')
-declare -ga aMicrocode=('intel-ucode' 'linux-firmware-amd')
-declare -ga aNetworkX=('network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda')
-declare -ga aUtilityX=('mate-calc' 'xkill' 'menulibre' 'mugshot' 'ocs-url' 'remmina' 'remmina-kwallet')
-## tty
-declare -ga aDaemons=('NetworkManager' 'acpi' 'acpid' 'gpm' 'connman' 'irqbalance' 'avahi')
-declare -ga aArchiverTty=('unrar' 'zip' 'p7zip' 'unzip' 'bzip2')
-declare -ga aDownloader=('curl' 'wget' 'git' 'lynx')
-declare -ga aEditorTxt=('nano')
-declare -ga aUtility=('dialog' 'gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted' 'rsync' 'duf' 'dfc' 'tmate' 'inetutils' 'iputils')
-			aUtility+=('cifs-utils' 'ntfs-3g' 'btop' 'htop' 'parallel' 'evtest' 'bubblewrap' 'pacman' 'fakeroot' 'bsdtar' 'exa' 'cmatrix')
-			aUtility+=('nvme-cli')
-declare -ga _PKGS='neofetch pfetch bc bat fzf bash-completion vpm vsv xtools geoip geoipupdate #geoip-data'
-#--repository=https://chililinux.com/void/current
-declare -ga _EXTRAS='nano-syntax-highlighting chili-void-grub-theme pigz'
-## end packages
-#
+
+sh_choose_packages() {
+	## begin packages
+
+	declare -ga aXorg=('xorg' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs' 'xrdb')
+	declare -ga aPulseaudio=('pulseaudio' 'pavucontrol' 'pasystray' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
+	declare -ga aPipewire=('pipewire' 'wireplumber' 'pulseaudio-utils' 'alsa-pipewire' 'libspa-bluetooth' 'libjack-pipewire')
+	if ((LCUSTOM)); then
+		## X11
+		declare -ga aIconsAndThemes=('Adapta' 'adwaita-icon-theme' 'chili-void-beauty-icons' 'chili-void-wallpapers' 'chili-void-gnome-professional-theme' 'xfwm-axiom-theme')
+		declare -ga aArchiverX=('xarchiver')
+		declare -ga aBrowser=('firefox' "firefox-i18n-$(sh_get_language_without_utf8)" 'brave-bin')
+		declare -ga aBluetooth=('bluez' 'bluez-alsa' 'bluedevil' 'blueman' 'bluez-cups' 'bluez-deprecated' 'gnome-bluetooth1' 'blueberry')
+		declare -ga aDisplaymanager=('lxdm' 'lxdm-theme-vdojo')
+		declare -ga aFilemanager=('Thunar' 'thunar-archive-plugin' 'thunar-volman' 'pcmanfm' 'octoxbps')
+		declare -ga aFont+=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font' 'ttf-ubuntu-font-family' 'font-iosevka')
+					aFont+=('unicode-emoji' 'noto-fonts-emoji' 'font-emoji-one-color' 'unicode-emoji' 'nerd-fonts-symbols-ttf' 'font-hack-ttf')
+		            aFont+=('font-awesome' 'font-awesome5' 'font-awesome6')
+		declare -ga aPerfumery=('conky' 'setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notification-daemon')
+		declare -ga aPrinter=('cups' 'system-config-printer' 'system-config-printer-udev' 'splix' 'samsung-unified-driver' 'brother-brlaser' 'cups-pdf')
+		declare -ga aTerminal=('rxvt-unicode' 'xfce4-terminal' 'cool-retro-term')
+		declare -ga aEditorX=('kate' 'mousepad')
+		declare -ga aMicrocode=('intel-ucode' 'linux-firmware-amd')
+		declare -ga aNetworkX=('network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda')
+		declare -ga aUtilityX=('mate-calc' 'xkill' 'menulibre' 'mugshot' 'ocs-url' 'remmina' 'remmina-kwallet')
+		## tty
+		declare -ga aDaemons=('NetworkManager' 'acpi' 'acpid' 'gpm' 'connman' 'irqbalance' 'avahi')
+		declare -ga aArchiverTty=('unrar' 'zip' 'p7zip' 'unzip' 'bzip2')
+		declare -ga aDownloader=('curl' 'wget' 'git' 'lynx')
+		declare -ga aEditorTxt=('nano')
+		declare -ga aUtility=('dialog' 'gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted' 'rsync' 'duf' 'dfc' 'tmate' 'inetutils' 'iputils')
+					aUtility+=('cifs-utils' 'ntfs-3g' 'btop' 'htop' 'parallel' 'evtest' 'bubblewrap' 'pacman' 'fakeroot' 'bsdtar' 'exa' 'cmatrix')
+					aUtility+=('nvme-cli')
+		declare -ga _PKGS='neofetch pfetch bc bat fzf bash-completion vpm vsv xtools geoip geoipupdate #geoip-data'
+		#--repository=https://chililinux.com/void/current
+		declare -ga _EXTRAS='nano-syntax-highlighting chili-void-grub-theme pigz'
+		## end packages
+	else
+		## X11
+		declare -ga aIconsAndThemes=('Adapta' 'adwaita-icon-theme')
+		declare -ga aArchiverX=()
+		declare -ga aBrowser=('firefox' "firefox-i18n-$(sh_get_language_without_utf8)")
+		declare -ga aBluetooth=()
+		declare -ga aDisplaymanager=('lxdm')
+		declare -ga aFilemanager=('Thunar' 'pcmanfm')
+		declare -ga aFont+=()
+		declare -ga aPerfumery=()
+		declare -ga aPrinter=()
+		declare -ga aTerminal=('xfce4-terminal')
+		declare -ga aEditorX=()
+		declare -ga aMicrocode=()
+		declare -ga aNetworkX=('network-manager-applet')
+		declare -ga aUtilityX=('gettext')
+		## tty
+		declare -ga aDaemons=('NetworkManager')
+		declare -ga aArchiverTty=()
+		declare -ga aDownloader=()
+		declare -ga aEditorTxt=()
+		declare -ga aUtility=()
+		declare -ga _PKGS=''
+		#--repository=https://chililinux.com/void/current
+		declare -ga _EXTRAS=''
+		## end packages
+	fi
+}
+
 declare _DEVICE='/dev/sdX'
 declare _FILESYSTEM='ext4'
 declare _AUDIOSERVER='Pulseaudio'
@@ -175,7 +206,7 @@ sh_setEnvironment() {
 	: "${DSK_PARTTYPENAME=9}"
 
 	# flag languages
-	: PT_BR=0
+	: "${PT_BR=0}"
 	: "${EN_US=1}"
 	: "${DE_DE=2}"
 	: "${FR_FR=3}"
@@ -261,6 +292,7 @@ sh_touchConf() {
 		declare -p AConfMirror
 		declare -p AConfWifi
 		declare -p AConfFde
+		declare -p LCUSTOM
 		#	declare -p AARRAY_DSK_DEVICES
 		#	declare -p AARRAY_PART_DEVICES
 	} | sed 's/declare -/&g/' >>"$app_conf"
@@ -280,6 +312,75 @@ $cms1\n$cmsg2\n\
 $cmsg3$cmsg4" 11 68
 	fi
 }
+
+sh_lang_he() {
+    grep ^he <<<"$LANG"
+    return "$?"
+}
+export -f sh_lang_he
+
+sh_get_locale() {
+    grep _ <(locale -a) | head -1 | cut -c1-5
+}
+export -f sh_get_locale
+
+sh_get_code_lang() {
+    local LangFilter="${LANG%%.*}"
+    local LangFilterLowercase="${LangFilter,,}"
+    local LangClean="${LangFilterLowercase%%_*}"
+    local LangCountry="${LangFilterLowercase#*_}"
+    local LangFilterLowercaseModified="${LangFilterLowercase//_/-}"
+    echo "$LangFilterLowercaseModified"
+}
+export -f sh_get_code_lang
+
+sh_get_lang() {
+    echo "$LANG"
+}
+export -f sh_get_lang
+
+sh_get_language_without_utf8() {
+	local LangFilter="${LANG%%.*}"
+	local LangFilterModified="${LangFilter//_/-}"
+	echo "$LangFilterModified"
+}
+export -f sh_get_language_without_utf8
+
+sh_get_code_language() {
+    local LangFilter="${LANGUAGE%%.*}"
+    local LangFilterLowercase="${LangFilter,,}"
+    local LangClean="${LangFilterLowercase%%_*}"
+    local LangCountry="${LangFilterLowercase#*_}"
+    local LangFilterLowercaseModified="${LangFilterLowercase//_/-}"
+    echo "$LangFilterLowercaseModified"
+}
+export -f sh_get_code_language
+
+sh_get_language() {
+    echo "$LANGUAGE"
+}
+export -f sh_get_language
+
+sh_getcpu() {
+    #awk -F ':' 'NR==1 {print $2}' <<< "$(grep 'model name' /proc/cpuinfo)"
+    grep 'model name' /proc/cpuinfo | awk -F ':' 'NR==1 {print $2}'
+}
+export -f sh_getcpu
+
+sh_getmemory() {
+    awk -F' ' 'NR==2 {print $2}' < <(free -h)
+}
+export -f sh_getmemory
+
+sh_getvga() {
+	awk -F: '/VGA/ {print $3}' < <(lspci)
+}
+export -f sh_getvga
+
+sh_catecho() {
+    echo "$(<"$1")"
+}
+export -f sh_catecho
 
 sh_disablePrintk() {
 	if [[ -w /proc/sys/kernel/printk ]]; then
@@ -1114,10 +1215,12 @@ install_skel_user() {
 sh_update_bashrc() {
 	local user="${AsUser[cuser]}"
 
-	last_msg="${cmsg_Ajustando[$LC_DEFAULT]} bashrc ${cmsg_Em[$LC_DEFAULT]} $dir_install"
-	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	install_skel_user
-	evaluate_retval "$?" "$err_not_fatal"
+	if ((LCUSTOM)); then
+		last_msg="${cmsg_Ajustando[$LC_DEFAULT]} bashrc ${cmsg_Em[$LC_DEFAULT]} $dir_install"
+		msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+		install_skel_user
+		evaluate_retval "$?" "$err_not_fatal"
+	fi
 }
 
 sh_update_wpa_suplicant() {
@@ -1683,16 +1786,38 @@ sh_plasmaminimal() {
 }
 
 sh_xfce4minimal() {
-	local apkgs=(xfce4 xfce4-appfinder xfce4-battery-plugin xfce4-clipman-plugin xfce4-cpufreq-plugin
-				 xfce4-cpugraph-plugin xfce4-datetime-plugin xfce4-dict xfce4-diskperf-plugin xfce4-fsguard-plugin
-				 xfce4-genmon-plugin xfce4-mailwatch-plugin xfce4-mpc-plugin xfce4-netload-plugin xfce4-notifyd
-				 xfce4-panel xfce4-pulseaudio-plugin xfce4-power-manager xfce4-screensaver xfce4-session xfce4-settings
-				 xfce4-screenshooter xfce4-sensors-plugin xfce4-systemload-plugin xfce4-taskmanager xfce4-time-out-plugin
-				 xfce4-timer-plugin xfce4-verve-plugin xfce4-whiskermenu-plugin xfce4-weather-plugin xfce4-wavelan-plugin
-				 xfce4-xkb-plugin
-				 plank
-				 chili-void-xfce-skel
-				 )
+	local apkgs=(xfce4 Thunar thunar-volman elogind exo mousepad parole ristretto tumbler upower xdg-user-dirs-gtk xfce-polkit)
+		  apkgs+=(xfce4-notifyd xfce4-panel xfce4-power-manager xfce4-screensaver xfce4-session xfce4-settings xfce4-taskmanager)
+		  apkgs+=(xfce4-terminal xfconf xfdesktop xfwm4-themes xfwm4)
+
+	if ((LCUSTOM)); then
+		apkgs+=(xfce4-battery-plugin
+				xfce4-clipman-plugin
+				xfce4-cpufreq-plugin
+				xfce4-cpugraph-plugin
+				xfce4-datetime-plugin
+				xfce4-screenshooter
+				xfce4-dict
+				xfce4-diskperf-plugin
+				xfce4-fsguard-plugin
+				xfce4-genmon-plugin
+				xfce4-mailwatch-plugin
+				xfce4-mpc-plugin
+				xfce4-netload-plugin
+				xfce4-pulseaudio-plugin
+				xfce4-sensors-plugin
+				xfce4-systemload-plugin
+				xfce4-time-out-plugin
+				xfce4-timer-plugin
+				xfce4-verve-plugin
+				xfce4-whiskermenu-plugin
+				xfce4-weather-plugin
+				xfce4-wavelan-plugin
+				xfce4-xkb-plugin
+				plank
+				chili-void-xfce-skel
+			 )
+	fi
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Xfce4 ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${apkgs[*]}"
 }
 
@@ -1927,17 +2052,16 @@ sh_chooseSource() {
 	Asource["networkFull"]="${cmsg_BaixadoDoRepositorioOficialFull[$LC_DEFAULT]}"
 	cextra="${cmsg_ExtraNotIso[$LC_DEFAULT]}"
 
+	_SOURCE=${AConfMirror[_SOURCE]}
 	for x in "${!Asource[@]}"; do
-		Aflag[$x]='off'
-		if sh_getIso; then
-			Aflag["local"]='on'
-			cextra="${cmsg_ExtraIso[$LC_DEFAULT]}"
-			_SOURCE='local'
-			AConfMirror[_SOURCE]='local'
+		if [[ $_SOURCE = $x ]] ; then
+			Aflag[$x]='on'
 		else
-			Aflag["network"]='on'
-			_SOURCE='network'
-			AConfMirror[_SOURCE]='network'
+			Aflag[$x]='off'
+		fi
+		if sh_getIso; then
+			cextra="${cmsg_ExtraIso[$LC_DEFAULT]}"
+		else
 			if ! sh_checkcommand "${XBPS_INSTALL_CMD}"; then
 				cextra="${cmsg_ExtraNotIso[$LC_DEFAULT]}\n${cmsg_ExtraNotHostVoid[$LC_DEFAULT]}"
 			else
@@ -1946,9 +2070,9 @@ sh_chooseSource() {
 		fi
 		array+=("$x" "${Asource[$x]}" "${Aflag[$x]}")
 	done
-while true;
-do
 
+	while true;
+	do
 	src=$(${DIALOG} --title "=== ${cmsg_Source[LC_DEFAULT]^^} ===" \
 		--default-item "$_SOURCE" \
 		--stdout \
@@ -2896,12 +3020,12 @@ sh_choosewm() {
 
 	aWm[tty]="${cmsg_tty[LC_DEFAULT]}"
 	aWm[awesome]="Awesome"
+	aWm[blackbox]="Blackbox"
 	aWm[bspwm]="Tiling window manager based on binary space partitioning"
 	aWm[dwm]="Dwm"
-	aWm[blackbox]="Blackbox"
 	aWm[fluxbox]="Fluxbox"
-	aWm[i3wm]="i3wm"
 	aWm[gnome]="Gnome"
+	aWm[i3wm]="i3wm"
 	aWm[lxde]="The 'Lightweight X11 Desktop Environment'"
 	aWm[lxqt]="The 'Lightweight Qt Desktop Environment'"
 	aWm[mate]="Mate"
@@ -2950,6 +3074,13 @@ sh_choosewm() {
 		return
 		;;
 	esac
+	LCUSTOM=$false
+	if conf "=== ${cmsg_Wm[LC_DEFAULT]^^} ===" \
+			"\n${BOLD}${WHITE}$(gettext "Uma instalação customizada irá instalar pacotes extras e também")" \
+			"\n$(gettext "fazer diversas configurações, evitando faze-las manualmente posteriormente.")\n" \
+			"\n${BOLD}${RED}$(gettext "Customizar a instalação?")\n\n"; then
+		LCUSTOM=$true
+	fi
 	_WINDOWMANAGER=($(strtoarray "$wm"))
 	LWM=$true
 }
@@ -3406,16 +3537,24 @@ sh_extract_root_fs() {
 }
 
 sh_install() {
-	local abase=(zstd xz cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd)
-	local akernel=(linux dbus)
-	local afirmware=(wifi-firmware)
-	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils grub-terminus grub-btrfs-runit)
 	local start_datetime
 	local end_datetime
+	local akernel=(linux dbus)
+	local afirmware=(wifi-firmware)
+	if ((LCUSTOM)); then
+	local abase=(zstd xz cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd)
+	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils grub-terminus grub-btrfs-runit)
+	else
+	local abase=(cryptsetup lvm2 wireless_tools wpa_supplicant)
+	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils)
+	fi
 
 	ncounter=0
 	sh_checkInstall || return 1
+#	dialog --title $BOOTLOG --begin 1 0 --tailbox "$BOOTLOG" 20 0 &
+	reset
 	sh_checkNet "$url_mirror" || return 1
+	sh_choose_packages
 	start_time=$(date +%s) # Obtém o tempo de início em segundos desde a época Unix
 	start_datetime=$(date)
 
@@ -3464,7 +3603,7 @@ sh_install() {
    				sh_chroot_job "$(gettext "Instalando Archiver's tty em") $dir_install"                                "${XBPS_INSTALL_UNPACK_ONLY} ${aArchiverTty[*]}" "$err_not_fatal" "$err_not_fatal"
 		    	sh_chroot_job "$(gettext "Instalando Extras's em") $dir_install"                                      "${XBPS_INSTALL_UNPACK_ONLY} $_EXTRAS"           "$err_not_fatal"
             fi
-    		sh_update_bashrc
+   			sh_update_bashrc
     		sh_grubInstall
  			sh_copy_scripts
 	   		sh_make_fstab
@@ -3538,6 +3677,7 @@ sh_install() {
 		fi
 		exit 0
 	} # > out & sh_monitor
+#	killall dialog
 }
 
 sh_time_elapsed() {
