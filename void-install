@@ -4,7 +4,7 @@
 
 #  void-install
 #  Created: 2022/12/24
-#  Altered: 2024/03/10
+#  Altered: 2024/03/11
 #
 #  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -44,7 +44,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.7.10-20240310'
+readonly _VERSION_='2.7.11-20240311'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -1200,7 +1200,30 @@ sh_update_rc_conf() {
 }
 
 install_skel_user() {
-    local aname=('config-common' 'config-xfce' 'config-bspwm')
+    local aname=('config-common')
+    local x
+
+	for x in "${_WINDOWMANAGER[@]}"; do
+		case "$x" in
+		"tty") : ;;
+		"awesome")			aname+=(config-awesome);;
+		"bspwm") 			aname+=(config-bspwm);;
+		"blackbox")			aname+=(config-blackbox);;
+		"dwm") 				aname+=(config-dwm);;
+		"enlightenment")	aname+=(config-enlightenment);;
+		"fluxbox")			aname+=(config-fluxbox);;
+		"openbox")			aname+=(config-openbox);;
+		"gnome")			aname+=(config-gnome);;
+		"plasma")			aname+=(config-plasma);;
+		"xfce4")			aname+=(config-xfce);;
+		"i3wm")				aname+=(config-i3wm);;
+		"sway")				aname+=(config-sway);;
+		"twm")				aname+=(config-twm);;
+		"mate")				aname+=(config-mate);;
+		"lxde")				aname+=(config-lxde);;
+		"lxqt")				aname+=(config-lxqt);;
+		esac
+	done
 
     #skel
 	for path in "${aname[@]}"; do
@@ -1213,8 +1236,6 @@ install_skel_user() {
 }
 
 sh_update_bashrc() {
-	local user="${AsUser[cuser]}"
-
 	if ((LCUSTOM)); then
 		last_msg="${cmsg_Ajustando[$LC_DEFAULT]} bashrc ${cmsg_Em[$LC_DEFAULT]} $dir_install"
 		msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
@@ -1867,6 +1888,12 @@ sh_bspwmminimal() {
 
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Bspwm ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${apkgs[*]}"
 }
+
+sh_enlightenmentminimal() {
+	local apkgs=(enlightenment efl exquisite acpi acpid connman)
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Bspwm ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${apkgs[*]}"
+}
+
 
 sh_dwmminimal() {
 	local apkgs=(dwm)
@@ -3023,6 +3050,7 @@ sh_choosewm() {
 	aWm[blackbox]="Blackbox"
 	aWm[bspwm]="Tiling window manager based on binary space partitioning"
 	aWm[dwm]="Dwm"
+	aWm[enlightenment]="Enlightenment desktop shell"
 	aWm[fluxbox]="Fluxbox"
 	aWm[gnome]="Gnome"
 	aWm[i3wm]="i3wm"
@@ -3056,6 +3084,7 @@ sh_choosewm() {
 		dwm "${aWm[dwm]}" "${aFlag[dwm]}" \
 		blackbox "${aWm[blackbox]}" "${aFlag[blackbox]}" \
 		fluxbox "${aWm[fluxbox]}" "${aFlag[fluxbox]}" \
+		enlightenment "${aWm[enlightenment]}" "${aFlag[enlightenment]}" \
 		gnome "${aWm[gnome]}" "${aFlag[gnome]}" \
 		i3wm "${aWm[i3wm]}" "${aFlag[i3wm]}" \
 		lxde "${aWm[lxde]}" "${aFlag[lxde]}" \
@@ -3490,6 +3519,21 @@ sh_touch_keys() {
 </plist>
 EOF
 
+	cat > keys/76:75:c9:75:f1:97:35:78:3c:f9:73:d4:f6:04:0b:59.plist <<-EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>public-key</key>
+	<data>LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQm9qQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FZOEFNSUlCaWdLQ0FZRUFxRlJBUnpFeVJMMlVJdU1GWkMwOApmSURJUWZrUzVNczRxOXFLUFhQdHMyN01mbDdDNFdoSHZYb2h2MnNKSzV1SThlOXM3OEJUL0gvbTJxallMWjZJCnF1NmNrZFJUZzNpakNYbTFqY21wRGh1eVpqVW5xaUdPcnBjZUpaTEtUZEYxQWRvZTI4NGRTTW92ZUZldVdlMkIKbkI1aml1ZGg4Szg2WThPdXptbldTN29PTWgzK3dMMEQrNHlGRVRrTTF0ckZCUC9GOUprZEx2dHVONWwyUmVJUQpYa0I5NHpIQ3l5dXkyUC9USnlQOFphSG0vckRwV2JJbUZLMzhsa05IcEczS1ZWYnl5bnFkZyszenJnTHNlR0ZXCnBnelFSdTdON3ByRGIvbDVQV3JSQ0tEUDJyWCtKZHFyWXBrUXh6SDNvTnpkZTd2cGFqejU2c2tzaDhUaHBIY2MKU2g3eTN2ZEJ3dHpDZFlqMkd0RlJaRzB4S21TY24rQ0hLR3dGQTdwdkkzVlVISXNLMm9IazlkSWlwZjkxbFMxVQp4ZUo5Y3RlQmdYZFJ0S0E3QXVTVTN0VzFRak1pNGJrWWVxZ1NUTFJueUxtbVYvR2MyT3BEMktOQVpuWnBIM2RrCnNtV25ibC9rZ05qa2NLTVQ2Rm5hSjdYNlJNdHZ4Mi9CWlcwMy9jQ25nRTR6QWdNQkFBRT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==</data>
+	<key>public-key-size</key>
+	<integer>3072</integer>
+	<key>signature-by</key>
+	<string>Vilmar Catafesta &lt;vcatafesta@gmail.com&gt;</string>
+</dict>
+</plist>
+EOF
+
 	cat > keys/cc:e6:28:46:ff:19:07:a2:f0:4b:14:15:4f:89:1b:bc.plist <<-EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -3639,8 +3683,9 @@ sh_install() {
 					sh_bspwmminimal
 #					sh_make_bspwm_conf
 					;;
-				"dwm") sh_dwmminimal ;;
 				"blackbox") sh_blackboxminimal ;;
+				"dwm") sh_dwmminimal ;;
+				"enlightenment") sh_enlightenmentminimal ;;
 				"fluxbox") sh_fluxboxminimal ;;
 				"openbox") sh_openboxminimal ;;
 				"gnome") sh_gnomeminimal ;;

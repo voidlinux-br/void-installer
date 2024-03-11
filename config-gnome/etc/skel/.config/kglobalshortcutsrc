@@ -1,0 +1,21 @@
+[ActivityManager]
+_k_friendly_name=Gerenciador de atividades
+switch-to-activity-45c46bc1-6ffa-481b-b4ad-309073c65c59=none,none,Alternar para a atividade "Padrão"
+
+[org.kde.krunner.desktop]
+RunClipboard=Alt+Shift+F2,Alt+Shift+F2,Executar comando no conteúdo da área de transferência
+_k_friendly_name=KRunner
+_launch=Alt+Space\tAlt+F2\tSearch,Alt+Space\tAlt+F2\tSearch,KRunner
+
+[org.kde.plasma.emojier.desktop]
+_k_friendly_name=Seletor de emoji
+_launch=Meta+.\tMeta+Ctrl+Alt+Shift+Space,Meta+.\tMeta+Ctrl+Alt+Shift+Space,Seletor de emoji
+
+[systemsettings.desktop]
+_k_friendly_name=Configurações do sistema
+_launch=Tools,Tools,Configurações do sistema
+kcm-kscreen=none,none,Configurações da tela
+kcm-lookandfeel=none,none,Tema global
+kcm-users=none,none,Usuários
+powerdevilprofilesconfig=none,none,Economia de energia
+screenlocker=none,none,Bloqueio de tela

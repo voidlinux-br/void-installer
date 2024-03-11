@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Instalador Void Linux
+Exec=start-install-void
+Terminal=false
+Type=Application
+X-GNOME-Autostart-Phase=Initialization
+X-GNOME-HiddenUnderSystemd=true
+X-KDE-autostart-phase=1
