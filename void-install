@@ -57,6 +57,7 @@ readonly _TARBALL_ROOTFS=void-x86_64-base-custom-current.tar.xz
 declare -gi ncounter=0 njobs=73
 declare -gi quiet=0 grafico=0
 declare -gi LAUTO=1 LINSTALL=0 LCHROOT=0 LBIND=0 LMKPART=0 LEFI=0 LBIOS=1 LMKPARTED=0 LOSPROBER=0 LFDE=0 LVM=0 LFS=0 LPARTITION=0 LTABLE=0 LCUSTOM=0
+declare -gi HYPRLAND=0
 declare -gA AsUser=([cpass]='void' [cpassroot]='voidlinux' [chostname]='voidlinux' [cgroups]='wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder')
 declare -gA Amntpoint
 declare -gA AmntpointFDE
@@ -267,22 +268,23 @@ sh_setEnvironment() {
 }
 
 sh_touchConf() {
+#		_WINDOWMANAGER=(${_WINDOWMANAGER[*]})
 	cat >"$app_conf" <<-EOF
 		######################################################################
 		# void-install.conf
 		# Gerado por void-install
 		######################################################################
-		_DEVICE=$_DEVICE
-		_BOOTLOADER=$_BOOTLOADER
-		_DISKTABLE=$_DISKTABLE
-		_WINDOWMANAGER=(${_WINDOWMANAGER[*]})
-		_WIFI_NETWORK=$_WIFI_NETWORK
-		_WIFI_PASSWORD=$_WIFI_PASSWORD
-		_SOURCE=$_SOURCE
-		_PKGS="$_PKGS"
-		_EXTRAS="$_EXTRAS"
+		DEVICE=$_DEVICE
+		BOOTLOADER=$_BOOTLOADER
+		DISKTABLE=$_DISKTABLE
+		WIFI_NETWORK=$_WIFI_NETWORK
+		WIFI_PASSWORD=$_WIFI_PASSWORD
+		SOURCE=$_SOURCE
+		PKGS="$_PKGS"
+		EXTRAS="$_EXTRAS"
 	EOF
 	{
+		declare -p _WINDOWMANAGER
 		declare -p AsUser
 		declare -p Amkfs
 		declare -p Amntpoint
@@ -293,6 +295,7 @@ sh_touchConf() {
 		declare -p AConfWifi
 		declare -p AConfFde
 		declare -p LCUSTOM
+		declare -p HYPRLAND
 		#	declare -p AARRAY_DSK_DEVICES
 		#	declare -p AARRAY_PART_DEVICES
 	} | sed 's/declare -/&g/' >>"$app_conf"
@@ -1212,16 +1215,17 @@ install_skel_user() {
 		"dwm") 				aname+=(config-dwm);;
 		"enlightenment")	aname+=(config-enlightenment);;
 		"fluxbox")			aname+=(config-fluxbox);;
-		"openbox")			aname+=(config-openbox);;
 		"gnome")			aname+=(config-gnome);;
-		"plasma")			aname+=(config-plasma);;
-		"xfce4")			aname+=(config-xfce);;
+		"hyprland")			aname+=(config-hyprland);;
 		"i3wm")				aname+=(config-i3wm);;
-		"sway")				aname+=(config-sway);;
-		"twm")				aname+=(config-twm);;
-		"mate")				aname+=(config-mate);;
 		"lxde")				aname+=(config-lxde);;
 		"lxqt")				aname+=(config-lxqt);;
+		"mate")				aname+=(config-mate);;
+		"openbox")			aname+=(config-openbox);;
+		"plasma")			aname+=(config-plasma);;
+		"sway")				aname+=(config-sway);;
+		"twm")				aname+=(config-twm);;
+		"xfce4")			aname+=(config-xfce);;
 		esac
 	done
 
@@ -1731,7 +1735,10 @@ sh_mount_fs() {
 sh_X11minimal() {
 	local apkgs=()
 	local aMedia=()
-	apkgs+=("${aXorg[@]}")
+
+	if ! ((HYPRLAND)); then
+		apkgs+=("${aXorg[@]}")
+	fi
 	apkgs+=("${aFont[@]}")
 	apkgs+=("${aDisplaymanager[@]}")
 	apkgs+=("${aTerminal[@]}")
@@ -1757,7 +1764,9 @@ sh_X11minimal() {
 	apkgs+=("${aEditorX[@]}")
 
 #	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"               "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${apkgs[*]}"
-	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Xorg ${cmsg_Em[$LC_DEFAULT]} $dir_install"          "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${aXorg[*]}"
+	if ! ((HYPRLAND)); then
+		sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Xorg ${cmsg_Em[$LC_DEFAULT]} $dir_install"          "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${aXorg[*]}"
+	fi
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Font's ${cmsg_Em[$LC_DEFAULT]} $dir_install"        "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${aFont[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} Icons's ${cmsg_Em[$LC_DEFAULT]} $dir_install"       "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${aIconsAndThemes[*]}" "$err_not_fatal"
 	sh_chroot_job "${cmsg_InstalandoMetaPacotes[$LC_DEFAULT]} DM's ${cmsg_Em[$LC_DEFAULT]} $dir_install"          "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${aDisplaymanager[*]}"
@@ -1843,7 +1852,7 @@ sh_xfce4minimal() {
 }
 
 sh_gnomeminimal() {
-	local apkgs=(gnome dconf-editor devhelp Endeavour evolution five-or-more four-in-a-row geary
+	local apkgs=(gnome gnome-apps dconf-editor devhelp Endeavour evolution five-or-more four-in-a-row geary
 		gedit ghex glade3 gnome-boxes gnome-builder gnome-chess gnome-connections
 		gnome-games-collection gnome-klotski gnome-mahjongg gnome-mime-data gnome-multi-writer
 		gnome-nettool gnome-nibbles gnome-recipes gnome-robots gnome-sound-recorder gnome-sudoku
@@ -1898,6 +1907,31 @@ sh_enlightenmentminimal() {
 sh_dwmminimal() {
 	local apkgs=(dwm)
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Dwm ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${apkgs[*]}"
+}
+
+sh_hyprlandminimal() {
+	local user="${AsUser[cuser]}"
+	local apkgs=(hyprland hyprland-protocols xdg-desktop-portal-hyprland dbus polkit seatd elogind mesa-dri)
+		  apkgs+=(hyprlang)
+		  apkgs+=(Waybar dunst kitty libnotify xdg-desktop-portal-gtk)
+		  #Wallpaper tool for Wayland compositors
+		  apkgs+=(swaybg) 		#Wallpaper tool for Wayland compositors
+		  apkgs+=(hyprpaper) 	#Fast wallpaper utility for wlroots compositors with IPC controls
+		  apkgs+=(mpvpaper) 	#Video wallpaper program for wlroots based wayland compositors
+		  #hyprland's default terminal
+		  apkgs+=(kitty alacritty)
+		  #other great options
+#		  apkgs+=(alacritty wezterm)
+		  #most popular option
+		  apkgs+=(rofi)
+		  #gtk rofi
+		  apkgs+=(wofi)
+		  #hyprland wiki
+		  apkgs+=(bemenu fuzzel tofi)
+		  apkgs+=(neovim)
+	shell='/bin/bash'
+
+	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Hyprland ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${apkgs[*]}" "$err_not_fatal"
 }
 
 sh_lxdeminimal() {
@@ -3040,7 +3074,7 @@ sh_choosewm() {
 
     if [[ "$_SOURCE" = "local" ]]; then
         alerta "$ccabec" "Instalação escolhida foi via local/ISO, não é necessário alterar nada aqui"
-       	_WINDOWMANAGER='tty'
+	  	_WINDOWMANAGER='tty'
         LWM=$true
         return
     fi
@@ -3053,6 +3087,7 @@ sh_choosewm() {
 	aWm[enlightenment]="Enlightenment desktop shell"
 	aWm[fluxbox]="Fluxbox"
 	aWm[gnome]="Gnome"
+	aWm[hyprland]="Dynamic wlroots-based tiling Wayland compositor"
 	aWm[i3wm]="i3wm"
 	aWm[lxde]="The 'Lightweight X11 Desktop Environment'"
 	aWm[lxqt]="The 'Lightweight Qt Desktop Environment'"
@@ -3086,6 +3121,7 @@ sh_choosewm() {
 		fluxbox "${aWm[fluxbox]}" "${aFlag[fluxbox]}" \
 		enlightenment "${aWm[enlightenment]}" "${aFlag[enlightenment]}" \
 		gnome "${aWm[gnome]}" "${aFlag[gnome]}" \
+		hyprland "${aWm[hyprland]}" "${aFlag[hyprland]}" \
 		i3wm "${aWm[i3wm]}" "${aFlag[i3wm]}" \
 		lxde "${aWm[lxde]}" "${aFlag[lxde]}" \
 		lxqt "${aWm[lxqt]}" "${aFlag[lxqt]}" \
@@ -3104,6 +3140,7 @@ sh_choosewm() {
 		;;
 	esac
 	LCUSTOM=$false
+	HYPRLAND=$false
 	if conf "=== ${cmsg_Wm[LC_DEFAULT]^^} ===" \
 			"\n${BOLD}${WHITE}$(gettext "Uma instalação customizada irá instalar pacotes extras e também")" \
 			"\n$(gettext "fazer diversas configurações, evitando faze-las manualmente posteriormente.")\n" \
@@ -3111,6 +3148,9 @@ sh_choosewm() {
 		LCUSTOM=$true
 	fi
 	_WINDOWMANAGER=($(strtoarray "$wm"))
+	if grep -qi hyprland <<< "${_WINDOWMANAGER[@]}"; then
+		HYPRLAND=$true
+	fi
 	LWM=$true
 }
 
@@ -3581,6 +3621,7 @@ sh_extract_root_fs() {
 }
 
 sh_install() {
+	local user="${AsUser[cuser]}"
 	local start_datetime
 	local end_datetime
 	local akernel=(linux dbus)
@@ -3687,6 +3728,7 @@ sh_install() {
 				"dwm") sh_dwmminimal ;;
 				"enlightenment") sh_enlightenmentminimal ;;
 				"fluxbox") sh_fluxboxminimal ;;
+				"hyprland") sh_hyprlandminimal ;;
 				"openbox") sh_openboxminimal ;;
 				"gnome") sh_gnomeminimal ;;
 				"plasma") sh_plasmaminimal ;;
@@ -3710,6 +3752,9 @@ sh_install() {
 #			if ((LVM)); then
 #				sh_chroot_job "Certificando que todos pacotes estejam configurados corretamente em $dir_install" "xbps-reconfigure --force --all"
 #			fi
+			if ((HYPRLAND)); then
+				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} User into group _seatd ${cmsg_Em[$LC_DEFAULT]} $dir_install" "usermod -aG _seatd "$user"}" "$err_not_fatal"
+			fi
 			sh_chmod_tmp
 			sh_umount_fs
 			end_datetime=$(date)
