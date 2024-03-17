@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 
-#  void-chroot - chroot util compatible with all likeunix
+#  voiod-chroot - chroot util compatible with all likeunix
 #
 #  Created: 2019/04/05
-#  Altered: 2024/03/08
+#  Altered: 2024/03/17
 #
 #  Copyright (c) 2019-2024, Vilmar Catafesta <vcatafesta@gmail.com>
-#  Chili GNU/Linux - https://github.com/vcatafesta/ChiliOS
-#  Chili GNU/Linux - https://chililinux.com
-#  Chili GNU/Linux - https://chilios.com.br
+#  Chili GNU/Linux - https://github.com/vcatafesta
+#  					 https://github.com/chililinux
+#  					 https://chililinux.com
+#  					 https://chilios.com.br
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions
@@ -31,30 +32,31 @@
 #  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #########################################################################
 shopt -s extglob
+#findmount
 
 sh_setenvironment() {
 	declare -g ON_MOUNTS=()
-   bold=$(tput bold)
-   white="${bold}$(tput setaf 7)"
-   black="${bold}$(tput setaf 0)"
-   red=$(tput bold)$(tput setaf 196)
-   green=$(tput setaf 2)
-   yellow=$(tput bold)$(tput setaf 3)
-   blue=$(tput setaf 4)
-   pink=$(tput setaf 5)
-   cyan=$(tput setaf 6)
-   orange=$(tput setaf 3)
-   purple=$(tput setaf 125);
-   violet=$(tput setaf 61);
-   COL_NC='\e[0m' # No Color
-   COL_LIGHT_GREEN='\e[1;32m'
-   COL_LIGHT_RED='\e[1;31m'
-   TICK="${white}[${COL_LIGHT_GREEN}✓${COL_NC}${white}]"
-   CROSS="${white}[${COL_LIGHT_RED}✗${COL_NC}${white}]"
-   INFO="[i]"
-   DONE="${COL_LIGHT_GREEN} done!${COL_NC}"
-   OVER="\\r\\033[K"
-   DOTPREFIX="  ${black}::${reset} "
+	bold=$(tput bold)
+	white="${bold}$(tput setaf 7)"
+	black="${bold}$(tput setaf 0)"
+	red=$(tput bold)$(tput setaf 196)
+	green=$(tput setaf 2)
+	yellow=$(tput bold)$(tput setaf 3)
+	blue=$(tput setaf 4)
+	pink=$(tput setaf 5)
+	cyan=$(tput setaf 6)
+	orange=$(tput setaf 3)
+	purple=$(tput setaf 125)
+	violet=$(tput setaf 61)
+	COL_NC='\e[0m' # No Color
+	COL_LIGHT_GREEN='\e[1;32m'
+	COL_LIGHT_RED='\e[1;31m'
+	TICK="${white}[${COL_LIGHT_GREEN}✓${COL_NC}${white}]"
+	CROSS="${white}[${COL_LIGHT_RED}✗${COL_NC}${white}]"
+	INFO="[i]"
+	DONE="${COL_LIGHT_GREEN} done!${COL_NC}"
+	OVER="\\r\\033[K"
+	DOTPREFIX="  ${black}::${reset} "
 }
 
 msg() {
@@ -73,7 +75,8 @@ sh_ignore_error() {
 }
 
 sh_chroot_maybe_add_mount() {
-	local cond=$1; shift
+	local cond=$1
+	shift
 	if eval "$cond"; then
 		sh_mount_bind "$@"
 	fi
@@ -85,41 +88,43 @@ sh_mount_bind() {
 }
 
 sh_stop_bind() {
-	if (( ${#ON_MOUNTS[@]} )); then
+	if ((${#ON_MOUNTS[@]})); then
 		msg "Unbinding $CHROOTDIR"
 		umount -R "${ON_MOUNTS[@]}" >/dev/null 2>&-
 	fi
+	umount -R $CHROOTDIR/etc/resolv.conf >/dev/null 2>&-
 	unset ON_MOUNTS
 }
 
 sh_init_bind() {
 	if test $# -ge 1; then
-      CHROOTDIR="$1"
-      [[ ${CHROOTDIR} = '.' ]] && CHROOTDIR=${PWD}
-      for i in /proc /sys /dev /dev/pts /dev/shm /run /tmp; do
-         if [[ ! -d "${CHROOTDIR}${i}" ]]; then
-		      msg "Generate ${i} in $CHROOTDIR"
-   	      mkdir -p "${CHROOTDIR}${i}" >/dev/null 2>&-
+		CHROOTDIR="$1"
+		[[ ${CHROOTDIR} = '.' ]] && CHROOTDIR=${PWD}
+		for i in /proc /sys /dev /dev/pts /dev/shm /run /tmp; do
+			if [[ ! -d "${CHROOTDIR}${i}" ]]; then
+				msg "Generate ${i} in $CHROOTDIR"
+				mkdir -p "${CHROOTDIR}${i}" >/dev/null 2>&-
 			fi
-      done
+		done
 
-      sh_mount_bind proc "${CHROOTDIR}/proc" -t proc -o nosuid,noexec,nodev &&
-      sh_mount_bind sys "${CHROOTDIR}/sys" -t sysfs -o nosuid,noexec,nodev,ro &&
-      sh_ignore_error sh_chroot_maybe_add_mount "[[ -d '$CHROOTDIR/sys/firmware/efi/efivars' ]]" \
-         efivarfs "$CHROOTDIR/sys/firmware/efi/efivars" -t efivarfs -o nosuid,noexec,nodev &&
-      sh_mount_bind udev "${CHROOTDIR}/dev" -t devtmpfs -o mode=0755,nosuid &&
-      sh_mount_bind devpts "${CHROOTDIR}/dev/pts" -t devpts -o mode=0620,gid=5,nosuid,noexec &&
-      sh_mount_bind shm "${CHROOTDIR}/dev/shm" -t tmpfs -o mode=1777,nosuid,nodev &&
-      sh_mount_bind run "${CHROOTDIR}/run" -t tmpfs -o nosuid,nodev,mode=0755 &&
-      sh_mount_bind tmp "${CHROOTDIR}/tmp" -t tmpfs -o mode=1777,strictatime,nodev,nosuid
-      touch "$CHROOTDIR/etc/resolv.conf"
-      mount --bind /etc/resolv.conf "$CHROOTDIR/etc/resolv.conf"
-      msg "Starting CHROOT at $CHROOTDIR"
-      chroot ${CHROOTDIR}
+		touch "$CHROOTDIR/etc/resolv.conf"
+		sh_mount_bind proc "${CHROOTDIR}/proc" -t proc -o nosuid,noexec,nodev &&
+			sh_mount_bind sys "${CHROOTDIR}/sys" -t sysfs -o nosuid,noexec,nodev,ro &&
+			sh_ignore_error sh_chroot_maybe_add_mount "[[ -d '$CHROOTDIR/sys/firmware/efi/efivars' ]]" \
+				efivarfs "$CHROOTDIR/sys/firmware/efi/efivars" -t efivarfs -o nosuid,noexec,nodev &&
+			sh_mount_bind udev "${CHROOTDIR}/dev" -t devtmpfs -o mode=0755,nosuid &&
+			sh_mount_bind devpts "${CHROOTDIR}/dev/pts" -t devpts -o mode=0620,gid=5,nosuid,noexec &&
+			sh_mount_bind shm "${CHROOTDIR}/dev/shm" -t tmpfs -o mode=1777,nosuid,nodev &&
+			sh_mount_bind run "${CHROOTDIR}/run" -t tmpfs -o nosuid,nodev,mode=0755 &&
+			sh_mount_bind tmp "${CHROOTDIR}/tmp" -t tmpfs -o mode=1777,strictatime,nodev,nosuid
+			mount --bind /etc/resolv.conf $CHROOTDIR/etc/resolv.conf
+
+		msg "Starting CHROOT at $CHROOTDIR"
+		chroot ${CHROOTDIR}
 		sh_stop_bind
-   else
-      msg "Uso: void-chroot /mnt/full"
-   fi
+	else
+		msg "Uso: void-chroot /mnt/full"
+	fi
 }
 
 sh_setenvironment
