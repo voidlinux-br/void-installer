@@ -7,10 +7,9 @@
 
 #  install.sh
 #  Created: 2023/01/10
-#  Altered: 2023/10/15
+#  Altered: 2024/05/12
 #
-#  Copyright (c) 2023-2023, Vilmar Catafesta <vcatafesta@gmail.com>
-#                2023-2023, Felipe Nogueira <contato.fnog@gmail.com>
+#  Copyright (c) 2023-2024, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -42,7 +41,7 @@
 	umask 0022
 	url="https://raw.githubusercontent.com/voidlinux-br/void-installer/master"
 	url_blob="https://github.com/voidlinux-br/void-installer/blob/master"
-	declare -a files_bin=('void-install' 'void-maketar' 'void-mirror' 'void-services' 'void-testmirror' 'void-wifi' 'void-remove-vg' 'void-clonedisk' 'void-xrandr' 'void-runimage' 'void-gitclone' 'void-parted' 'void-chroot')
+	declare -a files_bin=('void-install' 'void-maketar' 'void-mirror' 'void-services' 'void-testmirror' 'void-wifi' 'void-remove-vg' 'void-clonedisk' 'void-xrandr' 'void-runimage' 'void-gitclone' 'void-parted' 'void-chroot' 'void-efivar' 'void-setfont')
 	declare -a files_home=('ChangeLog.txt' 'INSTALL' 'LICENSE' 'MAINTAINERS' 'Makefile' 'README.md' 'bashrc.sh' '.dircolors' 'install.sh')
 	declare -a files_lang=('void-clonedisk' 'void-gitclone' 'void-install' 'void-maketar' 'void-mirror' 'void-remove-vg' 'void-services' 'void-testmirror' 'void-wifi' 'void-xrandr' 'void-runimage')
 	declare -a files_blob=('void-x86_64-base-custom-current.tar.xz')

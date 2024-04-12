@@ -33,6 +33,8 @@ install:
 	@install -m 4755 void-maketar ${BINDIR}/void-maketar
 	@install -m 4755 void-parted ${BINDIR}/void-parted
 	@install -m 4755 void-chroot ${BINDIR}/void-chroot
+	@install -m 4755 void-efivar ${BINDIR}/void-efivar
+	@install -m 4755 void-setfont ${BINDIR}/void-setfont
 	@mkdir -p ${INFODIR}
 	@cp Makefile ChangeLog INSTALL LICENSE MAINTAINERS README.md ${DOCDIR}/
 	@cp Makefile ChangeLog INSTALL LICENSE MAINTAINERS README.md ${INFODIR}/
@@ -58,6 +60,8 @@ uninstall:
 	@rm ${BINDIR}/void-maketar
 	@rm ${BINDIR}/void-parted
 	@rm ${BINDIR}/void-chroot
+	@rm ${BINDIR}/void-efivar
+	@rm ${BINDIR}/void-setfont
 	@rm -fd ${BINDIR}
 	@rm -fd ${INFODIR}
 	@echo "${APP} foi removido."
