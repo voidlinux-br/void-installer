@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Miniaplicativo do Remmina
+Comment=Conecte a áreas de trabalho remotas através do miniaplicativo
+Icon=org.remmina.Remmina
+Exec=remmina -i
+Terminal=false
+Type=Application
+Hidden=false

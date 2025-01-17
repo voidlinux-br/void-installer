@@ -1,0 +1,198 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-09-06 16:48-0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: void-mirror:53
+msgid "Interrompido! Saindo..."
+msgstr ""
+
+#: void-mirror:76
+msgid "Removendo arquivos temporários..."
+msgstr ""
+
+#: void-mirror:146
+msgid "verificando caminho"
+msgstr ""
+
+#: void-mirror:499
+msgid "Português"
+msgstr ""
+
+#: void-mirror:500
+msgid "English"
+msgstr ""
+
+#: void-mirror:501
+msgid "Deustch"
+msgstr ""
+
+#: void-mirror:502
+msgid "Français"
+msgstr ""
+
+#: void-mirror:503
+msgid "Español"
+msgstr ""
+
+#: void-mirror:504
+msgid "Italiano"
+msgstr ""
+
+#: void-mirror:548
+msgid "LISTA DE ESPELHOS"
+msgstr ""
+
+#: void-mirror:548
+msgid "Não é possível continuar!"
+msgstr ""
+
+#: void-mirror:549
+msgid "Arquivo de lista de espelhos não encontrado no caminho"
+msgstr ""
+
+#: void-mirror:578 void-mirror:580
+msgid "BAIXAR LISTA DE ESPELHOS"
+msgstr ""
+
+#: void-mirror:578
+msgid "buscando nova lista de espelhos em"
+msgstr ""
+
+#: void-mirror:581
+msgid "Verifique sua conexão com a internet"
+msgstr ""
+
+#: void-mirror:582
+msgid "Incapaz de buscar uma nova lista de espelhos de"
+msgstr ""
+
+#: void-mirror:583
+msgid "Tentando usar a lista local"
+msgstr ""
+
+#: void-mirror:672 void-mirror:676 void-mirror:680 void-mirror:749
+msgid "=== ESPELHO ==="
+msgstr ""
+
+#: void-mirror:672 void-mirror:678
+msgid "Aguarde..."
+msgstr ""
+
+#: void-mirror:672 void-mirror:678
+msgid "testando com"
+msgstr ""
+
+#: void-mirror:675
+msgid "não retornou resultado"
+msgstr ""
+
+#: void-mirror:680
+msgid "não foi localizado no"
+msgstr ""
+
+#: void-mirror:681
+msgid "não foi localizado em"
+msgstr ""
+
+#: void-mirror:696
+msgid "Deseja definir/alterar o espelho deste host para o(s) escolhido(s) ?"
+msgstr ""
+
+#: void-mirror:727
+msgid "erro: você não pode realizar esta operação a menos que seja root."
+msgstr ""
+
+#: void-mirror:728
+msgid "ERRO"
+msgstr ""
+
+#: void-mirror:729
+msgid "não encontrei o comando"
+msgstr ""
+
+#: void-mirror:730
+msgid "IMPOSSÍVEL CONTINUAR"
+msgstr ""
+
+#: void-mirror:731
+msgid "Esse script precisa dos comandos listados acima"
+msgstr ""
+
+#: void-mirror:732
+msgid "Instale-os e/ou verifique se estão no seu"
+msgstr ""
+
+#: void-mirror:733
+msgid "Instalar o(s) comando(s)"
+msgstr ""
+
+#: void-mirror:734
+msgid "INFO: Rode novamente o aplicativo"
+msgstr ""
+
+#: void-mirror:735
+msgid "ERRO na instalação dos comandos. Tente manualmente."
+msgstr ""
+
+#: void-mirror:736
+msgid "Instalação abortada"
+msgstr ""
+
+#: void-mirror:737
+msgid "Ok"
+msgstr ""
+
+#: void-mirror:738
+msgid "Aceitar"
+msgstr ""
+
+#: void-mirror:739
+msgid "Sair"
+msgstr ""
+
+#: void-mirror:740
+msgid "Sim"
+msgstr ""
+
+#: void-mirror:741
+msgid "Não"
+msgstr ""
+
+#: void-mirror:742
+msgid "Gerando"
+msgstr ""
+
+#: void-mirror:743
+msgid "Atualizando espelhos..."
+msgstr ""
+
+#: void-mirror:744
+msgid "Usar as setas ↑ e ↓ para navegar."
+msgstr ""
+
+#: void-mirror:745
+msgid "Usar TAB para alternar entre os botões."
+msgstr ""
+
+#: void-mirror:746
+msgid "Usar ENTER ou BARRA DE ESPAÇO para selecionar e aceitar."
+msgstr ""
+
+#: void-mirror:748
+msgid "Configurando espelho em"
+msgstr ""

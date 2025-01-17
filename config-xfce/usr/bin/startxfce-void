@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# Defining the default visual style to be used in applications that use Qt
+export QT_STYLE_OVERRIDE=kvantum
+export QT_QPA_PLATFORMTHEME=xfce
+export GTK_THEME=adw-gtk3-dark
+
+# Force language
+if [ "$LANGUAGE" = "" ]; then
+	export LANGUAGE=$LANG
+fi
+
+#Faster AMD GPU
+export RADV_PERFTEST=sam,nggc,ext_ms
+
+#OBS Studio game capture with vulkan
+if [ -e "/usr/bin/obs-vkcapture" ]; then
+	export OBS_USE_EGL=1
+	export OBS_VKCAPTURE=1
+	export VK_INSTANCE_LAYERS=VK_LAYER_OBS_vkcapture_64:VK_LAYER_VALVE_steam_overlay_64 #Fix MangoHUD overlay
+fi
+
+#Keyboard LED
+if [ -e "$HOME/.config/ledkeyboard" ]; then
+	change-keyboard-led on
+fi
+
+#Create user-dirs
+xdg-user-dirs-update
+xdg-user-dirs-update --force
+
+### Execute in LiveCD
+if [ -e /run/initramfs/live/LiveOS/squashfs.img ]; then
+	# Copy the install file to the desktop and configure permissions
+	homeDesk="/home/anon/Desktop"
+	homeArea=/home/anon/'Área de trabalho'
+	cfile='void-install.desktop'
+	cfullFilename="$homeArea/$cfile"
+
+	if [ ! -d "$homeArea" ]; then
+		mkdir -p "$homeDesk"
+		mkdir -p "$homeArea"
+	fi
+
+	cp -f /usr/share/applications/$cfile "$cfullFilename"
+	# Generate the SHA256sum of the file on each boot
+	checksum=$(sha256sum "$cfullFilename" | awk '{print $1}')
+
+	# Set metadata using gio
+	gio set "$cfullFilename" metadata::xfce-exe-checksum "$checksum"
+	gio set "$cfullFilename" metadata::trusted true
+	chmod +x "$cfullFilename"
+
+#	cp -f $cfullFileName "$homeDesk/"
+fi

@@ -1,0 +1,28 @@
+[Desktop Entry]
+Type=Application
+Name=SimpleScreenRecorder
+Name[pt]=Gravador de tela
+Comment[pt]=
+Name[pt_BR]=Gravador de tela
+Comment[pt_BR]=
+Comment=A feature-rich screen recorder that supports X11 and OpenGL
+Icon=simplescreenrecorder
+Exec=simplescreenrecorder --logfile
+Terminal=false
+Categories=AudioVideo;Video;Recorder;Qt;
+Keywords=screen recorder;screencast;live streaming;ssr;
+StartupNotify=true
+Actions=SoftwareRender;NvidiaRender;IntegratedRender;
+X-XFCE-Source=file:///usr/share/applications/simplescreenrecorder.desktop
+
+[Desktop Action SoftwareRender]
+Name=Software Render
+Exec=SoftwareRender simplescreenrecorder --logfile
+
+[Desktop Action NvidiaRender]
+Name=Nvidia Render
+Exec=NvidiaRender simplescreenrecorder --logfile
+
+[Desktop Action IntegratedRender]
+Name=Integrated Render
+Exec=IntegratedRender simplescreenrecorder --logfile

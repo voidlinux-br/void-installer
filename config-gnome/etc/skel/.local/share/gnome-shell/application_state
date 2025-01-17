@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<application-state>
+  <context id="">
+    <application id="org.remmina.Remmina.desktop" score="0" last-seen="1709235152"/>
+    <application id="gnome-background-panel.desktop" score="0" last-seen="0"/>
+    <application id="org.gnome.Settings.desktop" score="0" last-seen="1709235166"/>
+    <application id="org.gnome.Calendar.desktop" score="0" last-seen="1709234729"/>
+    <application id="xfce4-terminal.desktop" score="22" last-seen="1709235136"/>
+  </context>
+</application-state>

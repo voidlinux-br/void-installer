@@ -1,0 +1,35 @@
+#!/bin/sh
+
+#Keyboard LED
+if [ -e "$HOME/.config/ledkeyboard" ]; then
+	change-keyboard-led on
+fi
+
+#Create user-dirs
+xdg-user-dirs-update
+xdg-user-dirs-update --force
+
+### Execute in LiveCD
+if [ -e /run/initramfs/live/LiveOS/squashfs.img ]; then
+	# Copy the install file to the desktop and configure permissions
+	homeDesk="/home/anon/Desktop"
+	homeArea=/home/anon/'Área de trabalho'
+	cfile='void-install.desktop'
+	cfullFilename="$homeArea/$cfile"
+
+	if [ ! -d "$homeArea" ]; then
+		mkdir -p "$homeDesk"
+		mkdir -p "$homeArea"
+	fi
+
+	cp -f /usr/share/applications/$cfile "$cfullFilename"
+	# Generate the SHA256sum of the file on each boot
+	checksum=$(sha256sum "$cfullFilename" | awk '{print $1}')
+
+	# Set metadata using gio
+	gio set "$cfullFilename" metadata::xfce-exe-checksum "$checksum"
+	gio set "$cfullFilename" metadata::trusted true
+	chmod +x "$cfullFilename"
+
+#	cp -f $cfullFileName "$homeDesk/"
+fi
