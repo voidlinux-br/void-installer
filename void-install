@@ -5,8 +5,9 @@
 #  void-install
 #  Created: 2022/12/24
 #  Altered: 2024/03/11
+#  Updated: sex 17 jan 2025 15:09:45 -04
 #
-#  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
+#  Copyright (c) 2022-2025, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -44,7 +45,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.7.11-20240311'
+readonly _VERSION_='2.15.01-20250117'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -56,7 +57,7 @@ readonly _TARBALL_ROOTFS=void-x86_64-base-custom-current.tar.xz
 #
 declare -gi ncounter=0 njobs=73
 declare -gi quiet=0 grafico=0
-declare -gi LAUTO=1 LINSTALL=0 LCHROOT=0 LBIND=0 LMKPART=0 LEFI=0 LBIOS=1 LMKPARTED=0 LOSPROBER=0 LFDE=0 LVM=0 LFS=0 LPARTITION=0 LTABLE=0 LCUSTOM=0
+declare -gi LAUTO=1 LINSTALL=0 LCHROOT=0 LBIND=0 LMKPART=0 LGRUB=1 LEFI=0 LBIOS=1 LMKPARTED=0 LOSPROBER=0 LFDE=0 LVM=0 LFS=0 LPARTITION=0 LTABLE=0 LCUSTOM=0
 declare -gi HYPRLAND=0
 declare -gA AsUser=([cpass]='void' [cpassroot]='voidlinux' [chostname]='voidlinux' [cgroups]='wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder')
 declare -gA Amntpoint
@@ -276,7 +277,9 @@ sh_touchConf() {
 		######################################################################
 		DEVICE=$_DEVICE
 		BOOTLOADER=$_BOOTLOADER
+		_BOOTLOADER=$_BOOTLOADER
 		DISKTABLE=$_DISKTABLE
+		_DISKTABLE=$_DISKTABLE
 		WIFI_NETWORK=$_WIFI_NETWORK
 		WIFI_PASSWORD=$_WIFI_PASSWORD
 		SOURCE=$_SOURCE
@@ -296,6 +299,9 @@ sh_touchConf() {
 		declare -p AConfFde
 		declare -p LCUSTOM
 		declare -p HYPRLAND
+		declare -p LEFI
+		declare -p LGRUB
+		declare -p LBIOS
 		#	declare -p AARRAY_DSK_DEVICES
 		#	declare -p AARRAY_PART_DEVICES
 	} | sed 's/declare -/&g/' >>"$app_conf"
@@ -1855,7 +1861,7 @@ sh_gnomeminimal() {
 	local apkgs=(gnome gnome-apps dconf-editor devhelp Endeavour evolution five-or-more four-in-a-row geary
 		gedit ghex glade3 gnome-boxes gnome-builder gnome-chess gnome-connections
 		gnome-games-collection gnome-klotski gnome-mahjongg gnome-mime-data gnome-multi-writer
-		gnome-nettool gnome-nibbles gnome-recipes gnome-robots gnome-sound-recorder gnome-sudoku
+		gnome-nettool gnome-nibbles gnome-robots gnome-sound-recorder gnome-sudoku
 		gnome-taquin gnome-terminal gnome-tetravex gnome-tweaks gnome-usage hitori iagno lightsoff
 		polari quadrapassel swell-foop sysprof tali gnome-backgrounds)
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Gnome ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${apkgs[*]}"
