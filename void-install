@@ -108,7 +108,7 @@ sh_update_self() {
     die
     exec "$local_script" "$@" # Recarrega o script com os mesmos argumentos
   else
-    msg_msg "O script já está atualizado."
+    log_msg "O script já está atualizado."
     rm -f "$temp_file"
   fi
   die
