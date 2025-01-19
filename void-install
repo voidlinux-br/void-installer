@@ -5145,7 +5145,7 @@ sh_setLogPrefix
 }
 sh_checkDependencies
 sh_checkDisplay
-sh_update_self
+sh_update_self "$@"
 sh_loadSavedConfig
 sh_disablePrintk
 sh_init "$@"
