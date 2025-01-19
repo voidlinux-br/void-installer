@@ -5,7 +5,7 @@
 #  void-install
 #  Created: 2022/12/24
 #  Altered: 2024/03/11
-#  Updated: sáb 18 jan 2025 22:51:18 -04
+#  Updated: sáb 18 jan 2025 23:05:24 -04
 #
 #  Copyright (c) 2022-2025, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -105,13 +105,11 @@ sh_update_self() {
     mv "$temp_file" "$local_script"
     chmod +x "$local_script"
     log_msg "Atualização concluída. Recarregando o script..."
-    die
     exec "$local_script" "$@" # Recarrega o script com os mesmos argumentos
   else
     log_msg "O script já está atualizado."
     rm -f "$temp_file"
   fi
-  die
 }
 
 sh_choose_packages() {
