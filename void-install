@@ -50,16 +50,14 @@ readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
 #
-#readonly _TARBALL_ROOTFS=void-x86_64-base-minimal-current.tar.xz
-#readonly _TARBALL_ROOTFS=void-x86_64-base-voidstrap-current.tar.xz
-#readonly _TARBALL_ROOTFS=void-x86_64-base-system-current.tar.xz
-readonly _TARBALL_ROOTFS=void-x86_64-base-custom-current.tar.xz
-#
+declare LCUSTOM=false
+declare LEFI=false
+declare LGRUB=true
 declare -gi ncounter=0 njobs=73
 declare -gi quiet=0 grafico=0
-declare -gi LAUTO=1 LINSTALL=0 LCHROOT=0 LBIND=0 LMKPART=0 LGRUB=1 LEFI=0 LBIOS=1 LMKPARTED=0 LOSPROBER=0 LFDE=0 LVM=0 LFS=0 LPARTITION=0 LTABLE=0 LCUSTOM=0
+declare -gi LAUTO=1 LINSTALL=0 LCHROOT=0 LBIND=0 LMKPART=0 LBIOS=1 LMKPARTED=0 LOSPROBER=0 LFDE=0 LVM=0 LFS=0 LPARTITION=0 LTABLE=0
 declare -gi HYPRLAND=0
-declare -gA AsUser=([cpass]='void' [cpassroot]='voidlinux' [chostname]='voidlinux' [cgroups]='wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder')
+declare -gA AsUser=([cpass]='voidlinux' [cpassroot]='voidlinux' [chostname]='voidlinux' [cgroups]='wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder')
 declare -gA Amntpoint
 declare -gA AmntpointFDE
 declare -gA Amkfs
@@ -74,13 +72,47 @@ declare -gA AConfWifi=([_NETWORK]='wifi_ssid' [_PASSWORD]='wifi_password')
 declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
 
+sh_update_self() {
+  local repo_url="https://raw.githubusercontent.com/voidlinux-br/void-installer/main/void-install"
+  local local_script="$0"
+  local temp_file
+
+  # Cria um arquivo temporário para armazenar a versão remota
+  temp_file=$(mktemp)
+
+  echo "Verificando por atualizações do script..."
+
+  # Baixa a versão mais recente do repositório
+  if command -v curl >/dev/null 2>&1; then
+    curl -sSfL "$repo_url" -o "$temp_file"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q "$repo_url" -O "$temp_file"
+  else
+    echo "Erro: nem curl nem wget estão instalados. Atualização não pode ser realizada."
+    rm -f "$temp_file"
+    return 1
+  fi
+
+  # Compara o script local com o remoto
+  if ! diff -q "$local_script" "$temp_file" >/dev/null 2>&1; then
+    echo "Nova versão encontrada. Atualizando o script..."
+    mv "$temp_file" "$local_script"
+    chmod +x "$local_script"
+    echo "Atualização concluída. Recarregando o script..."
+    exec "$local_script" "$@" # Recarrega o script com os mesmos argumentos
+  else
+    echo "O script já está atualizado."
+    rm -f "$temp_file"
+  fi
+}
+
 sh_choose_packages() {
 	## begin packages
 
 	declare -ga aXorg=('xorg' 'xinit' 'xterm' 'xorg-fonts' 'dbus-x11' 'elogind' 'dbus-elogind' 'polkit-elogind' 'xdg-user-dirs' 'xrdb')
 	declare -ga aPulseaudio=('pulseaudio' 'pavucontrol' 'pasystray' 'gst-plugins-bad1' 'gst-plugins-good1' 'gst-plugins-ugly1' 'gst-plugins-base1')
 	declare -ga aPipewire=('pipewire' 'wireplumber' 'pulseaudio-utils' 'alsa-pipewire' 'libspa-bluetooth' 'libjack-pipewire')
-	if ((LCUSTOM)); then
+	if $LCUSTOM; then
 		## X11
 		declare -ga aIconsAndThemes=('Adapta' 'adwaita-icon-theme' 'chili-void-beauty-icons' 'chili-void-wallpapers' 'chili-void-gnome-professional-theme' 'xfwm-axiom-theme')
 		declare -ga aArchiverX=('xarchiver')
@@ -104,11 +136,19 @@ sh_choose_packages() {
 		declare -ga aDownloader=('curl' 'wget' 'git' 'lynx')
 		declare -ga aEditorTxt=('nano')
 		declare -ga aUtility=('dialog' 'gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted' 'rsync' 'duf' 'dfc' 'tmate' 'inetutils' 'iputils')
-					aUtility+=('cifs-utils' 'ntfs-3g' 'btop' 'htop' 'parallel' 'evtest' 'bubblewrap' 'pacman' 'fakeroot' 'bsdtar' 'exa' 'cmatrix')
-					aUtility+=('nvme-cli')
-		declare -ga _PKGS='neofetch pfetch bc bat fzf bash-completion vpm vsv xtools geoip geoipupdate #geoip-data'
+					      aUtility+=('cifs-utils' 'ntfs-3g' 'btop' 'htop' 'parallel' 'evtest' 'bubblewrap' 'pacman' 'fakeroot' 'bsdtar' 'exa' 'cmatrix')
+					      aUtility+=('nvme-cli')
+		declare -ga _PKGS='neofetch pfetch bc bat fzf bash-completion vpm vsv xtools geoip geoipupdate #geoip-data pigz'
 		#--repository=https://chililinux.com/void/current
-		declare -ga _EXTRAS='nano-syntax-highlighting chili-void-grub-theme pigz'
+		declare -ga _EXTRAS=''
+    if sh_checkRepo 'https://chililinux.com/void/current'; then
+		  _EXTRAS='nano-syntax-highlighting'
+		  _EXTRAS+=' chili-void-grub-theme'
+		  _EXTRAS+=' chili-void-tools'
+		  _EXTRAS+=' chili-nano-config'
+		  _EXTRAS+=' chili-utils'
+      #_EXTRAS+=' chili-void-xfce-skel'
+    fi
 		## end packages
 	else
 		## X11
@@ -175,7 +215,13 @@ sh_setEnvironment() {
 	declare -g app_conf='/tmp/void-install.conf'
 	readonly cnickefi='Void_install'
 	readonly dir_install='/mnt/voidlinux'
-	readonly url_tarball="https://github.com/voidlinux-br/void-installer/raw/master/${_TARBALL_ROOTFS}"
+  #readonly _TARBALL_ROOTFS=void-x86_64-base-minimal-current.tar.xz
+  #readonly _TARBALL_ROOTFS=void-x86_64-base-voidstrap-current.tar.xz
+  #readonly _TARBALL_ROOTFS=void-x86_64-base-system-current.tar.xz
+  readonly _TARBALL_ROOTFS=void-x86_64-base-custom-current.tar.xz
+	#readonly url_tarball="https://github.com/voidlinux-br/void-installer/raw/master/${_TARBALL_ROOTFS}"
+	readonly url_tarball="https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/${_TARBALL_ROOTFS}"
+	readonly url_tarball_md5="https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/${_TARBALL_ROOTFS}.md5"
 	readonly true=1
 	readonly false=0
 	readonly err_fatal=$true
@@ -275,11 +321,8 @@ sh_touchConf() {
 		# void-install.conf
 		# Gerado por void-install
 		######################################################################
-		DEVICE=$_DEVICE
 		BOOTLOADER=$_BOOTLOADER
-		_BOOTLOADER=$_BOOTLOADER
 		DISKTABLE=$_DISKTABLE
-		_DISKTABLE=$_DISKTABLE
 		WIFI_NETWORK=$_WIFI_NETWORK
 		WIFI_PASSWORD=$_WIFI_PASSWORD
 		SOURCE=$_SOURCE
@@ -287,6 +330,12 @@ sh_touchConf() {
 		EXTRAS="$_EXTRAS"
 	EOF
 	{
+		declare -p _DEVICE
+		declare -p _BOOTLOADER
+		declare -p _DISKTABLE
+		declare -p _WIFI_NETWORK
+		declare -p _WIFI_PASSWORD
+		declare -p _SOURCE
 		declare -p _WINDOWMANAGER
 		declare -p AsUser
 		declare -p Amkfs
@@ -304,7 +353,10 @@ sh_touchConf() {
 		declare -p LBIOS
 		#	declare -p AARRAY_DSK_DEVICES
 		#	declare -p AARRAY_PART_DEVICES
-	} | sed 's/declare -/&g/' >>"$app_conf"
+#	} | sed 's/declare -/&g/' >>"$app_conf"
+#	} | sed -E 's/^declare (--|-g|-x)* //g' >>"$app_conf"
+#	} | sed 's/declare -/&g/' | sed -E 's/^declare -g-* /declare -g /g' >>"$app_conf"
+	} | sed -E 's/declare -/&g/; s/^declare -g-* /declare -g /' >>"$app_conf"
 }
 
 sh_checkDisplay() {
@@ -412,22 +464,16 @@ sh_loadSavedConfig() {
 		die "${cmsg_falhaAbertura[$LC_DEFAULT]} $app_conf!"
 	fi
 	sh_setUser
+  #debug $(declare -p LCUSTOM)
 }
 
 sh_setUser() {
-	AsUser[cuser]=${AsUser[cuser]:-${AsUser[cuser]:-$(sh_getusernameloggeduserbyid)}}
-	AsUser[cfullname]=${AsUser[cfullname]:-${AsUser[cfullname]:-$(sh_getfullusernameloggeduserbyid)}}
-	AsUser[cpass]=${AsUser[cpass]:-${AsUser[cpass]:-void}}
-	AsUser[cpassroot]=${AsUser[cpassroot]:-${AsUser[cpassroot]:-voidlinux}}
-	AsUser[chostname]=${AsUser[chostname]:-${AsUser[chostname]:-voidlinux}}
-	AsUser[cgroups]=${AsUser[cgroups]:-${AsUser[cgroups]:-"wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder"}}
-
-	#	[[ -v AsUser[cuser]     && (-z ${AsUser[cuser]}     || ${#AsUser[cuser]}     -eq 0) ]] && AsUser[cuser]=$(sh_getusernameloggeduserbyid)
-	#	[[ -v AsUser[cfullname] && (-z ${AsUser[cfullname]} || ${#AsUser[cfullname]} -eq 0) ]] && AsUser[cfullname]=$(sh_getfullusernameloggeduserbyid)
-	#	[[ -v AsUser[cpass]     && (-z ${AsUser[cpass]}     || ${#AsUser[cpass]}     -eq 0) ]] && AsUser[cpass]=void
-	#	[[ -v AsUser[cpassroot] && (-z ${AsUser[cpassroot]} || ${#AsUser[cpassroot]} -eq 0) ]] && AsUser[cpassroot]=voidlinux
-	#	[[ -v AsUser[chostname] && (-z ${AsUser[chostname]} || ${#AsUser[chostname]} -eq 0) ]] && AsUser[chostname]=voidlinux
-	#	[[ -v AsUser[cgroups]   && (-z ${AsUser[cgroups]}   || ${#AsUser[cgroups]}   -eq 0) ]] && AsUser[cgroups]="wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder"
+	AsUser[cuser]=${AsUser[cuser]:-$(sh_getusernameloggeduserbyid)}
+	AsUser[cfullname]=${AsUser[cfullname]:-$(sh_getfullusernameloggeduserbyGetent)}
+	AsUser[cpass]=${AsUser[cpass]:-voidlinux}
+	AsUser[cpassroot]=${AsUser[cpassroot]:-voidlinux}
+	AsUser[chostname]=${AsUser[chostname]:-voidlinux}
+	AsUser[cgroups]=${AsUser[cgroups]:-"wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder"}
 }
 
 sh_setAsciiLines() {
@@ -444,20 +490,36 @@ sh_checkRoot() {
 	fi
 }
 
+sh_checkRepo() {
+  local url_repo="$1"
+  local response
+
+	last_msg="${cmsg_ChecandoRota[$LC_DEFAULT]} ${url_repo}"
+	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+  response=$(curl -o /dev/null -s -w "%{http_code}\n" -L "$url_repo")
+	retval=$?
+	if [[ "$response" -eq 200 ]]; then
+	  evaluate_retval "0" "$err_not_fatal" "response: $response ($url_repo)"
+  	return 0
+	fi
+	evaluate_retval "1" "$err_not_fatal" "response: $response: ${cmsg_SemRota[$LC_DEFAULT]} ($url_repo) - ${cmsg_CheckNet[$LC_DEFAULT]}"
+	return 1
+}
+
 sh_checkNet() {
+	xurl="$1"
 	local retval
 
-	xurl="$1"
 	# have internet?
 	last_msg="${cmsg_ChecandoRota[$LC_DEFAULT]} ${xurl}"
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
 	response=$(curl --compressed -s -w "%{http_code}\n" -o /dev/null -k --url "${xurl}")
 	retval=$?
 	if [[ "$response" -eq 000 || "$response" -eq 404 ]]; then
-		evaluate_retval "$err_fatal" "$err_fatal" "${cmsg_SemRota[$LC_DEFAULT]} ($xurl) - ${cmsg_CheckNet[$LC_DEFAULT]}"
+		evaluate_retval "$err_fatal" "$err_fatal" "reponse: $response - ${cmsg_SemRota[$LC_DEFAULT]} ($xurl) - ${cmsg_CheckNet[$LC_DEFAULT]}"
 	fi
-	evaluate_retval "$retval"
-	return "$retval"
+  evaluate_retval "0" "$err_not_fatal" "response: $response ($xurl)"
+  return 0
 }
 
 sh_downloadTarball() {
@@ -759,15 +821,17 @@ evaluate_retval() {
 		if ((error_fatal)); then
 			[[ -z "$cmsgdie" ]] && die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..." || die "$cmsgdie"
 		else
+	    [[ -n "$cmsgdie" ]] && log_failure_msg_level "${cmsgdie}"
 			log_error "${cmsg_Error_not_fatal[LC_DEFAULT]} $BOOTLOG"
 		fi
 	fi
+	[[ -n "$cmsgdie" ]] && log_success_msg_level "${cmsgdie}"
 	return "${error_value}"
 }
 
 log_failure_msg_level() {
 	if ! ((quiet)) && ! ((grafico)); then
-		echo -n -e "   ${BMPREFIX}${@}"
+		echo -n -e "     ${BMPREFIX}${@}"
 		echo -e "   ${CURS_ZERO}${FAILURE_PREFIX}${SET_COL}${FAILURE_SUFFIX}"
 	fi
 	logmessage=${last_msg/$bold$red$green$yellow/}
@@ -778,7 +842,7 @@ log_failure_msg_level() {
 
 log_success_msg_level() {
 	if ! ((quiet)) && ! ((grafico)); then
-		echo -n -e "   ${BMPREFIX}${@}"
+		echo -n -e "     ${BMPREFIX}${@}"
 		echo -e "   ${CURS_ZERO}${SUCCESS_PREFIX}${SET_COL}${SUCCESS_SUFFIX}"
 	fi
 	logmessage=$(unfmt "$last_msg")
@@ -1082,18 +1146,17 @@ sh_update_mirror() {
 		repository=${url_mirror}current/multilib
 		repository=${url_mirror}current/multilib/nonfree
 
-		#repository=https://voidlinux.com.br/repo/current
-		#repository=https://voidlinux.com.br/repo/nonfree
-		#repository=https://voidlinux.com.br/repo/multilib
-		#repository=https://voidlinux.com.br/repo/multilib/nonfree
-
 		#repository=http://void.chililinux.com/voidlinux/current
 		#repository=http://void.chililinux.com/voidlinux/current/extras
 		#repository=http://void.chililinux.com/voidlinux/current/nonfree
 		#repository=http://void.chililinux.com/voidlinux/current/multilib
 		#repository=http://void.chililinux.com/voidlinux/current/multilib/nonfree
 
-		repository=https://chililinux.com/void/current
+		repository=https://void.chililinux.com/voidlinux/current
+		#repository=https://void.chililinux.com/voidlinux/current/extras
+		#repository=https://void.chililinux.com/voidlinux/current/nonfree
+		#repository=https://void.chililinux.com/voidlinux/current/multilib
+		#repository=https://void.chililinux.com/voidlinux/current/multilib/nonfree
 	EOF
 	evaluate_retval "$?"
 }
@@ -1246,7 +1309,7 @@ install_skel_user() {
 }
 
 sh_update_bashrc() {
-	if ((LCUSTOM)); then
+	if $LCUSTOM; then
 		last_msg="${cmsg_Ajustando[$LC_DEFAULT]} bashrc ${cmsg_Em[$LC_DEFAULT]} $dir_install"
 		msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
 		install_skel_user
@@ -1826,7 +1889,7 @@ sh_xfce4minimal() {
 		  apkgs+=(xfce4-notifyd xfce4-panel xfce4-power-manager xfce4-screensaver xfce4-session xfce4-settings xfce4-taskmanager)
 		  apkgs+=(xfce4-terminal xfconf xfdesktop xfwm4-themes xfwm4)
 
-	if ((LCUSTOM)); then
+	if $LCUSTOM; then
 		apkgs+=(xfce4-battery-plugin
 				xfce4-clipman-plugin
 				xfce4-cpufreq-plugin
@@ -2592,7 +2655,7 @@ sh_getNvme() {
 
 sh_getlgrub() {
 	local _device="$1"
-	if [[ "$LGRUB" = "$true" && "$_BOOTLOADER" = "$_device" ]]; then
+	if [[ "$LGRUB" == "true" && "$_BOOTLOADER" = "$_device" ]]; then
 		echo '*'
 	else
 		echo ' '
@@ -2668,7 +2731,7 @@ $(printf "%${nlen}s$sep%-4s$sep%-6s$sep%6s$sep%-6s$sep%-15s$sep%-30s" "DEVICE" "
 			if ((LCHOOSEBOOTLOADER)); then
 				_BOOTLOADER=$_DEVICE
 				AConfDisk[_BOOTLOADER]=$_BOOTLOADER
-				LGRUB=$true
+				LGRUB=true
 				LOSPROBER=$false
 				LDISK=$true
 				return 0
@@ -2682,7 +2745,7 @@ $(printf "%${nlen}s$sep%-4s$sep%-6s$sep%6s$sep%-6s$sep%-15s$sep%-30s" "DEVICE" "
 			_DEVICE="$sd"
 			_BOOTLOADER=$_DEVICE
 			AConfDisk[_BOOTLOADER]=$_BOOTLOADER
-			LGRUB=$true
+			LGRUB=true
 			LOSPROBER=$false
 			LDISK=$true
 			return 0
@@ -2701,7 +2764,7 @@ sh_setBootLoader() {
 	if sh_chooseDisk "=== BOOTLOADER (GRUB) ==="; then
 		_BOOTLOADER=$_DEVICE
 		AConfDisk[_BOOTLOADER]=$_BOOTLOADER
-		LGRUB=$true
+		LGRUB=true
 		LOSPROBER=$false
 		if conf "=== OS-PROBER ===" "\n$(gettext "Detectar outro OS(s) instalado ?")\n\n"; then
 			LOSPROBER=$true
@@ -2785,6 +2848,7 @@ sh_confadduser() {
 	local size
 	local model
 
+  sh_setUser
 	size=$(sh_splitarray "${AARRAY_DSK_DEVICES[${AConfDisk[_BOOTLOADER]}]}" 2)
 	model=$(sh_splitarray "${AARRAY_DSK_DEVICES[${AConfDisk[_BOOTLOADER]}]}" 4)
 	while true; do
@@ -3042,7 +3106,7 @@ sh_parseconf() {
 	[[ -n "${AConfMirror[_MIRROR]}" && -n "$url_mirror" ]] && LMIRROR=$true
 	[[ -n "${Amntpoint[*]}" ]] && LPARTITION=$true
 	[[ -n $_DEVICE ]] && LDISK=$true
-	[[ -n $_BOOTLOADER ]] && LGRUB=$true
+	[[ -n $_BOOTLOADER ]] && LGRUB=true
 	[[ -n ${_WINDOWMANAGER[*]} ]] && LWM=$true
 	[[ -n $_SOURCE ]] && LSOURCE=$true
 }
@@ -3066,10 +3130,8 @@ sh_getBootEFI() {
 	if [ -e /sys/firmware/efi/systab ]; then
 		TARGET_EFI=x86_64-efi
 		[[ "$(</sys/firmware/efi/fw_platform_size)" -eq 32 ]] && TARGET_EFI=i386-efi
-#		echo 0
 		return 0
 	fi
-#	echo 1
 	return 1
 }
 
@@ -3145,13 +3207,13 @@ sh_choosewm() {
 		return
 		;;
 	esac
-	LCUSTOM=$false
+	#LCUSTOM=false
 	HYPRLAND=$false
 	if conf "=== ${cmsg_Wm[LC_DEFAULT]^^} ===" \
 			"\n${BOLD}${WHITE}$(gettext "Uma instalação customizada irá instalar pacotes extras e também")" \
 			"\n$(gettext "fazer diversas configurações, evitando faze-las manualmente posteriormente.")\n" \
 			"\n${BOLD}${RED}$(gettext "Customizar a instalação?")\n\n"; then
-		LCUSTOM=$true
+		LCUSTOM=true
 	fi
 	_WINDOWMANAGER=($(strtoarray "$wm"))
 	if grep -qi hyprland <<< "${_WINDOWMANAGER[@]}"; then
@@ -3413,7 +3475,7 @@ sh_grubInstall() {
 		sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} GRUB i386-pc ${cmsg_Em[$LC_DEFAULT]} $_BOOTLOADER" \
 			"grub-install $_BOOTLOADER --target=i386-pc --recheck"
 	fi
-	if ((LEFI)); then
+	if $LEFI; then
 		sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} GRUB EFI ${cmsg_Em[$LC_DEFAULT]} $_BOOTLOADER" \
 			"grub-install $_BOOTLOADER --target=$TARGET_EFI --efi-directory=/boot/efi --boot-directory=/boot --bootloader-id=$cnickefi --removable --recheck"
 		sh_mkefiroaming
@@ -3632,7 +3694,8 @@ sh_install() {
 	local end_datetime
 	local akernel=(linux dbus)
 	local afirmware=(wifi-firmware)
-	if ((LCUSTOM)); then
+
+	if $LCUSTOM; then
 	local abase=(zstd xz cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd)
 	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils grub-terminus grub-btrfs-runit)
 	else
@@ -3645,17 +3708,20 @@ sh_install() {
 #	dialog --title $BOOTLOG --begin 1 0 --tailbox "$BOOTLOG" 20 0 &
 	reset
 	sh_checkNet "$url_mirror" || return 1
+	if [[ "$_SOURCE" = "network" ]]; then
+    sh_checkTarball
+  fi
 	sh_choose_packages
 	start_time=$(date +%s) # Obtém o tempo de início em segundos desde a época Unix
 	start_datetime=$(date)
 
-	if ((LEFI)); then
+	if $LEFI; then
 		if sh_getBootEFI; then
 			agrub+=(grub-"$TARGET_EFI")
 			agrub+=(efivar)
 			agrub+=(efibootmgr)
 		else
-			LEFI=$false
+			LEFI=false
 			LBIOS=$true
 		fi
 	fi
@@ -3680,33 +3746,37 @@ sh_install() {
 			sh_chroot_job "${cmsg_Atualizando[$LC_DEFAULT]} xbps ${cmsg_Em[$LC_DEFAULT]} $dir_install"               "LC_ALL=C xbps-install --sync --update xbps --yes"
 			sh_chroot_job "${cmsg_AtualizandoRepositorio[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"         "LC_ALL=C xbps-install --sync --update --yes"
 			if [[ "$_SOURCE" = "local" ]]; then
-       			sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"      "${XBPS_INSTALL_UNPACK_ONLY} ${agrub[*]}"
+        sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"      "${XBPS_INSTALL_UNPACK_ONLY} ${agrub[*]}"
 			else
-  				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "${XBPS_INSTALL_UNPACK_ONLY} ${akernel[*]}"
-  				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Grub ${cmsg_Em[$LC_DEFAULT]} $dir_install"             "${XBPS_INSTALL_UNPACK_ONLY} ${agrub[*]}"
-   				sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"      "${XBPS_INSTALL_UNPACK_ONLY} ${abase[*]}"
-#  				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Wifi Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "${XBPS_INSTALL_UNPACK_ONLY} ${afirmware[*]}"
-   				sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install"                        "${XBPS_INSTALL_UNPACK_ONLY} $_PKGS"             "$err_not_fatal" "$err_not_fatal"
-   				sh_chroot_job "$(gettext "Instalando Daemons em") $dir_install"                                       "${XBPS_INSTALL_UNPACK_ONLY} ${aDaemons[*]}"     "$err_not_fatal" "$err_not_fatal"
-   				sh_chroot_job "$(gettext "Instalando Editores texto em") $dir_install"                                "${XBPS_INSTALL_UNPACK_ONLY} ${aEditorTxt[*]}"   "$err_not_fatal" "$err_not_fatal"
-   				sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install"                                   "${XBPS_INSTALL_UNPACK_ONLY} ${aDownloader[*]}"  "$err_not_fatal" "$err_not_fatal"
-   				sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install"                                   "${XBPS_INSTALL_UNPACK_ONLY} ${aUtility[*]}"     "$err_not_fatal" "$err_not_fatal"
-   				sh_chroot_job "$(gettext "Instalando Archiver's tty em") $dir_install"                                "${XBPS_INSTALL_UNPACK_ONLY} ${aArchiverTty[*]}" "$err_not_fatal" "$err_not_fatal"
-		    	sh_chroot_job "$(gettext "Instalando Extras's em") $dir_install"                                      "${XBPS_INSTALL_UNPACK_ONLY} $_EXTRAS"           "$err_not_fatal"
-            fi
-   			sh_update_bashrc
-    		sh_grubInstall
+        sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install"           "${XBPS_INSTALL_UNPACK_ONLY} ${akernel[*]}"
+  			sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Grub ${cmsg_Em[$LC_DEFAULT]} $dir_install"             "${XBPS_INSTALL_UNPACK_ONLY} ${agrub[*]}"
+   			sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install"      "${XBPS_INSTALL_UNPACK_ONLY} ${abase[*]}"
+#  			sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Wifi Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "${XBPS_INSTALL_UNPACK_ONLY} ${afirmware[*]}"
+        if [[ -n "$_PKGS" ]]; then
+     			sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install"                        "${XBPS_INSTALL_UNPACK_ONLY} $_PKGS"             "$err_not_fatal" "$err_not_fatal"
+        fi
+   			sh_chroot_job "$(gettext "Instalando Daemons em") $dir_install"                                       "${XBPS_INSTALL_UNPACK_ONLY} ${aDaemons[*]}"     "$err_not_fatal" "$err_not_fatal"
+   			sh_chroot_job "$(gettext "Instalando Editores texto em") $dir_install"                                "${XBPS_INSTALL_UNPACK_ONLY} ${aEditorTxt[*]}"   "$err_not_fatal" "$err_not_fatal"
+   			sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install"                                   "${XBPS_INSTALL_UNPACK_ONLY} ${aDownloader[*]}"  "$err_not_fatal" "$err_not_fatal"
+   			sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install"                                   "${XBPS_INSTALL_UNPACK_ONLY} ${aUtility[*]}"     "$err_not_fatal" "$err_not_fatal"
+   			sh_chroot_job "$(gettext "Instalando Archiver's tty em") $dir_install"                                "${XBPS_INSTALL_UNPACK_ONLY} ${aArchiverTty[*]}" "$err_not_fatal" "$err_not_fatal"
+        if [[ -n "$_EXTRAS" ]]; then
+  		    sh_chroot_job "$(gettext "Instalando Extras's em") $dir_install"                                      "${XBPS_INSTALL_UNPACK_ONLY} $_EXTRAS"           "$err_not_fatal"
+        fi
+      fi
+   		sh_update_bashrc
+    	sh_grubInstall
  			sh_copy_scripts
-	   		sh_make_fstab
-    		sh_make_user
-    		sh_update_hostname
-    		sh_update_rc_local
-    		sh_update_sshd
-    		sh_update_rc_conf
-    		sh_update_locale
+	   	sh_make_fstab
+    	sh_make_user
+    	sh_update_hostname
+    	sh_update_rc_local
+    	sh_update_sshd
+    	sh_update_rc_conf
+    	sh_update_locale
 
-    		sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-reconfigure --force glibc-locales"
-    		sh_update_wpa_suplicant
+    	sh_chroot_job "${cmsg_Configurando[$LC_DEFAULT]} locales ${cmsg_Em[$LC_DEFAULT]} $dir_install" "xbps-reconfigure --force glibc-locales"
+    	sh_update_wpa_suplicant
 
 			_ONLY_TTY=$false
 			if [[ "${#_WINDOWMANAGER[@]}" -eq 1 ]]; then
@@ -3907,10 +3977,10 @@ ${BOLD}${WHITE}Partition : ${RED}$_PART\n" 8 75
 		return 1
 	fi
 
-	LEFI=$(sh_ternario "$(sh_getBootEFI)") # [[ "$(sh_getBootEFI)" ]] && LEFI=$true || LEFI=$false
+	[[ "$(sh_getBootEFI)" ]] && LEFI=true || LEFI=false
 	LBIOS=$true
 
-	if ((LEFI)); then
+	if $LEFI; then
 		if [[ "$(sh_splitarray "${AARRAY_DSK_DEVICES[$_BOOTLOADER]}" 7)" != "gpt" ]]; then
 			if ! infoconf "${cmsg_Disco[$LC_DEFAULT]}" "$(fdisk -l "$_BOOTLOADER")" \
 				"${YELLOW}=== UEFI ===" "\n${BOLD}${RED}NOTICE: ${RESET}\
@@ -3919,11 +3989,11 @@ Redo the partition table in gpt or choose another disk.\n\n\
 ${BOLD}${WHITE}Continue with installation without UEFI ?"; then
 				return 1
 			fi
-			LEFI=$false
+			LEFI=false
 		fi
 	fi
 
-	if ((LEFI)); then
+	if $LEFI; then
 		for i in {0..9}; do
 			[[ "$(sh_splitarray "${AARRAY_PART_DEVICES[${_BOOTLOADER}${ext}${i}]}" 8)" = "BIOS boot" ]] && {
 				LBIOS=$true
@@ -3955,7 +4025,7 @@ ${BOLD}${WHITE}Continue with installation without UEFI ?"; then
 			((++varfound))
 			_PART_VAR="$i"
 		elif [ "$fstype" = "vfat" -a "$mntpoint" = "/boot/efi" ]; then
-			if ((LEFI)); then
+			if $LEFI; then
 				if [[ "$flag" != "EFI System" ]]; then
 					if ! conf "=== UEFI ===" "${BOLD}${RED}ERROR:${RESET} Could not verify selected partition for mountpoint ${BOLD}${BLUE}/boot/efi${RESET}\n\
 whether it has the ${RED}'esp'${RESET} flag required for this purpose.\n
@@ -3992,7 +4062,7 @@ Bootloader : $_BOOTLOADER\n\
 	if [ "$rootfound" -eq 0 ]; then
 		${DIALOG} --colors --msgbox "${BOLD}${RED}ERROR:${RESET} the mount point for the root filesystem (/) has not yet been configured." 8 75
 		return 1
-	elif [ $LEFI -eq $true -a "$bootfound" -eq 0 ]; then
+	elif [ $LEFI == "true" -a "$bootfound" -eq 0 ]; then
 		info "=== UEFI ===" "\n\
 ${BOLD}${RED}ERROR:${RESET}\
 The EFI system partition has not yet been configured.\n
@@ -4426,6 +4496,11 @@ sh_getfullusernameloggeduser() {
 	local passwd_fields
 	IFS=: read -r -a passwd_fields <<<"$(grep -w "$USER" /etc/passwd)"
 	echo "${passwd_fields[4]}"
+}
+
+function sh_getfullusernameloggeduserbyGetent() {
+  local logged_user="${SUDO_USER:-$USER}"  # Prioriza SUDO_USER, mas usa USER como fallback
+  getent passwd "$logged_user" | cut -d ':' -f 5 | cut -d ',' -f 1
 }
 
 sh_getfullusernameloggeduserbyid() {
@@ -5064,6 +5139,7 @@ sh_setLogPrefix
 }
 sh_checkDependencies
 sh_checkDisplay
+sh_update_self
 sh_loadSavedConfig
 sh_disablePrintk
 sh_init "$@"
