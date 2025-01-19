@@ -5,7 +5,7 @@
 #  void-install
 #  Created: 2022/12/24
 #  Altered: 2024/03/11
-#  Updated: sáb 18 jan 2025 23:05:24 -04
+#  Updated: dom 19 jan 2025 18:43:24 -04
 #
 #  Copyright (c) 2022-2025, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -153,6 +153,7 @@ sh_choose_packages() {
 		  _EXTRAS+=' chili-void-tools'
 		  _EXTRAS+=' chili-nano-config'
 		  _EXTRAS+=' chili-utils'
+		  _EXTRAS+=' chili-void-tools'
       #_EXTRAS+=' chili-void-xfce-skel'
     fi
 		## end packages
@@ -1920,8 +1921,11 @@ sh_xfce4minimal() {
 				xfce4-wavelan-plugin
 				xfce4-xkb-plugin
 				plank
-				chili-void-xfce-skel
 			 )
+      if sh_checkRepo 'https://chililinux.com/void/current'; then
+        apkgs+=(chili-void-xfce-skel)
+        apkgs+=(chili-xfce-config)
+      fi
 	fi
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Xfce4 ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${apkgs[*]}"
 }
@@ -3213,13 +3217,14 @@ sh_choosewm() {
 		return
 		;;
 	esac
-	#LCUSTOM=false
 	HYPRLAND=$false
 	if conf "=== ${cmsg_Wm[LC_DEFAULT]^^} ===" \
 			"\n${BOLD}${WHITE}$(gettext "Uma instalação customizada irá instalar pacotes extras e também")" \
 			"\n$(gettext "fazer diversas configurações, evitando faze-las manualmente posteriormente.")\n" \
 			"\n${BOLD}${RED}$(gettext "Customizar a instalação?")\n\n"; then
 		LCUSTOM=true
+	else
+		LCUSTOM=false
 	fi
 	_WINDOWMANAGER=($(strtoarray "$wm"))
 	if grep -qi hyprland <<< "${_WINDOWMANAGER[@]}"; then
@@ -3700,13 +3705,12 @@ sh_install() {
 	local end_datetime
 	local akernel=(linux dbus)
 	local afirmware=(wifi-firmware)
+	local abase=(zstd xz cryptsetup lvm2 wireless_tools wpa_supplicant)
+	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils)
 
 	if $LCUSTOM; then
-	local abase=(zstd xz cryptsetup lvm2 wireless_tools wpa_supplicant socklog-void openntpd)
-	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils grub-terminus grub-btrfs-runit)
-	else
-	local abase=(cryptsetup lvm2 wireless_tools wpa_supplicant)
-	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils)
+	  abase+=(socklog-void openntpd)
+	  agrub+=(grub-terminus grub-btrfs-runit)
 	fi
 
 	ncounter=0
@@ -3772,7 +3776,7 @@ sh_install() {
       fi
    		sh_update_bashrc
     	sh_grubInstall
- 			sh_copy_scripts
+ 			#sh_copy_scripts
 	   	sh_make_fstab
     	sh_make_user
     	sh_update_hostname
