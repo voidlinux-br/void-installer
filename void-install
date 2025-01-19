@@ -77,6 +77,8 @@ sh_update_self() {
   local repo_url="https://raw.githubusercontent.com/voidlinux-br/void-installer/main/void-install"
   local local_script="$0"
   local temp_file
+  local remote_hash
+  local local_hash
 
   # Cria um arquivo temporário para armazenar a versão remota
   temp_file=$(mktemp)
@@ -94,8 +96,12 @@ sh_update_self() {
     return 1
   fi
 
-  # Compara o script local com o remoto
-  if ! diff -q "$local_script" "$temp_file" >/dev/null 2>&1; then
+  # Calcula os hashes das versões local e remota
+  remote_hash=$(sha256sum "$temp_file" | awk '{print $1}')
+  local_hash=$(sha256sum "$local_script" | awk '{print $1}')
+
+  # Compara os hashes para detectar mudanças
+  if [[ "$remote_hash" != "$local_hash" ]]; then
     echo "Nova versão encontrada. Atualizando o script..."
     mv "$temp_file" "$local_script"
     chmod +x "$local_script"
