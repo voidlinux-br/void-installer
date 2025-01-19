@@ -6,7 +6,6 @@
 #  Created: 2022/12/24
 #  Altered: 2024/03/11
 #  Updated: sáb 18 jan 2025 22:51:18 -04
-sex 17 jan 2025 15:09:45 -04
 #
 #  Copyright (c) 2022-2025, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -83,7 +82,7 @@ sh_update_self() {
   # Cria um arquivo temporário para armazenar a versão remota
   temp_file=$(mktemp)
 
-  echo "Verificando por atualizações do script..."
+  log_msg "Verificando por atualizações do script..."
 
   # Baixa a versão mais recente do repositório
   if command -v curl >/dev/null 2>&1; then
@@ -91,7 +90,7 @@ sh_update_self() {
   elif command -v wget >/dev/null 2>&1; then
     wget -q "$repo_url" -O "$temp_file"
   else
-    echo "Erro: nem curl nem wget estão instalados. Atualização não pode ser realizada."
+    log_msg "Erro: nem curl nem wget estão instalados. Atualização não pode ser realizada."
     rm -f "$temp_file"
     return 1
   fi
@@ -102,15 +101,17 @@ sh_update_self() {
 
   # Compara os hashes para detectar mudanças
   if [[ "$remote_hash" != "$local_hash" ]]; then
-    echo "Nova versão encontrada. Atualizando o script..."
+    log_msg "Nova versão encontrada. Atualizando o script..."
     mv "$temp_file" "$local_script"
     chmod +x "$local_script"
-    echo "Atualização concluída. Recarregando o script..."
+    log_msg "Atualização concluída. Recarregando o script..."
+    die
     exec "$local_script" "$@" # Recarrega o script com os mesmos argumentos
   else
-    echo "O script já está atualizado."
+    msg_msg "O script já está atualizado."
     rm -f "$temp_file"
   fi
+  die
 }
 
 sh_choose_packages() {
