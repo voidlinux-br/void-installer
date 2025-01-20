@@ -3356,7 +3356,7 @@ display_config() {
 
 sh_getTrueFalse() {
   local var="$1"
-  [[ "$var" == 'true' ]] && echo 'sim' || echo 'não'
+  [[ "$var" == 'true' ]] && echo 'Sim' || echo 'Nao'
  }
 
 sh_getinfoFde() {
