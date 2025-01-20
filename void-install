@@ -154,7 +154,6 @@ sh_choose_packages() {
 		  _EXTRAS+=' chili-nano-config'
 		  _EXTRAS+=' chili-utils'
 		  _EXTRAS+=' chili-void-tools'
-      #_EXTRAS+=' chili-void-xfce-skel'
     fi
 		## end packages
 	else
@@ -1923,8 +1922,8 @@ sh_xfce4minimal() {
 				plank
 			 )
       if sh_checkRepo 'https://chililinux.com/void/current'; then
-        apkgs+=(chili-void-xfce-skel)
         apkgs+=(chili-xfce-config)
+        #apkgs+=(chili-void-xfce-skel)
       fi
 	fi
 	sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Xfce4 ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C ${XBPS_INSTALL_UNPACK_ONLY} ${apkgs[*]}"
