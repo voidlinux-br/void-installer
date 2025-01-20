@@ -3347,6 +3347,7 @@ display_config() {
                   \n$(padr "${cmsg_BootLoader[$LC_DEFAULT]} (${_DISKTABLE}) :" 30 ' ') \Zb\Z0${AConfDisk[_BOOTLOADER]} | $(sh_splitarray "${AARRAY_DSK_DEVICES[$_BOOTLOADER]}" 2) | $(sh_splitarray "${AARRAY_DSK_DEVICES[$_BOOTLOADER]}" 4)${RESET}\
                                           \n$(padr "Detect SO's (os-prober) :" 30 ' ') \Zb\Z0$(sh_getyes "${AConfDisk[_OSPROBER]}")${RESET}\
                                      \n$(padr "${cmsg_Extra11[$LC_DEFAULT]} :" 30 ' ') \Zb\Z0"${_WINDOWMANAGER[*]}"${RESET}\
+                                                     \n$(padr "Customização :" 30 ' ') \Zb\Z0"$LCUSTOM"${RESET}\
                                                               \n$(padr "Fde :" 30 ' ') \Zb\Z0$(sh_getinfoFde "$LFDE")${RESET}\
                                                               \n$(padr "Lvm :" 30 ' ') \Zb\Z0$(sh_getinfoFde "$LVM")${RESET}\
                                             \n$(padr "FileSystem/Mountpoint :" 30 ' ') \Zb\Z7↓↓↓\
