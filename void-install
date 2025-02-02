@@ -5,7 +5,7 @@
 #  void-install
 #  Created: 2022/12/24
 #  Altered: 2024/03/11
-#  Updated: dom 19 jan 2025 18:43:24 -04
+#  Updated: dom 02 fev 2025 18:43:58 -04
 #
 #  Copyright (c) 2022-2025, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -45,7 +45,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.15.01-20250117'
+readonly _VERSION_='2.25.02.02-20250202'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -482,12 +482,15 @@ sh_setUser() {
 	AsUser[cgroups]=${AsUser[cgroups]:-"wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder"}
 }
 
+# Testa se o terminal suporta caracteres gráficos estendidos
 sh_setAsciiLines() {
-	if [[ "$LANG" =~ 'UTF-8' ]]; then
-		export NCURSES_NO_UTF8_ACS=0
-	else
-		export NCURSES_NO_UTF8_ACS=1
-	fi
+  #Isso força o dialog a usar caracteres ASCII básicos para as bordas.
+  #if [[ "$LANG" =~ 'UTF-8' ]]; then
+  if [[ "$(printf '\u250C')" =~ "┌" ]]; then
+    export NCURSES_NO_UTF8_ACS=1  # Terminal suporta ACS
+  else
+    export NCURSES_NO_UTF8_ACS=0  # Terminal NÃO suporta ACS
+  fi
 }
 
 sh_checkRoot() {
