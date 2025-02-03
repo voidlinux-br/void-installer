@@ -5,7 +5,7 @@
 #  void-install
 #  Created: 2022/12/24
 #  Altered: 2024/03/11
-#  Updated: dom 02 fev 2025 18:43:58 -04
+#  Updated: seg 03 fev 2025 00:15:11 -04
 #
 #  Copyright (c) 2022-2025, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -45,7 +45,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.25.02.02-20250202'
+readonly _VERSION_='2.25.02.03-20250203'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -71,6 +71,57 @@ declare -gA AConfMirror=([_SOURCE]='network' [_MIRROR]='repo - fastly.voidlinux.
 declare -gA AConfWifi=([_NETWORK]='wifi_ssid' [_PASSWORD]='wifi_password')
 declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
+declare dialogRcFile="$HOME/.dialogrc"
+
+cleanup() {
+  rm -f "$dialogRcFile"
+}
+trap cleanup EXIT
+
+sh_create_dialogrc() {
+  cat > "$dialogRcFile" <<-EOF
+  use_shadow = OFF
+  use_colors = ON
+  screen_color = (YELLOW,DEFAULT,OFF)
+  dialog_color = (WHITE,DEFAULT,OFF)
+  title_color = (YELLOW,DEFAULT,ON)
+  border_color = (WHITE,DEFAULT,ON)
+  button_active_color = (BLACK,YELLOW,ON)
+  button_inactive_color = (WHITE,DEFAULT,OFF)
+  button_key_active_color = (BLACK,YELLOW,ON)
+  button_key_inactive_color = (RED,DEFAULT,OFF)
+  button_label_active_color = (BLACK,YELLOW,ON)
+  button_label_inactive_color = (WHITE,DEFAULT,ON)
+  inputbox_color = (WHITE,DEFAULT,OFF)
+  inputbox_border_color = (WHITE,DEFAULT,OFF)
+  searchbox_color = (WHITE,DEFAULT,OFF)
+  searchbox_title_color = (YELLOW,DEFAULT,ON)
+  searchbox_border_color = (WHITE,DEFAULT,ON)
+  position_indicator_color = (YELLOW,DEFAULT,ON)
+  menubox_color = (WHITE,DEFAULT,OFF)
+  menubox_border_color = (WHITE,DEFAULT,ON)
+  item_color = (WHITE,DEFAULT,OFF)
+  item_selected_color = (BLACK,YELLOW,ON)
+  tag_color = (YELLOW,DEFAULT,ON)
+  tag_selected_color = (BLACK,YELLOW,ON)
+  tag_key_color = (RED,DEFAULT,OFF)
+  tag_key_selected_color = (RED,YELLOW,ON)
+  check_color = (WHITE,DEFAULT,OFF)
+  check_selected_color = (BLACK,YELLOW,ON)
+  uarrow_color = (YELLOW,DEFAULT,ON)
+  darrow_color = (YELLOW,DEFAULT,ON)
+  itemhelp_color = (WHITE,DEFAULT,OFF)
+  form_active_text_color = (WHITE,DEFAULT,ON)
+  form_text_color = (WHITE,DEFAULT,ON)
+  form_item_readonly_color = (WHITE,DEFAULT,ON)
+  gauge_color = (YELLOW,DEFAULT,ON)
+  border2_color = (WHITE,DEFAULT,ON)
+  inputbox_border2_color = (WHITE,DEFAULT,OFF)
+  searchbox_border2_color = (WHITE,DEFAULT,ON)
+  menubox_border2_color = (WHITE,DEFAULT,ON)
+EOF
+  export DIALOGRC="$dialogRcFile"
+}
 
 sh_update_self() {
   local repo_url="https://raw.githubusercontent.com/voidlinux-br/void-installer/main/void-install"
@@ -217,6 +268,7 @@ cleanup() {
 }
 
 sh_setEnvironment() {
+  sh_create_dialogrc
 	declare url_mirror='https://repo-fastly.voidlinux.org/'
 	declare -g app_conf='/tmp/void-install.conf'
 	readonly cnickefi='Void_install'
