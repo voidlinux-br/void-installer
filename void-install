@@ -76,7 +76,7 @@ declare dialogRcFile="$HOME/.dialogrc"
 cleanup() {
   rm -f "$dialogRcFile"
 }
-trap cleanup EXIT
+#trap cleanup EXIT
 
 sh_create_dialogrc() {
   cat > "$dialogRcFile" <<-EOF
@@ -268,7 +268,7 @@ cleanup() {
 }
 
 sh_setEnvironment() {
-  sh_create_dialogrc
+  [[ ! -e "$dialogRcFile" ]] && sh_create_dialogrc
 	declare url_mirror='https://repo-fastly.voidlinux.org/'
 	declare -g app_conf='/tmp/void-install.conf'
 	readonly cnickefi='Void_install'
