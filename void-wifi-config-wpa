@@ -1,0 +1,423 @@
+#!/usr/bin/env bash
+# -*- coding: utf-8 -*-
+# shellcheck shell=bash disable=SC1091,SC2039,SC2166
+#
+#  void-wifi-config-wpa
+#  Created: 2025/02/06 - 04:56
+#  Altered: 2025/02/06 - 04:56
+#
+#  Copyright (c) 2025-2025, Vilmar Catafesta <vcatafesta@gmail.com>
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AS IS'' AND ANY EXPRESS OR
+#  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+#  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+#  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+#  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+#  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+#  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##############################################################################
+#export LANGUAGE=pt_BR
+export TEXTDOMAINDIR=/usr/share/locale
+export TEXTDOMAIN=voi-wifi-config-wpa
+
+# Definir a variável de controle para restaurar a formatação original
+reset=$(tput sgr0)
+
+# Definir os estilos de texto como variáveis
+bold=$(tput bold)
+underline=$(tput smul)   # Início do sublinhado
+nounderline=$(tput rmul) # Fim do sublinhado
+reverse=$(tput rev)      # Inverte as cores de fundo e texto
+
+# Definir as cores ANSI como variáveis
+black=$(tput bold)$(tput setaf 0)
+red=$(tput bold)$(tput setaf 196)
+green=$(tput bold)$(tput setaf 2)
+yellow=$(tput bold)$(tput setaf 3)
+blue=$(tput setaf 4)
+pink=$(tput setaf 5)
+magenta=$(tput setaf 5)
+cyan=$(tput setaf 6)
+white=$(tput setaf 7)
+gray=$(tput setaf 8)
+orange=$(tput setaf 202)
+purple=$(tput setaf 125)
+violet=$(tput setaf 61)
+light_red=$(tput setaf 9)
+light_green=$(tput setaf 10)
+light_yellow=$(tput setaf 11)
+light_blue=$(tput setaf 12)
+light_magenta=$(tput setaf 13)
+light_cyan=$(tput setaf 14)
+bright_white=$(tput setaf 15)
+
+#debug
+export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset}'
+#set -x
+#set -e
+shopt -s extglob
+
+#system
+declare APP="${0##*/}"
+declare APPDESC="Wrapper para o wpa_supplicant"
+declare _VERSION_="1.2.06-20250206"
+declare distro="$(uname -n)"
+declare DEPENDENCIES=(tput dialog)
+declare dialogRcFile="$HOME/.dialogrc"
+declare -g sep="\xe2\x94\x82"
+declare ccabec="${APP} - v${_VERSION_} - ${APPDESC} - Configuração Wi-Fi"
+
+# flag dialog exit status codes
+: "${D_OK=0}"
+: "${D_DONE=0}"
+: "${D_CANCEL=1}"
+: "${D_HELP=2}"
+: "${D_EXTRA=3}"
+: "${D_CONFIG=3}"
+: "${D_ITEM_HELP=4}"
+: "${D_ESC=255}"
+
+MostraErro() {
+	echo "erro: ${red}$1${reset} => comando: ${cyan}'$2'${reset} => result=${yellow}$3${reset}"
+}
+trap 'MostraErro "$APP[$FUNCNAME][$LINENO]" "$BASH_COMMAND" "$?"; exit 1' ERR
+
+cleanup() {
+	rm -f "$dialogRcFile"
+}
+#trap cleanup EXIT
+
+sh_create_dialogrc() {
+	cat >"$dialogRcFile" <<-EOF
+		screen_color = (white,black,off)
+		dialog_color = (white,black,off)
+		title_color = (cyan,black,on)
+		border_color = dialog_color
+		shadow_color = (black,black,on)
+		button_inactive_color = dialog_color
+		button_key_inactive_color = dialog_color
+		button_label_inactive_color = dialog_color
+		button_active_color = (white,cyan,on)
+		button_key_active_color = button_active_color
+		button_label_active_color = (black,cyan,on)
+		tag_key_selected_color = (white,cyan,on)
+		item_selected_color = tag_key_selected_color
+    form_text_color = (BLUE,black,ON)
+		form_item_readonly_color = (green,black,on)
+		itemhelp_color = (white,cyan,off)
+		inputbox_color = dialog_color
+		inputbox_border_color = dialog_color
+		searchbox_color = dialog_color
+		searchbox_title_color = title_color
+		searchbox_border_color = border_color
+		position_indicator_color = title_color
+		menubox_color = dialog_color
+		menubox_border_color = border_color
+		item_color = dialog_color
+		tag_color = title_color
+		tag_selected_color = button_label_active_color
+		tag_key_color = button_key_inactive_color
+		check_color = dialog_color
+		check_selected_color = button_active_color
+		uarrow_color = screen_color
+		darrow_color = screen_color
+		form_active_text_color = button_active_color
+		gauge_color = title_color
+		border2_color = dialog_color
+		searchbox_border2_color = dialog_color
+		menubox_border2_color = dialog_color
+		separate_widget = ''
+		tab_len = 0
+		visit_items = off
+		use_shadow = off
+		use_colors = on
+	EOF
+	export DIALOGRC="$dialogRcFile"
+}
+
+die() {
+	local msg="$1"
+	#Definindo variáveis de cores
+	msg="$(sed 's/<[^>]*>//g' <<<"$msg")" # Remove as tags HTML
+	echo -e "==>${cyan}error: ${red}${msg}${reset}"
+	exit 1
+}
+export -f die
+
+msg_raw() {
+	local msg="$1"
+	# Remove tags HTML, se existirem
+	#msg="$(sed 's/<[^>]*>//g' <<< "$msg")"
+
+	# Verifica se existe ':' na mensagem
+	if [[ "$msg" == *:* ]]; then
+		# Divide a string antes e depois do primeiro ':'
+		local before_colon="${msg%%:*}:"
+		local after_colon="${msg#*: }"
+		# Aplica as cores
+		msg="${cyan}${before_colon} ${red}${after_colon}${reset}"
+	else
+		# Se não houver ':', aplica apenas a cor padrão
+		msg="${cyan}${msg}${reset}"
+	fi
+	echo -e "$msg"
+}
+export -f msg_raw
+
+msg() {
+	local msg="$1"
+	msg="$(sed 's/<[^>]*>//g' <<<"$msg")" # Remove as tags HTML
+	echo -e "==>${cyan}[RUNNING]: ${yellow}${msg}${reset}"
+	printf "==>%b%-10s%s\n" "${cyan}" "[RUNNING]" "${yellow}$msg${reset}"
+}
+export -f msg
+
+msg_ok() {
+	local msg="$1"
+	msg="$(sed 's/<[^>]*>//g' <<<"$msg")" # Remove as tags HTML
+	#echo -e "==>${cyan}[FEITO]  : ${green}${msg}${reset}"
+	printf "==>%b%-10s%s\n" "${green}" "[FEITO]" "${green}$msg${reset}"
+}
+export -f msg_ok
+
+msg_run() {
+	local msg="$1"
+	#echo -e "==>${cyan}[RUNNING]: ${yellow}${msg}${reset}"
+	printf "==>%b%-10s%s\n" "${cyan}" "[RUNNING]" "${yellow}$msg${reset}"
+	eval "$msg"
+}
+export -f msg_run
+
+msg_info() {
+	local msg="$1"
+	local caller_function="${FUNCNAME[1]}" # Nome da função que chamou a função atual
+	local caller_line="${BASH_LINENO[1]}"  # Número da linha que chamou a função atual
+	msg="$(sed 's/<[^>]*>//g' <<<"$msg")"  # Remove as tags HTML
+	#echo -e "${blue}==>${green}[${caller_function}:${caller_line}]=>${yellow}info   : ${cyan}${msg}${reset}"
+	#echo -e "${caller_function}=>${yellow}info   : ${cyan}${msg}${reset}"
+	#echo -e "==>${yellow}[INFO]   : ${cyan}${msg}${reset}"
+	printf "==>%b%-10s%s\n" "${yellow}" "[INFO]" "${cyan}$msg${reset}"
+
+}
+export -f msg_info
+
+msg_warning() {
+	local msg="$1"
+	local caller_function="${FUNCNAME[1]}" # Nome da função que chamou a função atual
+	local caller_line="${BASH_LINENO[1]}"  # Número da linha que chamou a função atual
+	msg="$(sed 's/<[^>]*>//g' <<<"$msg")"  # Remove as tags HTML
+	#echo -e "${caller_function}=>${red}warning: ${orange}${msg}${reset}"
+	#echo -e "==>${red}warning: ${orange}${msg}${reset}"
+	printf "==>%b%-10s%s\n" "${red}" "[WARNING]" "${orange}$msg${reset}"
+}
+export -f msg_warning
+
+msg_warn() {
+	local msg="$1"
+	local caller_function="${FUNCNAME[1]}" # Nome da função que chamou a função atual
+	local caller_line="${BASH_LINENO[1]}"  # Número da linha que chamou a função atual
+	msg="$(sed 's/<[^>]*>//g' <<<"$msg")"  # Remove as tags HTML
+	#echo -e "${caller_function}=>${red}warning: ${orange}${msg}${reset}"
+	#echo -e "==>${red}warning: ${orange}${msg}${reset}"
+	printf "==>%b%-10s%s\n" "${red}" "[WARNING]" "${orange}$msg${reset}"
+}
+export -f msg_warn
+
+replicate() {
+	local char=${1:-'#'}
+	local nsize=${2:-$(tput cols)}
+	local line
+	printf -v line "%*s" "$nsize" && echo -e "${blue}${line// /$char}${reset}"
+}
+export -f replicate
+
+send_telegram_message() {
+	local message="$1"
+	local parse_mode="$2"
+
+	# Define parse_mode como "MarkdownV2" se não for especificado
+	[[ -z $parse_mode ]] && parse_mode="HTML"
+
+	# Remove as tags HTML e exibe o resultado no terminal
+	echo -e "${red}$(sed 's/<[^>]*>//g' <<<"$message")${reset}"
+	# Envia a mensagem original com HTML para o Telegram
+	curl -s -X POST "https://api.telegram.org/bot${inputs_telegram_token}/sendMessage" \
+		-d chat_id="${inputs_telegram_chat_id}" \
+		-d text="$message" \
+		-d parse_mode="$parse_mode"
+}
+export -f send_telegram_message
+
+# Função para verificar se o serviço está ativo, e ativar apenas se não estiver
+check_and_start_service() {
+	service=$1
+	service_name=$2
+
+	# Verifica se o serviço está ativo
+	if ! systemctl is-active --quiet "$service"; then
+		# Se o serviço não estiver ativo, tenta ativá-lo
+		msg_warning "O serviço '$service_name' não está ativo. Tentando ativar..."
+		sudo systemctl start "$service"
+
+		# Verifica novamente se o serviço foi ativado com sucesso
+		if systemctl is-active --quiet "$service"; then
+			msg_ok "O serviço '$service_name' foi ativado com sucesso."
+		else
+			die "Falha ao ativar o serviço '$service_name'."
+		fi
+	else
+		msg_ok "O serviço '$service_name' já está ativo."
+	fi
+}
+
+get_wifi_interface() {
+	# Obtém as interfaces de rede Wi-Fi disponíveis
+	interfaces=$(iw dev | grep Interface | awk '{print $2}')
+
+	# Verifica se há interfaces Wi-Fi disponíveis
+	if [ -z "$interfaces" ]; then
+		dialog \
+			--msgbox "Nenhuma interface de rede Wi-Fi encontrada. Saindo..." \
+			6 40
+		exit 1
+	fi
+
+	# Exibe as interfaces em um menu usando o dialog
+	interface=$(dialog \
+		--backtitle "$ccabec" \
+		--title "Selecione a Interface de Rede" \
+		--menu "Escolha a interface de rede" \
+		15 50 4 \
+		$(echo "$interfaces" | awk '{print $1, $1}') 3>&1 1>&2 2>&3)
+
+	# Verifica se o usuário selecionou uma interface
+	if [ -z "$interface" ]; then
+		dialog --msgbox "Nenhuma interface selecionada. Saindo..." 6 40
+		exit 1
+	fi
+}
+
+scan_networks() {
+	# Escaneia as redes Wi-Fi
+	networks=$(sudo iw dev "$interface" scan | grep SSID | awk -F: '{print $2}' | sed 's/^[ \t]*//')
+
+	# Verifica se há redes Wi-Fi disponíveis
+	if [ -z "$networks" ]; then
+		dialog \
+			--msgbox "Nenhuma rede Wi-Fi encontrada. Saindo..." \
+			6 40
+		exit 1
+	fi
+
+	# Retorna as redes encontradas
+	echo "$networks"
+}
+
+# Função para conectar-se à rede Wi-Fi usando wpa_supplicant
+connect_wifi() {
+	# Solicita ao usuário para selecionar a rede Wi-Fi
+	network=$(dialog \
+		--backtitle "$ccabec" \
+		--title "Selecione a Rede Wi-Fi" \
+		--menu "Escolha a rede Wi-Fi" \
+		15 50 4 \
+		$(echo "$networks" | awk '{print $1, $1}') 3>&1 1>&2 2>&3)
+
+	# Verifica se o usuário selecionou uma rede
+	if [ -z "$network" ]; then
+		dialog \
+			--msgbox "Nenhuma rede selecionada. Saindo..." \
+			6 40
+		exit 1
+	fi
+
+	# Solicita ao usuário a senha da rede Wi-Fi
+	password=$(dialog \
+		--backtitle "$ccabec" \
+		--title "Senha da Rede Wi-Fi" \
+		--insecure \
+		--passwordbox "Digite a senha para a rede Wi-Fi '$network'" \
+		8 40 3>&1 1>&2 2>&3)
+
+	# Cria um arquivo de configuração para o wpa_supplicant
+	wpa_conf="/etc/wpa_supplicant/wpa_supplicant.conf"
+
+	# Adiciona a rede ao arquivo de configuração do wpa_supplicant
+	sudo bash -c "cat >> $wpa_conf <<EOF
+network={
+    ssid=\"$network\"
+    psk=\"$password\"
+}
+EOF"
+
+	# Reinicia o wpa_supplicant para aplicar a configuração
+	sudo systemctl restart wpa_supplicant@"$interface".service
+
+	# Verifica se o serviço wpa_supplicant foi iniciado corretamente
+	#if ! systemctl is-active --quiet wpa_supplicant@"$interface".service; then
+	#	dialog --msgbox "Falha ao iniciar o serviço wpa_supplicant para a interface '$interface'. Verifique o log do sistema para mais detalhes." 6 40
+	#	exit 1
+	#fi
+
+	# Verifica se a conexão foi bem-sucedida
+	if iw dev "$interface" link; then
+    dialog \
+      --msgbox "Conectado com sucesso à rede Wi-Fi '$network'!\n\n" \
+      "Status da conexão:\n\n$status"	6 40
+	else
+		dialog \
+			--msgbox "Falha ao conectar à rede Wi-Fi '$network'. Verifique a senha e tente novamente." \
+			6 40
+	fi
+}
+
+# Função principal
+main() {
+	# Verifica se o NetworkManager está ativo, e ativa caso não esteja
+	check_and_start_service "NetworkManager" "NetworkManager"
+
+	# Verifica se o wpa_supplicant está ativo, e ativa caso não esteja
+	check_and_start_service "wpa_supplicant" "wpa_supplicant"
+
+	# Exibe uma mensagem inicial
+	dialog \
+		--backtitle "$ccabec" \
+		--title "Configuração Wi-Fi" \
+		--msgbox "Bem-vindo ao assistente de configuração de Wi-Fi!" \
+		6 40
+
+	# Obtém a interface de rede Wi-Fi
+	get_wifi_interface
+
+	# Escaneia as redes Wi-Fi disponíveis
+	networks=$(scan_networks)
+
+	# Verifica se há redes Wi-Fi disponíveis
+	if [ -z "$networks" ]; then
+		dialog \
+			--msgbox "Nenhuma rede Wi-Fi encontrada. Saindo..." \
+			6 40
+		return 1
+	fi
+
+	# Conecta-se a uma rede Wi-Fi
+	connect_wifi
+	return
+}
+
+# Executa a função principal
+sh_create_dialogrc
+main

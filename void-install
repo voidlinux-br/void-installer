@@ -3375,6 +3375,9 @@ sh_copy_scripts() {
 					void-services
 					void-testmirror
 					void-wifi
+					void-wifi-config
+					void-wifi-config-wpa
+					void-dialog-theme-selector
 					void-xrandr
 					)
 	local script
@@ -5213,7 +5216,7 @@ sh_setLogPrefix
 }
 sh_checkDependencies
 sh_checkDisplay
-sh_update_self "$@"
+#sh_update_self "$@"
 sh_loadSavedConfig
 sh_disablePrintk
 sh_init "$@"
