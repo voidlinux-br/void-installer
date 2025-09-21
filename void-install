@@ -80,7 +80,7 @@ cleanup() {
 
 sh_create_dialogrc() {
   cat > "$dialogRcFile" <<-EOF
-creen_color = (white,black,off)
+screen_color = (white,black,off)
 dialog_color = (white,black,off)
 title_color = (cyan,black,on)
 border_color = dialog_color
