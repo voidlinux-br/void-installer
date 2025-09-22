@@ -887,7 +887,7 @@ evaluate_retval() {
 			[[ -z "$cmsgdie" ]] && die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..." || die "$cmsgdie"
 		else
 	    [[ -n "$cmsgdie" ]] && log_failure_msg_level "${cmsgdie}"
-			log_error "${cmsg_Error_not_fatal[LC_DEFAULT]} $BOOTLOG"
+			log_error "${cmsg_Error_not_fatal[$LC_DEFAULT]} $BOOTLOG"
 		fi
 	fi
 	[[ -n "$cmsgdie" ]] && log_success_msg_level "${cmsgdie}"
@@ -1136,7 +1136,7 @@ sh_mkparted() {
 		else
 			if ! infoconf "${cmsg_Disco[$LC_DEFAULT]}" "$(fdisk -l "$_DEVICE")" \
 				"${YELLOW}${cmsg_CriandoParticoes[$LC_DEFAULT]} ${_DEVICE}" \
-				"\n${cmsg_DesejaCriarParticaoSwap[LC_DEFAULT]}"; then
+				"\n${cmsg_DesejaCriarParticaoSwap[$LC_DEFAULT]}"; then
 				withswap=$false
 			fi
 		fi
@@ -2245,7 +2245,7 @@ sh_chooseSource() {
 	local array=()
 	local x
 
-	Asource["local"]="${cmsg_PacotesDaImagemIso[LC_DEFAULT]}"
+	Asource["local"]="${cmsg_PacotesDaImagemIso[$LC_DEFAULT]}"
 	Asource["network"]="${cmsg_BaixadoDoRepositorioOficial[$LC_DEFAULT]}"
 	Asource["networkFull"]="${cmsg_BaixadoDoRepositorioOficialFull[$LC_DEFAULT]}"
 	cextra="${cmsg_ExtraNotIso[$LC_DEFAULT]}"
@@ -2271,7 +2271,7 @@ sh_chooseSource() {
 
 	while true;
 	do
-	src=$(${DIALOG} --title "=== ${cmsg_Source[LC_DEFAULT]^^} ===" \
+	src=$(${DIALOG} --title "=== ${cmsg_Source[$LC_DEFAULT]^^} ===" \
 		--default-item "$_SOURCE" \
 		--stdout \
 		--colors \
@@ -2289,7 +2289,7 @@ sh_chooseSource() {
 		#dom 03 mar 2024 17:00:23 -04
 		if [[ "$src" = "networkFull" ]]; then
 			if ! sh_checkcommand "${XBPS_INSTALL_CMD}"; then
-				alerta "=== ${cmsg_Source[LC_DEFAULT]^^} ===" \
+				alerta "=== ${cmsg_Source[$LC_DEFAULT]^^} ===" \
 					"\n${BOLD}$(gettext "Aparentemente, o VOID Linux NÃO está sendo usado como host.\nEscolha network ou ISO")"
 				continue
 			fi
@@ -2532,7 +2532,7 @@ sh_chooseMirror() {
 		done <<<"${sorted_list[@]}"
 
 		mirror=$(${DIALOG} \
-			--title "=== ${cmsg_Mirror[LC_DEFAULT]^^} ===" \
+			--title "=== ${cmsg_Mirror[$LC_DEFAULT]^^} ===" \
 			--stdout \
 			--keep-tite \
 			--aspect 20 \
@@ -2556,16 +2556,16 @@ sh_chooseMirror() {
 			grafico=$true
 			if [[ -n $(command -v void-testmirror) || -n $(command -v ./void-testmirror) ]]; then
 				last_msg="Wait... ${cmsg_Gerando[$LC_DEFAULT]} test with void-testmirror ${xurl}"
-				msg "=== ${cmsg_Mirror[LC_DEFAULT]^^} === void-testmirror" "$last_msg" "$(log_info_msg "$last_msg")"
+				msg "=== ${cmsg_Mirror[$LC_DEFAULT]^^} === void-testmirror" "$last_msg" "$(log_info_msg "$last_msg")"
 				result=$(void-testmirror --nocolor --ping --quiet)
 				evaluate_retval "$?" "$err_not_fatal"
 				[[ -z "$result" ]] && result="${RED}ERRO DESCONHECIDO: void-testmirror não retornou resultado${RESET}"
-				info "=== ${cmsg_Mirror[LC_DEFAULT]^^} === void-testmirror" "\n$result"
+				info "=== ${cmsg_Mirror[$LC_DEFAULT]^^} === void-testmirror" "\n$result"
 			else
 				last_msg "Wait... ${cmsg_Gerando[$LC_DEFAULT]} test with void-mirror ${xurl}"
 				msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
 				evaluate_retval "1" "$err_not_fatal"
-				info "=== ${cmsg_Mirror[LC_DEFAULT]^^} === void-testmirror" "\n${RED}void-testmirror não foi localizado no \$PATH${RESET}" \
+				info "=== ${cmsg_Mirror[$LC_DEFAULT]^^} === void-testmirror" "\n${RED}void-testmirror não foi localizado no \$PATH${RESET}" \
 					"${RED}void-testmirror não foi localizado em $PWD!${RESET}"
 			fi
 			grafico=$oldgrafico
@@ -2579,7 +2579,7 @@ sh_chooseMirror() {
 		LMIRROR=$true
 
 		if [[ "$distro" = @(void|void-live|voidlinux) ]]; then
-			if conf "=== ${cmsg_Mirror[LC_DEFAULT]^^} ===" \
+			if conf "=== ${cmsg_Mirror[$LC_DEFAULT]^^} ===" \
 				"\n${BOLD}$(gettext "Aparentemente, o VOID Linux está sendo usado como host.")\n" \
 				"\n${BOLD}${CYAN}Mirror     : ${AConfMirror[_MIRROR]}" \
 				"\n${BOLD}${CYAN}Url Mirror : $url_mirror" \
@@ -3215,7 +3215,7 @@ sh_choosewm() {
         return
     fi
 
-	aWm[tty]="${cmsg_tty[LC_DEFAULT]}"
+	aWm[tty]="${cmsg_tty[$LC_DEFAULT]}"
 	aWm[awesome]="Awesome"
 	aWm[blackbox]="Blackbox"
 	aWm[bspwm]="Tiling window manager based on binary space partitioning"
@@ -3276,7 +3276,7 @@ sh_choosewm() {
 		;;
 	esac
 	HYPRLAND=$false
-	if conf "=== ${cmsg_Wm[LC_DEFAULT]^^} ===" \
+	if conf "=== ${cmsg_Wm[$LC_DEFAULT]^^} ===" \
 			"\n${BOLD}${WHITE}$(gettext "Uma instalação customizada irá instalar pacotes extras e também")" \
 			"\n$(gettext "fazer diversas configurações, evitando faze-las manualmente posteriormente.")\n" \
 			"\n${BOLD}${RED}$(gettext "Customizar a instalação?")\n\n"; then
@@ -3401,8 +3401,8 @@ display_config() {
                                                          \n$(padr "Hostname :" 30 ' ') \Zb\Z0${AsUser[chostname]}${RESET}\
                                      \n$(padr "${cmsg_Teclado[$LC_DEFAULT]} :" 30 ' ') \Zb\Z0${AConfLocale[_KEYMAP]}${RESET}\
                                                          \n$(padr "Timezone :" 30 ' ') \Zb\Z0${AConfLocale[_TIMEZONE]}${RESET}\
-     \n$(padr "${cmsg_redewifi[$LC_DEFAULT]} (${cmsg_opcional[LC_DEFAULT]}) :" 30 ' ') \Zb\Z0${AConfWifi[_NETWORK]}${RESET}\
-    \n$(padr "${cmsg_senhawifi[$LC_DEFAULT]} (${cmsg_opcional[LC_DEFAULT]}) :" 30 ' ') \Zb\Z0$(sh_gethidden-password "${AConfWifi[_PASSWORD]}")${RESET}\
+     \n$(padr "${cmsg_redewifi[$LC_DEFAULT]} (${cmsg_opcional[$LC_DEFAULT]}) :" 30 ' ') \Zb\Z0${AConfWifi[_NETWORK]}${RESET}\
+    \n$(padr "${cmsg_senhawifi[$LC_DEFAULT]} (${cmsg_opcional[$LC_DEFAULT]}) :" 30 ' ') \Zb\Z0$(sh_gethidden-password "${AConfWifi[_PASSWORD]}")${RESET}\
                                       \n$(padr "${cmsg_Mirror[$LC_DEFAULT]} :" 30 ' ') \Zb\Z0${AConfMirror[url_mirror]} - ${AConfMirror[location]}${RESET}\
                                       \n$(padr "${cmsg_Source[$LC_DEFAULT]} :" 30 ' ') \Zb\Z0${AConfMirror[_SOURCE]}${RESET}\
                                       \n$(padr "${cmsg_Extra6[$LC_DEFAULT]} :" 30 ' ') \Zb\Z0${AConfDisk[_DEVICE]} | $(sh_splitarray "${AARRAY_DSK_DEVICES[$_BOOTLOADER]}" 2) | $(sh_splitarray "${AARRAY_DSK_DEVICES[$_BOOTLOADER]}" 4)${RESET}\
@@ -3513,9 +3513,9 @@ sh_checkInstall() {
 	fi
 
 	display_config
-	if conf "${cmsg_ConfSalva[LC_DEFAULT]^^}" "$SETUP " \
-		"${RESET}\n${cmsg_AcompanheInstalacao[LC_DEFAULT]} : ${BLUE}sudo tail -f $BOOTLOG${RESET}" \
-		"\n${cmsg_OuPeloTerminal[LC_DEFAULT]}                : ${BLUE}(ctrl+alt+f8)${RESET}" \
+	if conf "${cmsg_ConfSalva[$LC_DEFAULT]^^}" "$SETUP " \
+		"${RESET}\n${cmsg_AcompanheInstalacao[$LC_DEFAULT]} : ${BLUE}sudo tail -f $BOOTLOG${RESET}" \
+		"\n${cmsg_OuPeloTerminal[$LC_DEFAULT]}                : ${BLUE}(ctrl+alt+f8)${RESET}" \
 		"\n\n${BOLD}${WHITE}${cmsg_descInstalar[$LC_DEFAULT]}?"; then
 		clear
 		return 0
@@ -3682,7 +3682,7 @@ sh_tar_rootfs() {
 			sh_checkIntegrityTarball || return 1
 			sh_install
 		else
-			die "${cmsg_ERRO[LC_DEFAULT]} tar #$?. ${cmsg_ErroTar[LC_DEFAULT]} $_TARBALL_ROOTFS ${cmsg_Em[LC_DEFAULT]} $dir_install"
+			die "${cmsg_ERRO[$LC_DEFAULT]} tar #$?. ${cmsg_ErroTar[$LC_DEFAULT]} $_TARBALL_ROOTFS ${cmsg_Em[$LC_DEFAULT]} $dir_install"
 		fi
 	fi
 }
@@ -3911,12 +3911,12 @@ sh_install() {
 			sh_chmod_tmp
 			sh_umount_fs
 			end_datetime=$(date)
-			alerta "$APP" "${cmsg_FinalizadaComSucesso[LC_DEFAULT]}\n" \
+			alerta "$APP" "${cmsg_FinalizadaComSucesso[$LC_DEFAULT]}\n" \
 				"Start Date time  : $start_datetime" \
 				"Finish Date Time : $end_datetime" \
 				"Time elapsed     : ${RED}$(sh_time_elapsed)"
 		else
-			die "${cmsg_ERRO[LC_DEFAULT]} tar #$?. ${cmsg_ErroTar[LC_DEFAULT]} $_TARBALL_ROOTFS ${cmsg_Em[LC_DEFAULT]} $dir_install"
+			die "${cmsg_ERRO[$LC_DEFAULT]} tar #$?. ${cmsg_ErroTar[$LC_DEFAULT]} $_TARBALL_ROOTFS ${cmsg_Em[$LC_DEFAULT]} $dir_install"
 		fi
 		exit 0
 	} # > out & sh_monitor
@@ -4169,7 +4169,7 @@ Create it or define:\n
 
 sh_getyes() {
 	local var="$1"
-	[[ "$var" -eq 0 ]] && { echo "${cmsg_nolabel[LC_DEFAULT]}"; } || { echo "${cmsg_yeslabel[LC_DEFAULT]}"; }
+	[[ "$var" -eq 0 ]] && { echo "${cmsg_nolabel[$LC_DEFAULT]}"; } || { echo "${cmsg_yeslabel[$LC_DEFAULT]}"; }
 }
 
 sh_choosePartition() {
@@ -4215,7 +4215,7 @@ sh_choosePartition() {
 		part=$(${DIALOG} \
 			--default-item "$_DEVICE" \
 			--backtitle    "$ccabec" \
-			--title        "${cmsg_TitleFileSystem[LC_DEFAULT]}" \
+			--title        "${cmsg_TitleFileSystem[$LC_DEFAULT]}" \
 			--ok-label     "${cmsg_Mudar[$LC_DEFAULT]}" \
 			--cancel-label "${cmsg_ButtonFeito[$LC_DEFAULT]}" \
 			--colors \
@@ -4457,27 +4457,27 @@ sh_main_menu() {
 			--extra-button --extra-label "${cmsg_Definicoes[$LC_DEFAULT]}" \
 			--title "$APP - ${cmsg_MenuInstalacao[$LC_DEFAULT]} $(sh_getparamfile)" \
 			--menu "${RESET}${cmsg_MENU[$LC_DEFAULT]}" 9 100 0 \
-			"${cmsg_Mirror[$LC_DEFAULT]}" "${cmsg_descMirror[LC_DEFAULT]}" \
-			"${cmsg_Source[$LC_DEFAULT]}" "${cmsg_DefinirInstalacaoDeOrigem[LC_DEFAULT]}" \
-			"${cmsg_Disco[$LC_DEFAULT]}" "${cmsg_descDisco[LC_DEFAULT]}" \
-			"${cmsg_BootLoader[$LC_DEFAULT]}" "${cmsg_descBootLoader[LC_DEFAULT]}" \
-			"FileSystem" "${cmsg_descFileSystem[LC_DEFAULT]}" \
-			"${cmsg_Teclado[$LC_DEFAULT]}" "${cmsg_descTeclado[LC_DEFAULT]}" \
-			"Timezone" "${cmsg_descTimezone[LC_DEFAULT]}" \
-			"Wm" "${cmsg_descWm[LC_DEFAULT]}" \
-			"Extra" "${cmsg_descExtra[LC_DEFAULT]}" \
-			"Audio" "${cmsg_DefinirAudioServer[LC_DEFAULT]}" \
+			"${cmsg_Mirror[$LC_DEFAULT]}" "${cmsg_descMirror[$LC_DEFAULT]}" \
+			"${cmsg_Source[$LC_DEFAULT]}" "${cmsg_DefinirInstalacaoDeOrigem[$LC_DEFAULT]}" \
+			"${cmsg_Disco[$LC_DEFAULT]}" "${cmsg_descDisco[$LC_DEFAULT]}" \
+			"${cmsg_BootLoader[$LC_DEFAULT]}" "${cmsg_descBootLoader[$LC_DEFAULT]}" \
+			"FileSystem" "${cmsg_descFileSystem[$LC_DEFAULT]}" \
+			"${cmsg_Teclado[$LC_DEFAULT]}" "${cmsg_descTeclado[$LC_DEFAULT]}" \
+			"Timezone" "${cmsg_descTimezone[$LC_DEFAULT]}" \
+			"Wm" "${cmsg_descWm[$LC_DEFAULT]}" \
+			"Extra" "${cmsg_descExtra[$LC_DEFAULT]}" \
+			"Audio" "${cmsg_DefinirAudioServer[$LC_DEFAULT]}" \
 			"${cmsg_Instalar[$LC_DEFAULT]}" "${cmsg_descInstalar[$LC_DEFAULT]}" \
 			"Fde" "Full-Disk Encryption + Lvm (optional)" \
 			"Lvm" "Logical Volume Management (optional)" \
 			"Vg" "Delete/Clear Volume Group (VG) from LVM (optional)" \
-			"Wifi" "${cmsg_descWifi[LC_DEFAULT]}" \
-			"${cmsg_Servicos[$LC_DEFAULT]}" "${cmsg_utilvoidservices[LC_DEFAULT]}" \
-			"${cmsg_Sair[$LC_DEFAULT]}" "${cmsg_descSair[LC_DEFAULT]}" 2>&1 >/dev/tty)
+			"Wifi" "${cmsg_descWifi[$LC_DEFAULT]}" \
+			"${cmsg_Servicos[$LC_DEFAULT]}" "${cmsg_utilvoidservices[$LC_DEFAULT]}" \
+			"${cmsg_Sair[$LC_DEFAULT]}" "${cmsg_descSair[$LC_DEFAULT]}" 2>&1 >/dev/tty)
 
 		if [ $? -eq 3 ]; then
 			display_config
-			info "${cmsg_ConfSalva[LC_DEFAULT]^^}" "$SETUP"
+			info "${cmsg_ConfSalva[$LC_DEFAULT]^^}" "$SETUP"
 			continue
 		fi
 
@@ -4563,7 +4563,7 @@ sh_init() {
 			LCHROOT=$true
 			appexec+=('sh_dryrun')
 			;;
-		*) die "${cmsg_operNotSupported[LC_DEFAULT]}: $1 ($(gettext "usar -h para ajuda"))" ;;
+		*) die "${cmsg_operNotSupported[$LC_DEFAULT]}: $1 ($(gettext "usar -h para ajuda"))" ;;
 		esac
 		shift
 	done
@@ -4623,11 +4623,11 @@ sh_confLvm() {
 	fi
 
 	if ! ((LDISK)); then
-		alerta "${RED}${REVERSE}$ctitlemenu ${cmsg_TitleDisco[LC_DEFAULT]}" "${RED}${REVERSE}${cmsg_NotConfDisco[LC_DEFAULT]^^}"
+		alerta "${RED}${REVERSE}$ctitlemenu ${cmsg_TitleDisco[$LC_DEFAULT]}" "${RED}${REVERSE}${cmsg_NotConfDisco[$LC_DEFAULT]^^}"
 		DEFITEM="${cmsg_Disco[$LC_DEFAULT]}"
 		return 1
 	elif ! ((LPARTITION)); then
-		alerta "${RED}${REVERSE}$ctitlemenu $(gettext "=== PARTIÇÃO ===")" "${RED}${REVERSE}${cmsg_NotConfFileSystem[LC_DEFAULT]^^}"
+		alerta "${RED}${REVERSE}$ctitlemenu $(gettext "=== PARTIÇÃO ===")" "${RED}${REVERSE}${cmsg_NotConfFileSystem[$LC_DEFAULT]^^}"
 		DEFITEM="FileSystem"
 		return 1
 	fi
