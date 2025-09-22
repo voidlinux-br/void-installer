@@ -289,7 +289,7 @@ sh_setEnvironment() {
 	readonly err_fatal=$true
 	readonly err_not_fatal=$false
 	readonly BOOTLOG="/tmp/void-install-$(sh_diahora).log"
-	readonly LOGGER='/dev/tty8'
+	readonly LOGGER='/dev/tty9'
 	shell='/bin/sh'
 	: "${ccabec="$APP v${_VERSION_} - https://github.com/voidlinux-br/void-installer"}"
 	: "${ccabecmin="$APP v${_VERSION_}"}"
@@ -3970,8 +3970,8 @@ sh_setMknodTty() {
 	if [[ -c "$LOGGER" ]]; then
 		return 0
 	fi
-	mknod -m 0620 /dev/tty8 c 4 8
-	chown --reference=/dev/tty0 /dev/tty8
+	mknod -m 0620 /dev/tty9 c 4 8
+	chown --reference=/dev/tty0 /dev/tty9
 }
 
 sh_seekstrarray() {
@@ -5039,7 +5039,7 @@ sh_setLanguage() {
 	cmsg_DesejaProsseguir[pt_BR]=$(gettext "Deseja prosseguir SEM partição de swap?")
 	cmsg_DesejaCriarParticaoSwap[pt_BR]=$(gettext "Deseja criar partição de swap ?")
 	cmsg_AcompanheInstalacao[pt_BR]=$(gettext "Acompanhe a evolução da instalação            ")
-	cmsg_OuPeloTerminal[pt_BR]=$(gettext "e/ou pelo terminal tty8        ")
+	cmsg_OuPeloTerminal[pt_BR]=$(gettext "e/ou pelo terminal tty9        ")
 	cmsg_PacotesDaImagemIso[pt_BR]=$(gettext "Utilizar os pacotes da imagem ISO")
 	cmsg_BaixadoDoRepositorioOficial[pt_BR]=$(gettext     "Utilizar tarball base e atualizar pela internet (qualquer host Linux)")
 	cmsg_BaixadoDoRepositorioOficialFull[pt_BR]=$(gettext "Baixar todos os pacotes da internet (requer host Void Linux)")
