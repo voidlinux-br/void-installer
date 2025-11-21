@@ -433,8 +433,8 @@ Verificar status:
 ```sh
 sv status zramen
 ```
+O ZRAM será ativado automaticamente em todos os boots
 
-O ZRAM será ativado automaticamente em todos os boots.
 ---
 
 # 🎉 SISTEMA COMPLETO, HÍBRIDO E À PROVA DE FUTURO
