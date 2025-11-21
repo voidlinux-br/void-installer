@@ -52,18 +52,16 @@ export PS1="${GREEN}\u${YELLOW}@${CYAN}\h${RED}:\w\ ${RESET}\# "
 # ▶️ 2. Conectar à Internet
 
 Wi-Fi:
-
-
 ```sh
 wpa_passphrase "SSID" "SENHA" > wifi.conf
 wpa_supplicant -B -i wlan0 -c wifi.conf
 dhcpcd wlan0
 ```
 
-```sh
+Instalte alguns necessários pacotes:
+```bash
 xbps-install -Sy parted vpm vsv nano
 ```
-
 ---
 
 # ▶️ 3. Identificar o disco
@@ -71,22 +69,27 @@ xbps-install -Sy parted vpm vsv nano
 ```sh
 fdisk -l
 ```
+ou
 
-Assumiremos **/dev/sda**.
+```sh
+parted -l
+```
+
+Assumiremos para o tutorial **/dev/sda**
 
 ---
 
 # ▶️ 4. Criar tabela GPT + Partições (ORDEM CORRETA)
 
-**Explicação:**  
-A partição BIOS **DEVE** ser a primeira.  
+**Explicação:** 
+A partição BIOS **DEVE** ser a primeira. 
 Isso aumenta compatibilidade com placas-mãe antigas, bootloaders problemáticos e BIOS que esperam o código de boot nas primeiras áreas do disco.
 
 A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 
 ### Ordem ideal:
-1️⃣ BIOS Boot (EF02)  
-2️⃣ ESP (EFI System, FAT32)  
+1️⃣ BIOS Boot (EF02) 
+2️⃣ ESP (EFI System, FAT32) 
 3️⃣ Btrfs (raiz)
 
 ---
