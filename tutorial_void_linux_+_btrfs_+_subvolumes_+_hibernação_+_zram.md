@@ -363,6 +363,15 @@ Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua 
 
 Personalizar o .bashrc do root (opcional)
 ```sh
+cat << 'EOF' > /root/.bash_profile
+# ~/.bash_profile — carrega o .bashrc no Void
+
+# Se o .bashrc existir, carregue
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+EOF
+
 cat << 'EOF' > /root/.bashrc
 # ============================
 #   .bashrc ROOT — Void Linux
