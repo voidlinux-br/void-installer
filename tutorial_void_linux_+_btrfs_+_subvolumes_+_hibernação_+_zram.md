@@ -376,7 +376,27 @@ for i in run dev sys proc; do umount -R /mnt/$i; done
 umount -R /mnt
 reboot
 ```
+### ▶️ Alterar o shell padrão do usuário root para Bash
+Por padrão, o Void Linux usa `/bin/sh` (dash) como shell mínimo.  
+Para que o usuário **root** utilize o Bash ao fazer login (TTY/SSH), execute:
+
+```sh
+chsh -s /bin/bash root
+```
+Verifique se a alteração foi aplicada:
+
+```sh
+getent passwd root
+```
+
+A última coluna deve mostrar:
+
+```
+/bin/bash
+```
+Isso altera apenas o **shell de login** do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
 ---
+
 ## ▶️ 14. Ativar ZRAM (após o reboot no sistema instalado)
 
 O Void Linux utiliza o serviço **zramen** para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
