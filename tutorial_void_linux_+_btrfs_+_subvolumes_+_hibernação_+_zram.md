@@ -37,14 +37,13 @@ bash
 
 Cole no terminal:
 ```sh
-export GREEN="\033[1;32m"   # Verde
-export RED="\033[1;31m"     # Vermelho
-export YELLOW="\033[1;33m"  # Amarelo
-export BLUE="\033[1;34m"    # Azul
-export MAGENTA="\033[1;35m" # Magenta
-export CYAN="\033[1;36m"    # Ciano
-export RESET="\033[0m"      # Resetar as cores
-export PS1="${GREEN}\u${YELLOW}@${CYAN}\h${RED}:\w\ ${RESET}\# "
+get_exit_status() {
+  local status="$?"
+  [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
+}
+export PS1='\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
+$( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
+\[\033[0m\]\$ '
 ```
 
 # ▶️ 2. Conectar à Internet
@@ -128,6 +127,10 @@ w
 ```sh
 mkfs.fat -F32 /dev/sda2     # ESP (2ª partição)
 mkfs.btrfs -f /dev/sda3     # Btrfs (3ª partição)
+```
+verifique:
+```
+lsblk -f /dev/sda
 ```
 ---
 
