@@ -170,6 +170,10 @@ mount -o noatime,compress=zstd,space_cache=v2,subvol=@var_cache /dev/sda3 /mnt/v
 # Monta a ESP/UEFI corretamente em /boot/efi
 mount /dev/sda2 /mnt/boot/efi
 ```
+verifique a montagem:
+```
+lsblk -f /dev/sda
+```
 
 Copia as chaves do repositório (XBPS keys) para o /mnt
 ```sh
