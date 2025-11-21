@@ -405,6 +405,7 @@ ln -s /etc/sv/zramen /var/service
 
 Este SSD boota **em qualquer máquina do planeta**.
 
+# DISCLAMER
                 Este tutorial é livre: você é livre para alterá-lo e redistribuí-lo.
                 O tutorial é disponibilizado para você sob a Licença MIT, e
                 inclui software de código aberto sob uma variedade de outras licenças.
