@@ -394,7 +394,8 @@ A última coluna deve mostrar:
 ```
 /bin/bash
 ```
-Isso altera apenas o **shell de login** do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
+Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
+
 ---
 
 ## ▶️ 14. Ativar ZRAM (após o reboot no sistema instalado)
