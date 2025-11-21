@@ -58,9 +58,9 @@ wpa_supplicant -B -i wlan0 -c wifi.conf
 dhcpcd wlan0
 ```
 
-Instalte alguns necessários pacotes:
+Instale alguns necessários pacotes:
 ```bash
-xbps-install -Sy parted vpm vsv nano
+xbps-install -Sy xbps parted vpm vsv nano
 ```
 ---
 
@@ -100,9 +100,9 @@ parted --script /dev/sda -- \
     mklabel gpt \
     mkpart primary fat32 1MiB 2MiB set 1 bios on name 1 BIOS \
     mkpart primary fat32 2MiB 512MiB set 2 esp on name 2 EFI \
-    mkpart primary ext4 512MiB 100% name 3 ROOT \
+    mkpart primary btrfs 512MiB 100% name 3 ROOT \
     align-check optimal 1
-parted --script /dev/vda -- print
+parted --script /dev/sda -- print
 ```
 
 OU
@@ -143,7 +143,7 @@ mkfs.btrfs -f /dev/sda3     # Btrfs (3ª partição)
 
 # ▶️ 6. Criar subvolumes Btrfs
 
-**REVISÃO:** A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks. O subvolume `@opt` foi removido por ser menos comum no Void. O subvolume `@swap` foi adicionado para o `swapfile`.
+**REVISÃO:** A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
 
 ```sh
 # Monta o subvolume padrão (ID 5) para criar os outros
@@ -181,11 +181,9 @@ mount -o noatime,compress=zstd,space_cache=v2,subvol=@snapshots /dev/sda3 /mnt/.
 mount -o noatime,nodatacow,space_cache=v2,subvol=@var_log       /dev/sda3 /mnt/var/log
 mount -o noatime,nodatacow,space_cache=v2,subvol=@var_cache     /dev/sda3 /mnt/var/cache
 
-# Monta a ESP
+# Monta a ESP/UEFI
 mount /dev/sda2 /mnt/boot
 ```
-
----
 
 Copia as chaves do repositório (XBPS keys) para o /mnt
 ```sh
@@ -193,6 +191,7 @@ mkdir -pv /mnt/var/db/xbps/keys
 cp -rpvf /var/db/xbps/keys/*.plist /mnt/var/db/xbps/keys/
 cp /etc/resolv.conf /mnt/etc/resolv.conf
 ```
+---
 
 # ▶️ 8. Instalar o Void Linux
 ```sh
@@ -241,10 +240,10 @@ Gere o locales:
 xbps-reconfigure -f glibc-locales
 ```
 
-Ativar serviços:
+Ativar alguns serviços:
 ```sh
 ln -sf /etc/sv/dhcpcd /var/service
-ln -sf /etc/sv/sshdd /var/service
+ln -sf /etc/sv/sshd /var/service
 ```
 
 reconfigurar senha root:
@@ -269,7 +268,7 @@ rm -f /swap/swapfile
 # 2. Desabilitar COW (desabilita compressão automaticamente)
 chattr +C /swap
 
-# 3. Criar swapfile sem buracos (fallocate, não truncate ben dd). Esse é o único método garantido:
+# 3. Criar swapfile sem buracos (fallocate, não truncate nem dd). Esse é o único método garantido:
 fallocate -l 16G /swap/swapfile
 chmod 600 /swap/swapfile
 
@@ -294,7 +293,7 @@ Obter offset:
 
 ```sh
 # Instala o pacote para o filefrag
-xbps-install e2fsprogs
+xbps-install -Sy e2fsprogs
 
 # Obtém o offset
 offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
@@ -310,12 +309,13 @@ UUID_EFI=$(blkid -s UUID -o value /dev/sda2)
 ```
 
 2. Configurar o GRUB com o UUID da partição e o offset do `swapfile`:
-# Edite o arquivo /etc/default/grub e adicione/modifique a linha:
-# Use o editor vi ou nano para fazer a alteração
+Edite o arquivo /etc/default/grub e adicione/modifique a linha: Use o editor vi ou nano para fazer a alteração
 ```sh
 GRUB_CMDLINE_LINUX="resume=UUID=$UUID resume_offset=$offset"
 vi /etc/default/grub
+```
 ou
+```sh
 nano /etc/default/grub
 ```
 
