@@ -425,11 +425,12 @@ O ZRAM será ativado automaticamente em todos os boots.
 
 Este SSD boota **em qualquer máquina do planeta**.
 
-# DISCLAMER
-                Este tutorial é livre: você é livre para alterá-lo e redistribuí-lo.
-                O tutorial é disponibilizado para você sob a Licença MIT, e
-                inclui software de código aberto sob uma variedade de outras licenças.
-                Você pode ler instruções sobre como baixar e criar para você mesmo
-                o código fonte específico usado para criar esta cópia.
-                Este tutorial vem com absolutamente NENHUMA garantia.
+# DISCLAIMER
 
+Este tutorial é livre: você pode usar, copiar, modificar e redistribuir como quiser.  
+O conteúdo é disponibilizado sob a **Licença MIT**, e pode incluir trechos ou comandos derivados de softwares de código aberto sujeitos às suas próprias licenças.
+
+Nenhuma garantia é fornecida — tudo aqui é entregue “no estado em que se encontra”.  
+Use por sua conta e risco. Nem o autor, nem colaboradores, nem o Void Linux são responsáveis por perdas, danos, falhas de sistema ou qualquer consequência do uso deste material.
+
+Se desejar, você pode obter o código-fonte, revisar, adaptar e gerar sua própria versão deste tutorial.
