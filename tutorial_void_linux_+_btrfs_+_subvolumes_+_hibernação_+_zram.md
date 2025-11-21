@@ -309,13 +309,9 @@ UUID_EFI=$(blkid -s UUID -o value /dev/sda2)
 ```
 
 2. Configurar o GRUB com o UUID da partição e o offset do `swapfile`:
-Edite o arquivo /etc/default/grub e adicione/modifique a linha: Use o editor vi ou nano para fazer a alteração
+Edite o arquivo /etc/default/grub e adicione/modifique a linha:
 ```sh
 GRUB_CMDLINE_LINUX="resume=UUID=$UUID resume_offset=$offset"
-vi /etc/default/grub
-```
-ou
-```sh
 nano /etc/default/grub
 ```
 
@@ -380,13 +376,12 @@ for i in run dev sys proc; do umount -R /mnt/$i; done
 umount -R /mnt
 reboot
 ```
-
 ---
 
 # ▶️ 14. Ativar ZRAM
 
 ```sh
-xbps-install zramen
+xbps-install -Sy zramen
 nano /etc/zramen.conf
 ```
 
@@ -399,7 +394,6 @@ zram_algorithm=zstd
 ```sh
 ln -s /etc/sv/zramen /var/service
 ```
-
 ---
 
 # 🎉 SISTEMA COMPLETO, HÍBRIDO E À PROVA DE FUTURO
@@ -410,3 +404,11 @@ ln -s /etc/sv/zramen /var/service
 - Zram para performance 
 
 Este SSD boota **em qualquer máquina do planeta**.
+
+                Este tutorial é livre: você é livre para alterá-lo e redistribuí-lo.
+                O tutorial é disponibilizado para você sob a Licença MIT, e
+                inclui software de código aberto sob uma variedade de outras licenças.
+                Você pode ler instruções sobre como baixar e criar para você mesmo
+                o código fonte específico usado para criar esta cópia.
+                Este tutorial vem com absolutamente NENHUMA garantia.
+
