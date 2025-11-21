@@ -190,7 +190,6 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current \
 ```sh
 for i in proc sys dev run; do mount --rbind /$i /mnt/$i; done
 chroot /mnt /bin/bash
-bash
 export PS1='\033[1;32m\u\033[1;33m@\033[1;36m\h\033[1;31m:\w \033[0m# '
 ```
 
@@ -204,13 +203,13 @@ ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 nano /etc/default/libc-locales
 ```
 
-Descomente:
+Descomente as linhas:
 ```
 en_US.UTF-8 UTF-8
 pt_BR.UTF-8 UTF-8
 ```
 
-ou use o comando abaixo:
+ou use o comando abaixo para fazer automaticamente:
 ```sh
 sed -i -e 's/^#\(en_US.UTF-8 UTF-8\)/\1/' \
        -e 's/^#\(pt_BR.UTF-8 UTF-8\)/\1/' \
