@@ -205,7 +205,7 @@ $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d
 # ▶️ 10. Configurações iniciais
 ```sh
 echo void > /etc/hostname
-ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
+ln -sfv /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 ```
 
 ```sh
@@ -232,8 +232,8 @@ xbps-reconfigure -f glibc-locales
 
 Ativar alguns serviços:
 ```sh
-ln -sf /etc/sv/dhcpcd /var/service
-ln -sf /etc/sv/sshd /var/service
+ln -sfv /etc/sv/dhcpcd /var/service
+ln -sfv /etc/sv/sshd /var/service
 ```
 
 reconfigurar senha root:
@@ -267,11 +267,6 @@ mkswap /swap/swapfile
 swapon /swap/swapfile
 ```
 
-Adicionar ao /etc/fstab (usando o caminho absoluto no subvolume):
-```
-echo "/swap/swapfile none swap sw 0 0" >> /etc/fstab
-```
-
 Obter offset:
 ```sh
 # Instala o pacote para o filefrag
@@ -298,6 +293,7 @@ nano /etc/default/grub
 3. Refazer o `initrd`
 ```sh
 KVER=$(ls /usr/lib/modules)
+echo $KVER
 dracut --force /boot/initramfs-${KVER}.img ${KVER}
 ```
 
@@ -313,6 +309,7 @@ UUID=$UUID         /.snapshots btrfs noatime,compress=zstd,space_cache=v2,subvol
 # ======== EFI System Partition ========
 UUID=$UUID_EFI     /boot/efi   vfat  defaults,noatime,umask=0077                             0 2
 # ======== Swapfile ========
+/swap/swapfile     none        swap  sw                                                      0 0
 EOF
 ```
 
