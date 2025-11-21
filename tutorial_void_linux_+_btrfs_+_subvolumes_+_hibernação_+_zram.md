@@ -377,13 +377,23 @@ umount -R /mnt
 reboot
 ```
 ---
+## ▶️ 14. Ativar ZRAM (após o reboot no sistema instalado)
 
-# ▶️ 14. Ativar ZRAM
+O Void Linux utiliza o serviço **zramen** para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
+
+### 14.1 Instalar o zramen
 
 ```sh
 xbps-install -Sy zramen
+```
+
+### 14.2 Configurar o ZRAM
+
+```sh
 nano /etc/zramen.conf
 ```
+
+Configuração recomendada:
 
 ```
 zram_fraction=0.5
@@ -391,9 +401,19 @@ zram_devices=1
 zram_algorithm=zstd
 ```
 
+### 14.3 Ativar o serviço no runit
+
 ```sh
 ln -s /etc/sv/zramen /var/service
 ```
+
+Verificar status:
+
+```sh
+sv status zramen
+```
+
+O ZRAM será ativado automaticamente em todos os boots.
 ---
 
 # 🎉 SISTEMA COMPLETO, HÍBRIDO E À PROVA DE FUTURO
