@@ -30,15 +30,13 @@ Entre como root.
 
 ---
 
-
 Troque o shell de sh para o bash. O dash/sh NÃO suporta várias coisas que muitos scripts usam.
 ```sh
 bash
 ```
 
 Cole no terminal:
-
-```bash
+```sh
 export GREEN="\033[1;32m"   # Verde
 export RED="\033[1;31m"     # Vermelho
 export YELLOW="\033[1;33m"  # Amarelo
@@ -50,7 +48,6 @@ export PS1="${GREEN}\u${YELLOW}@${CYAN}\h${RED}:\w\ ${RESET}\# "
 ```
 
 # ▶️ 2. Conectar à Internet
-
 Wi-Fi:
 ```sh
 wpa_passphrase "SSID" "SENHA" > wifi.conf
@@ -59,7 +56,7 @@ dhcpcd wlan0
 ```
 
 Instale alguns necessários pacotes:
-```bash
+```sh
 xbps-install -Sy xbps parted vpm vsv nano
 ```
 ---
@@ -80,16 +77,13 @@ Assumiremos para o tutorial **/dev/sda**
 ---
 
 # ▶️ 4. Criar tabela GPT + Partições (ORDEM CORRETA)
-
-**Explicação:** 
 A partição BIOS **DEVE** ser a primeira. 
 Isso aumenta compatibilidade com placas-mãe antigas, bootloaders problemáticos e BIOS que esperam o código de boot nas primeiras áreas do disco.
-
 A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 
 ### Ordem ideal:
-1️⃣ BIOS Boot (EF02) 
-2️⃣ ESP (EFI System, FAT32) 
+1️⃣ BIOS Boot (EF02)  
+2️⃣ ESP (EFI System, FAT32)  
 3️⃣ Btrfs (raiz)
 
 ---
@@ -112,7 +106,6 @@ fdisk /dev/sda
 ```
 
 No fdisk:
-
 ```
 g                      # cria GPT
 
@@ -129,22 +122,17 @@ n                      # restante do disco
 
 w
 ```
-
 ---
 
 # ▶️ 5. Formatar as partições
-
 ```sh
 mkfs.fat -F32 /dev/sda2     # ESP (2ª partição)
 mkfs.btrfs -f /dev/sda3     # Btrfs (3ª partição)
 ```
-
 ---
 
 # ▶️ 6. Criar subvolumes Btrfs
-
-**REVISÃO:** A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
-
+A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
 ```sh
 # Monta o subvolume padrão (ID 5) para criar os outros
 mount -o subvolid=5 /dev/sda3 /mnt
@@ -163,33 +151,28 @@ umount /mnt
 ---
 
 # ▶️ 7. Montar subvolumes
-
-**REVISÃO:** Montagem inicial com `subvol=@` e montagem dos subvolumes com `subvolid=5` para garantir que o subvolume `@` seja o padrão e que os outros subvolumes sejam montados corretamente, evitando problemas de aninhamento. A opção `ssd` foi removida por ser obsoleta.
-
 ```sh
 # Monta o subvolume principal (@)
 mount -o noatime,compress=zstd,space_cache=v2,subvol=@ /dev/sda3 /mnt
 
 # Cria os pontos de montagem
-mkdir -pv /mnt/{boot,home,var/log,var/cache,.snapshots,swap}
+mkdir -pv /mnt/{boot/efi,home,var/log,var/cache,.snapshots,swap}
 
-# Monta os subvolumes restantes usando subvolid=5 para evitar problemas de aninhamento
+# Monta os subvolumes restantes
 mount -o noatime,compress=zstd,space_cache=v2,subvol=@home      /dev/sda3 /mnt/home
 mount -o noatime,compress=zstd,space_cache=v2,subvol=@snapshots /dev/sda3 /mnt/.snapshots
+mount -o noatime,compress=zstd,space_cache=v2,subvol=@var_log   /dev/sda3 /mnt/var/log
+mount -o noatime,compress=zstd,space_cache=v2,subvol=@var_cache /dev/sda3 /mnt/var/cache
 
-# Monta subvolumes com nodatacow
-mount -o noatime,nodatacow,space_cache=v2,subvol=@var_log       /dev/sda3 /mnt/var/log
-mount -o noatime,nodatacow,space_cache=v2,subvol=@var_cache     /dev/sda3 /mnt/var/cache
-
-# Monta a ESP/UEFI
-mount /dev/sda2 /mnt/boot
+# Monta a ESP/UEFI corretamente em /boot/efi
+mount /dev/sda2 /mnt/boot/efi
 ```
 
 Copia as chaves do repositório (XBPS keys) para o /mnt
 ```sh
 mkdir -pv /mnt/var/db/xbps/keys
-cp -rpvf /var/db/xbps/keys/*.plist /mnt/var/db/xbps/keys/
-cp /etc/resolv.conf /mnt/etc/resolv.conf
+cp -rpafv /var/db/xbps/keys/*.plist /mnt/var/db/xbps/keys/
+cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
 ```
 ---
 
@@ -212,7 +195,6 @@ export PS1='\033[1;32m\u\033[1;33m@\033[1;36m\h\033[1;31m:\w \033[0m# '
 ```
 
 # ▶️ 10. Configurações iniciais
-
 ```sh
 echo void > /etc/hostname
 ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
@@ -252,12 +234,6 @@ passwd
 ```
 
 # ▶️ 11. Criar swapfile com suporte a hibernação
-
-**REVISÃO:** A criação do `swapfile` foi ajustada para seguir a ordem correta e as melhores práticas do Btrfs:
-1. Desabilitar COW e compressão no subvolume `@swap`.
-2. Criar o `swapfile` dentro do subvolume `@swap`.
-3. Desabilitar COW e compressão no arquivo.
-
 ```sh
 # 1. Criar diretório
 mkdir /swap
@@ -284,13 +260,11 @@ swapon /swap/swapfile
 ```
 
 Adicionar ao /etc/fstab (usando o caminho absoluto no subvolume):
-
 ```
 echo "/swap/swapfile none swap sw 0 0" >> /etc/fstab
 ```
 
 Obter offset:
-
 ```sh
 # Instala o pacote para o filefrag
 xbps-install -Sy e2fsprogs
@@ -300,9 +274,7 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
 
 **Configurar o Kernel para Hibernação:**
-
 1. Obter o UUID da partição Btrfs (ex: /dev/sda3):
-
 ```sh
 UUID=$(blkid -s UUID -o value /dev/sda3)
 UUID_EFI=$(blkid -s UUID -o value /dev/sda2)
@@ -317,65 +289,53 @@ nano /etc/default/grub
 
 3. Refazer o `initrd`
 ```sh
-KVER=$(ls /lib/modules)
+KVER=$(ls /usr/lib/modules)
 dracut --force /boot/initramfs-${KVER}.img ${KVER}
 ```
 
 4. Configurar montagem dos subvolumes no /etc/fstab
 ```sh
-echo {
-"# ======== BTRFS – Subvolumes ========"
-"UUID=$UUID         /           btrfs noatime,compress=zstd,space_cache=v2,subvol=@           0 0"
-"UUID=$UUID         /home       btrfs noatime,compress=zstd,space_cache=v2,subvol=@home       0 0"
-"UUID=$UUID         /opt        btrfs noatime,compress=zstd,space_cache=v2,subvol=@opt        0 0"
-"UUID=$UUID         /var/log    btrfs noatime,compress=zstd,space_cache=v2,subvol=@var_log    0 0"
-"UUID=$UUID         /var/cache  btrfs noatime,compress=zstd,space_cache=v2,subvol=@var_cache  0 0"
-"UUID=$UUID         /.snapshots btrfs noatime,compress=zstd,space_cache=v2,subvol=@snapshots  0 0"
-"# ======== EFI System Partition ========"
-"UUID=$UUID_EFI     /boot       vfat  defaults,noatime,umask=0077                             0 2"
-"# ======== Swapfile ========"
-} >> /etc/fstab
-
+cat <<EOF >> /etc/fstab
+# ======== BTRFS – Subvolumes ========
+UUID=$UUID         /           btrfs noatime,compress=zstd,space_cache=v2,subvol=@           0 0
+UUID=$UUID         /home       btrfs noatime,compress=zstd,space_cache=v2,subvol=@home       0 0
+UUID=$UUID         /var/log    btrfs noatime,compress=zstd,space_cache=v2,subvol=@var_log    0 0
+UUID=$UUID         /var/cache  btrfs noatime,compress=zstd,space_cache=v2,subvol=@var_cache  0 0
+UUID=$UUID         /.snapshots btrfs noatime,compress=zstd,space_cache=v2,subvol=@snapshots  0 0
+# ======== EFI System Partition ========
+UUID=$UUID_EFI     /boot/efi   vfat  defaults,noatime,umask=0077                             0 2
+# ======== Swapfile ========
+EOF
 ```
+
 ---
 
 # ▶️ 12. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
 
 ## 🔵 12.1 Instalar GRUB para BIOS (Legacy)
-Usa a partição BIOS criada como primeira.
 
+Usa a partição BIOS criada como primeira.
 ```sh
 grub-install --target=i386-pc /dev/sda
 ```
 
 ## 🟢 12.2 Instalar GRUB para UEFI
-
 ```sh
-grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=Void
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void
 ```
 
 ## 🟣 12.3 Criar fallback UEFI (boot universal)
 Esse arquivo garante boot mesmo quando a NVRAM for apagada.
-
 ```sh
-mkdir -p /boot/EFI/BOOT
-cp -vf /boot/EFI/Void/grubx64.efi /boot/EFI/BOOT/BOOTX64.EFI
+mkdir -p /boot/efi/EFI/BOOT
+cp -vf /boot/efi/EFI/Void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
 ```
 
 ## 📝 12.4 Gerar arquivo final do GRUB
-
 ```sh
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
-# ▶️ 13. Finalizar instalação
-
-```sh
-exit
-for i in run dev sys proc; do umount -R /mnt/$i; done
-umount -R /mnt
-reboot
-```
 ### ▶️ Alterar o shell padrão do usuário root para Bash
 Por padrão, o Void Linux usa `/bin/sh` (dash) como shell mínimo.  
 Para que o usuário **root** utilize o Bash ao fazer login (TTY/SSH), execute:
@@ -396,26 +356,29 @@ A última coluna deve mostrar:
 ```
 Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
 
+# ▶️ 13. Finalizar instalação
+```sh
+exit
+for i in run dev sys proc; do umount -R /mnt/$i; done
+umount -R /mnt
+reboot
+```
 ---
 
 ## ▶️ 14. Ativar ZRAM (após o reboot no sistema instalado)
-
-O Void Linux utiliza o serviço **zramen** para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
+O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
 
 ### 14.1 Instalar o zramen
-
 ```sh
 xbps-install -Sy zramen
 ```
 
 ### 14.2 Configurar o ZRAM
-
 ```sh
 nano /etc/zramen.conf
 ```
 
 Configuração recomendada:
-
 ```
 zram_fraction=0.5
 zram_devices=1
@@ -423,13 +386,11 @@ zram_algorithm=zstd
 ```
 
 ### 14.3 Ativar o serviço no runit
-
 ```sh
 ln -s /etc/sv/zramen /var/service
 ```
 
 Verificar status:
-
 ```sh
 sv status zramen
 ```
@@ -457,3 +418,4 @@ Use por sua conta e risco. Nem o autor, nem colaboradores, nem o Void Linux são
 
 Se desejar, você pode obter o código-fonte, revisar, adaptar e gerar sua própria versão deste tutorial.
 ```
+
