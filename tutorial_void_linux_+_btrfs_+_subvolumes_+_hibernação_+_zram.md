@@ -361,6 +361,60 @@ A última coluna deve mostrar:
 ```
 Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
 
+Personalizar o .bashrc do root (opcional)
+```sh
+cat << 'EOF' > /root/.bashrc
+# ============================
+#   .bashrc ROOT — Void Linux
+# ============================
+
+# Só continua se for shell interativo
+[[ $- != *i* ]] && return
+
+# Histórico decente
+HISTSIZE=5000
+HISTFILESIZE=5000
+HISTCONTROL=ignoredups:erasedups
+
+# Editor padrão
+export EDITOR=vim
+export VISUAL=vim
+
+# Função de status (SEM COR – PS1 colore)
+get_exit_status() {
+  local status="$?"
+  [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
+}
+
+# Prompt ROOT — vermelho, com status ✔/✘ colorido
+export PS1='\[\033[1;31m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
+$( if [[ $? -eq 0 ]]; then printf "\033[1;32m✔"; else printf "\033[1;31m✘\033[1;35m%d" $?; fi ) \
+\[\033[0m\]# '
+
+# Alias úteis
+alias ll='ls -lh --color=auto'
+alias la='ls -A --color=auto'
+alias l='ls --color=auto'
+alias grep='grep --color=auto'
+alias df='df -h'
+alias du='du -h'
+alias free='free -h'
+
+# Segurança raiz (evita rm catastrófico)
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Autocompletar (se existir)
+if [ -f /etc/bash/bashrc.d/complete.bash ]; then
+  . /etc/bash/bashrc.d/complete.bash
+fi
+
+# PATH extra
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+EOF
+```
+
 # ▶️ 13. Finalizar instalação
 ```sh
 exit
