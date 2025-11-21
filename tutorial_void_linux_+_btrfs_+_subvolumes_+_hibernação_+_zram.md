@@ -38,14 +38,14 @@ bash
 
 Cole no terminal:
 
-```sh
-GREEN="\033[1;32m"   # Verde
-RED="\033[1;31m"     # Vermelho
-YELLOW="\033[1;33m"  # Amarelo
-BLUE="\033[1;34m"    # Azul
-MAGENTA="\033[1;35m" # Magenta
-CYAN="\033[1;36m"    # Ciano
-RESET="\033[0m"      # Resetar as cores
+```bash
+export GREEN="\033[1;32m"   # Verde
+export RED="\033[1;31m"     # Vermelho
+export YELLOW="\033[1;33m"  # Amarelo
+export BLUE="\033[1;34m"    # Azul
+export MAGENTA="\033[1;35m" # Magenta
+export CYAN="\033[1;36m"    # Ciano
+export RESET="\033[0m"      # Resetar as cores
 export PS1="${GREEN}\u${YELLOW}@${CYAN}\h${RED}:\w\ ${RESET}\# "
 ```
 
