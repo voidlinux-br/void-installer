@@ -177,7 +177,7 @@ lsblk -f /dev/sda
 
 Copia as chaves do repositório (XBPS keys) para o /mnt
 ```sh
-mkdir -pv /mnt/var/db/xbps/keys
+mkdir -pv /mnt/{etc,var/db/xbps/keys}
 cp -rpafv /var/db/xbps/keys/*.plist /mnt/var/db/xbps/keys/
 cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
 ```
