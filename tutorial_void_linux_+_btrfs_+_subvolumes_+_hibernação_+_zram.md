@@ -307,9 +307,9 @@ UUID=$UUID         /var/log    btrfs noatime,compress=zstd,space_cache=v2,subvol
 UUID=$UUID         /var/cache  btrfs noatime,compress=zstd,space_cache=v2,subvol=@var_cache  0 0
 UUID=$UUID         /.snapshots btrfs noatime,compress=zstd,space_cache=v2,subvol=@snapshots  0 0
 # ======== EFI System Partition ========
-UUID=$UUID_EFI     /boot/efi   vfat  defaults,noatime,umask=0077                             0 2
+UUID=$UUID_EFI                                     /boot/efi   vfat  defaults,noatime,umask=0077                             0 2
 # ======== Swapfile ========
-/swap/swapfile     none        swap  sw                                                      0 0
+/swap/swapfile                                     none        swap  sw                                                      0 0
 EOF
 ```
 
