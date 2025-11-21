@@ -197,7 +197,9 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current \
 ```sh
 for i in proc sys dev run; do mount --rbind /$i /mnt/$i; done
 chroot /mnt /bin/bash
-export PS1='\033[1;32m\u\033[1;33m@\033[1;36m\h\033[1;31m:\w \033[0m# '
+export PS1='(chroot)\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
+$( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
+\[\033[0m\]\$ '
 ```
 
 # ▶️ 10. Configurações iniciais
