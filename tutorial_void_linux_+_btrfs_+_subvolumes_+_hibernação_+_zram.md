@@ -19,7 +19,11 @@ Este guia instala um Void Linux totalmente **híbrido**, capaz de dar boot em:
 Use a versão glibc pela compatibilidade superior:
 
 ```
-void-live-x86_64-BASE.iso
+   https://repo-default.voidlinux.org/live/current/void-live-x86_64-20250202-base.iso
+```
+ou procure a última versão em:
+```
+   https://voidlinux.org/download/
 ```
 
 Entre como root.
