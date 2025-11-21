@@ -346,7 +346,7 @@ echo {
 # ▶️ 12. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
 
 ## 🔵 12.1 Instalar GRUB para BIOS (Legacy)
-Usa a partição EF02 criada como primeira.
+Usa a partição BIOS criada como primeira.
 
 ```sh
 grub-install --target=i386-pc /dev/sda
@@ -359,13 +359,12 @@ grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=Void
 ```
 
 ## 🟣 12.3 Criar fallback UEFI (boot universal)
+Esse arquivo garante boot mesmo quando a NVRAM for apagada.
 
 ```sh
 mkdir -p /boot/EFI/BOOT
 cp -vf /boot/EFI/Void/grubx64.efi /boot/EFI/BOOT/BOOTX64.EFI
 ```
-
-Esse arquivo garante boot mesmo quando a NVRAM for apagada.
 
 ## 📝 12.4 Gerar arquivo final do GRUB
 
