@@ -401,10 +401,10 @@ ln -s /etc/sv/zramen /var/service
 ---
 
 # 🎉 SISTEMA COMPLETO, HÍBRIDO E À PROVA DE FUTURO
-- Boot BIOS + UEFI  
-- Fallback UEFI  
-- Btrfs com snapshots (pronto para Snapper/Timeshift)  
-- Hibernação real com swapfile  
-- Zram para performance  
+- Boot BIOS + UEFI 
+- Fallback UEFI 
+- Btrfs com snapshots (pronto para Snapper/Timeshift) 
+- Hibernação real com swapfile 
+- Zram para performance 
 
 Este SSD boota **em qualquer máquina do planeta**.
