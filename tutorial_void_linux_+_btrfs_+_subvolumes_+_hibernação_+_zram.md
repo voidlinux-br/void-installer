@@ -105,27 +105,51 @@ parted --script /dev/sda -- print
 ```
 
 - ou fdisk (manualmente)
+
+1. Abrir o fdisk
 ```
 fdisk /dev/sda
 ```
 
-- No fdisk:
+2. Criar a partição BIOS Boot (1 MiB)
+Essa partição é essencial para compatibilidade com BIOS antigas e para o GRUB em modo BIOS/Legacy.
 ```
-g                      # cria GPT
+g           # cria tabela GPT
+n           # nova partição
+<ENTER>     # número 1
+<ENTER>     # início automático (setor 2048)
++1M         # tamanho 1 MiB
+t           # mudar tipo
+4           # código = BIOS Boot (ef02)
+```
 
-# 1 – BIOS BOOT (primeira partição)
-n                      # 1–2 MB
-t → EF02               # tipo BIOS Boot
+3. Criar a partição ESP (EFI System Partition – 512 MiB)
+```
+n           # nova partição
+<ENTER>     # número 2
+<ENTER>     # início automático
++512M       # tamanho 512 MiB
+t           # mudar tipo
+2           # seleciona partição 2
+1           # tipo EFI System (ef00)
+```
 
-# 2 – ESP (segunda)
-n                      # 512 MB
-t → 1                  # EFI System Partition
+4. Criar a partição Btrfs (resto do disco)
+```
+n           # nova partição
+<ENTER>     # número 3
+<ENTER>     # início automático
+<ENTER>     # usa todo o restante do disco
+t           # mudar tipo
+3           # seleciona partição 3
+30          # tipo Linux filesystem (8300)
+```
 
-# 3 – Partição principal Btrfs
-n                      # restante do disco
-
+5. Gravar e sair
+```
 w
 ```
+
 ---
 
 # ▶️ 5. Formatar as partições
