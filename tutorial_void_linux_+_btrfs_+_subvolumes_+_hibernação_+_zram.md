@@ -144,8 +144,8 @@ mount -o subvolid=5 /dev/sda3 /mnt
 btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@snapshots
-btrfs subvolume create /mnt/@var_log
-btrfs subvolume create /mnt/@var_cache
+btrfs subvolume create /mnt/@log
+btrfs subvolume create /mnt/@cache
 
 # Desmonte
 umount /mnt
@@ -164,8 +164,8 @@ mkdir -pv /mnt/{boot/efi,home,var/log,var/cache,.snapshots,swap}
 # Monta os subvolumes restantes
 mount -o noatime,compress=zstd,space_cache=v2,subvol=@home      /dev/sda3 /mnt/home
 mount -o noatime,compress=zstd,space_cache=v2,subvol=@snapshots /dev/sda3 /mnt/.snapshots
-mount -o noatime,compress=zstd,space_cache=v2,subvol=@var_log   /dev/sda3 /mnt/var/log
-mount -o noatime,compress=zstd,space_cache=v2,subvol=@var_cache /dev/sda3 /mnt/var/cache
+mount -o noatime,compress=zstd,space_cache=v2,subvol=@log       /dev/sda3 /mnt/var/log
+mount -o noatime,compress=zstd,space_cache=v2,subvol=@cache     /dev/sda3 /mnt/var/cache
 
 # Monta a ESP/UEFI corretamente em /boot/efi
 mount /dev/sda2 /mnt/boot/efi
@@ -188,7 +188,7 @@ cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
 XBPS_ARCH=x86_64 \
 xbps-install -Sy -R https://repo-default.voidlinux.org/current \
   -r /mnt base-system btrfs-progs grub grub-x86_64-efi \
-  linux-headers linux-firmware-network dhcpcd nano
+  linux-headers linux-firmware-network dhcpcd nano grc
 ```
 
 ---
@@ -303,8 +303,8 @@ cat <<EOF >> /etc/fstab
 # ======== BTRFS – Subvolumes ========
 UUID=$UUID         /           btrfs noatime,compress=zstd,space_cache=v2,subvol=@           0 0
 UUID=$UUID         /home       btrfs noatime,compress=zstd,space_cache=v2,subvol=@home       0 0
-UUID=$UUID         /var/log    btrfs noatime,compress=zstd,space_cache=v2,subvol=@var_log    0 0
-UUID=$UUID         /var/cache  btrfs noatime,compress=zstd,space_cache=v2,subvol=@var_cache  0 0
+UUID=$UUID         /var/log    btrfs noatime,compress=zstd,space_cache=v2,subvol=@log        0 0
+UUID=$UUID         /var/cache  btrfs noatime,compress=zstd,space_cache=v2,subvol=@cache      0 0
 UUID=$UUID         /.snapshots btrfs noatime,compress=zstd,space_cache=v2,subvol=@snapshots  0 0
 # ======== EFI System Partition ========
 UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077                             0 2
@@ -413,6 +413,25 @@ alias free='free -h'
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
+alias ping='grc ping'
+# grc aliases
+alias ping='grc ping'
+alias ping6='grc ping6'
+alias traceroute='grc traceroute'
+alias traceroute6='grc traceroute6'
+alias netstat='grc netstat'
+alias ifconfig='grc ifconfig'
+alias ip='grc ip'
+alias mount='grc mount'
+alias ps='grc ps'
+alias diff='grc diff'
+alias gcc='grc gcc'
+alias make='grc make'
+alias df='grc df'
+alias du='grc du'
+alias duf='grc duf'
+alias dig='grc dig'
+alias dmesg='grc dmesg'
 
 # Autocompletar (se existir)
 if [ -f /etc/bash/bashrc.d/complete.bash ]; then
