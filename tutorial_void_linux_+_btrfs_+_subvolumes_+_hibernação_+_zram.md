@@ -223,7 +223,7 @@ echo void > /etc/hostname
 ```
 
 2. Configurar timezone
-- Define o fuso horário para America/Sao_Paulo:
+- Define o fuso horário para America/Sao_Paulo, altere se necessário:
 ```
 ln -sfv /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 ```
@@ -462,21 +462,9 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 EOF
 ```
 
-# ▶️ 13. Finalizar instalação
-1. Sair do chroot e desmontar os bind mounts:
-```
-exit
-for i in run dev sys proc; do umount -R /mnt/$i; done
-umount -R /mnt
-```
-2. Reiniciar o sistema host:
-```
-reboot
-```
-
 ---
 
-## ▶️ 14. Ativar ZRAM (após o reboot no sistema instalado)
+# ▶️ 13. Ativar ZRAM (opcional)
 O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
 1. Instalar o zramen
 ```
@@ -506,8 +494,21 @@ sv status zramen
 O ZRAM será ativado automaticamente em todos os boots
 
 ---
----
 
+# ▶️ 13. Finalizar instalação
+1. Sair do chroot e desmontar os bind mounts:
+```
+exit
+for i in run dev sys proc; do umount -R /mnt/$i; done
+umount -R /mnt
+```
+2. Reiniciar o sistema host:
+```
+reboot
+```
+
+---
+---
 
 # 🎉 SISTEMA COMPLETO, HÍBRIDO E À PROVA DE FUTURO
 - Boot BIOS + UEFI 
