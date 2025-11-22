@@ -240,13 +240,13 @@ sed -i -e 's/^#\(en_US.UTF-8 UTF-8\)/\1/' \
 xbps-reconfigure -f glibc-locales
 ```
 
-Ativar alguns serviços:
+5. Ativar alguns serviços:
 ```sh
 ln -sfv /etc/sv/dhcpcd /var/service
 ln -sfv /etc/sv/sshd /var/service
 ```
 
-5. reconfigurar senha root:
+6. reconfigurar senha root:
 ```
 passwd
 ```
@@ -283,7 +283,7 @@ mkswap /swap/swapfile
 swapon /swap/swapfile
 ```
 
-Verificar:
+6. Verificar:
 ```
 swapon --show
 ```
@@ -294,8 +294,8 @@ swapon --show
 - 60% é suficiente para hibernação na maioria dos casos. 
 - Para cargas pesadas → use 70% ou 80%.
 
-Obter offset:
-```sh
+7. Obter offset:
+```
 # Instala o pacote para o filefrag
 xbps-install -Sy e2fsprogs
 
@@ -303,34 +303,29 @@ xbps-install -Sy e2fsprogs
 offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
 
-**Configurar o Kernel para Hibernação:**
-1. Obter o UUID da partição Btrfs (ex: /dev/sda3):
-```sh
+# Configurar o Kernel para Hibernação:
+1. Obter o UUIDs das partições:
+```
 UUID=$(blkid -s UUID -o value /dev/sda3)
 UUID_EFI=$(blkid -s UUID -o value /dev/sda2)
 ```
 
 2. Configurar o GRUB com o UUID da partição e o offset do `swapfile`:
-
 Edite o arquivo /etc/default/grub e adicione/modifique a linha:
-```sh
+```
 echo "GRUB_CMDLINE_LINUX=\"resume=UUID=$UUID resume_offset=$offset\"" >> /etc/default/grub
 ```
 
 3. Refazer o `initrd`
-```sh
-KVER=$(ls /usr/lib/modules)
-echo $KVER
+```
+KVER=$(ls /usr/lib/modules); echo $KVER
 dracut --force /boot/initramfs-${KVER}.img ${KVER}
 ```
 
 4. Configurar montagem dos subvolumes no /etc/fstab
-```sh
+```
 cat <<EOF >> /etc/fstab
 # ======== BTRFS – Subvolumes ========
-defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300
-
-
 UUID=$UUID         /           btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@           0 0
 UUID=$UUID         /home       btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@home       0 0
 UUID=$UUID         /var/log    btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@log        0 0
@@ -342,47 +337,44 @@ UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noa
 /swap/swapfile                                    none        swap  sw                                                               0 0
 EOF
 ```
-
 ---
 
 # ▶️ 12. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
-
 1. Instalar GRUB para BIOS (Legacy)
 Usa a partição BIOS criada como primeira.
-```sh
+```
 grub-install --target=i386-pc /dev/sda
 ```
 2. Instalar GRUB para UEFI
-```sh
+```
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void
 ```
 3. Criar fallback UEFI (boot universal)
 Esse arquivo garante boot mesmo quando a NVRAM for apagada.
-```sh
+```
 mkdir -p /boot/efi/EFI/BOOT
 cp -vf /boot/efi/EFI/Void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
 ```
 4. Gerar arquivo final do GRUB
-```sh
+```
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
 ### ▶️ Alterar o shell padrão do usuário root para Bash
 Por padrão, o Void Linux usa `/bin/sh` (dash) como shell mínimo.  
 Para que o usuário **root** utilize o Bash ao fazer login (TTY/SSH), execute:
-
-```sh
+```
 chsh -s /bin/bash root
 ```
-Verifique se a alteração foi aplicada:
 
-```sh
+Verifique se a alteração foi aplicada:
+```
 getent passwd root         # A última coluna deve mostrar: /bin/bash
 ```
 Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
 
 ### ▶️ Personalizar o .bashrc do root (opcional)
-```sh
+```
 cat << 'EOF' > /root/.bash_profile
 # ~/.bash_profile — carrega o .bashrc no Void
 
@@ -396,30 +388,24 @@ cat << 'EOF' > /root/.bashrc
 # ============================
 #   .bashrc ROOT — Void Linux
 # ============================
-
 # Só continua se for shell interativo
 [[ $- != *i* ]] && return
-
 # Histórico decente
 HISTSIZE=5000
 HISTFILESIZE=5000
 HISTCONTROL=ignoredups:erasedups
-
 # Editor padrão
 export EDITOR=vim
 export VISUAL=vim
-
 # Função de status (SEM COR – PS1 colore)
 get_exit_status() {
   local status="$?"
   [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
 }
-
 # Prompt ROOT — vermelho, com status ✔/✘ colorido
 export PS1='\[\033[1;31m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
 $( if [[ $? -eq 0 ]]; then printf "\033[1;32m✔"; else printf "\033[1;31m✘\033[1;35m%d" $?; fi ) \
 \[\033[0m\]# '
-
 # Alias úteis
 alias ll='ls -lh --color=auto'
 alias la='ls -A --color=auto'
@@ -428,7 +414,6 @@ alias grep='grep --color=auto'
 alias df='df -h'
 alias du='du -h'
 alias free='free -h'
-
 # Segurança raiz (evita rm catastrófico)
 alias rm='rm -i'
 alias cp='cp -i'
@@ -452,12 +437,10 @@ alias du='grc du'
 alias duf='grc duf'
 alias dig='grc dig'
 alias dmesg='grc dmesg'
-
 # Autocompletar (se existir)
 if [ -f /etc/bash/bashrc.d/complete.bash ]; then
   . /etc/bash/bashrc.d/complete.bash
 fi
-
 # PATH extra
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 EOF
@@ -474,17 +457,14 @@ reboot
 
 ## ▶️ 14. Ativar ZRAM (após o reboot no sistema instalado)
 O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
-
-### 14.1 Instalar o zramen
-```sh
+1. Instalar o zramen
+```
 xbps-install -Sy zramen
 ```
-
-### 14.2 Configurar o ZRAM
-```sh
+2. Configurar o ZRAM
+```
 nano /etc/zramen.conf
 ```
-
 Configuração recomendada:
 ```
 zram_fraction=0.5
@@ -492,17 +472,15 @@ zram_devices=1
 zram_algorithm=zstd
 ```
 
-### 14.3 Ativar o serviço no runit
-```sh
+3. Ativar o serviço no runit
+```
 ln -s /etc/sv/zramen /var/service
 ```
-
 Verificar status:
-```sh
+```
 sv status zramen
 ```
 O ZRAM será ativado automaticamente em todos os boots
-
 ---
 
 # 🎉 SISTEMA COMPLETO, HÍBRIDO E À PROVA DE FUTURO
