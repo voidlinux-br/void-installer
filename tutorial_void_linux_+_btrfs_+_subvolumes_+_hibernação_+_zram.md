@@ -367,7 +367,7 @@ UUID_EFI=$(blkid -s UUID -o value /dev/sda2)
 
 # ▶️    13. Configurar o Kernel para hibernação (opcional)
 Configurar o GRUB com o UUID da partição e o offset do `swapfile`
-- Adcione a linha abaixo no arquivo /etc/default/grub:
+- Adcione a linha abaixo no arquivo /etc/default/grub
 ```
 echo "GRUB_CMDLINE_LINUX=\"resume=UUID=$UUID resume_offset=$offset\"" >> /etc/default/grub
 ```
@@ -383,7 +383,7 @@ dracut --force /boot/initramfs-${KVER}.img ${KVER}
 ---
 
 # ▶️    15. Configurar montagem dos subvolumes no /etc/fstab
-- Não esquecer de configurar passo 12
+> Não esquecer de configurar passo 12
 ```
 cat <<EOF >> /etc/fstab
 # ======== BTRFS – Subvolumes ========
