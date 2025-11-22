@@ -258,9 +258,7 @@ chmod 600 /swap/swapfile
 
 # 4. Verifica:
 filefrag -v /swap/swapfile
-
-  /swap/swapfile: 1 extent found
-  Se isso aparecer → hibernação vai funcionar 100%.
+   #/swap/swapfile: 1 extent found  (Se isso aparecer → hibernação vai funcionar 100%)
 
 # 5. Criar swap e ativar
 mkswap /swap/swapfile
@@ -284,10 +282,10 @@ UUID_EFI=$(blkid -s UUID -o value /dev/sda2)
 ```
 
 2. Configurar o GRUB com o UUID da partição e o offset do `swapfile`:
+
 Edite o arquivo /etc/default/grub e adicione/modifique a linha:
 ```sh
-GRUB_CMDLINE_LINUX="resume=UUID=$UUID resume_offset=$offset"
-nano /etc/default/grub
+echo "GRUB_CMDLINE_LINUX=\"resume=UUID=$UUID resume_offset=$offset\"" >> /etc/default/grub
 ```
 
 3. Refazer o `initrd`
