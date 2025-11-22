@@ -369,17 +369,11 @@ chsh -s /bin/bash root
 Verifique se a alteração foi aplicada:
 
 ```sh
-getent passwd root
-```
-
-A última coluna deve mostrar:
-
-```
-/bin/bash
+getent passwd root         # A última coluna deve mostrar: /bin/bash
 ```
 Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
 
-Personalizar o .bashrc do root (opcional)
+### ▶️ Personalizar o .bashrc do root (opcional)
 ```sh
 cat << 'EOF' > /root/.bash_profile
 # ~/.bash_profile — carrega o .bashrc no Void
