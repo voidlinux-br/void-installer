@@ -56,7 +56,7 @@ dhcpcd wlan0
 
 Instale alguns necessários pacotes:
 ```sh
-xbps-install -Sy xbps parted vpm vsv nano
+xbps-install -Sy xbps parted vpm vsv nano zstd xz
 ```
 ---
 
@@ -138,7 +138,7 @@ lsblk -f /dev/sda
 A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
 ```sh
 # Monta o subvolume padrão (ID 5) para criar os outros
-mount -o subvolid=5 /dev/sda3 /mnt
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvolid=5 /dev/sda3 /mnt
 
 # Cria subvolumes essenciais
 btrfs subvolume create /mnt/@
@@ -156,16 +156,16 @@ umount /mnt
 # ▶️ 7. Montar subvolumes
 ```sh
 # Monta o subvolume principal (@)
-mount -o noatime,compress=zstd,space_cache=v2,subvol=@ /dev/sda3 /mnt
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@ /dev/sda3 /mnt
 
 # Cria os pontos de montagem
 mkdir -pv /mnt/{boot/efi,home,var/log,var/cache,.snapshots,swap}
 
 # Monta os subvolumes restantes
-mount -o noatime,compress=zstd,space_cache=v2,subvol=@home      /dev/sda3 /mnt/home
-mount -o noatime,compress=zstd,space_cache=v2,subvol=@snapshots /dev/sda3 /mnt/.snapshots
-mount -o noatime,compress=zstd,space_cache=v2,subvol=@log       /dev/sda3 /mnt/var/log
-mount -o noatime,compress=zstd,space_cache=v2,subvol=@cache     /dev/sda3 /mnt/var/cache
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@home      /dev/sda3 /mnt/home
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@snapshots /dev/sda3 /mnt/.snapshots
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@log       /dev/sda3 /mnt/var/log
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@cache     /dev/sda3 /mnt/var/cache
 
 # Monta a ESP/UEFI corretamente em /boot/efi
 mount /dev/sda2 /mnt/boot/efi
