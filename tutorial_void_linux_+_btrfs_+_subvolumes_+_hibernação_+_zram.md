@@ -547,7 +547,6 @@ O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de 
 ```
 xbps-install -Sy zramen
 ```
-
 2. Configurar o ZRAM
 ```
 nano /etc/zramen.conf
@@ -558,13 +557,11 @@ zram_fraction=0.5
 zram_devices=1
 zram_algorithm=zstd
 ```
-
 3. Ativar o serviço no runit
 ```
 ln -s /etc/sv/zramen /var/service
 ```
-
-- Verificar status:
+4. Verificar status:
 ```
 sv status zramen
 ```
