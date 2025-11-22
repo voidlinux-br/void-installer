@@ -87,7 +87,7 @@ A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 - 2️⃣ ESP (EFI System, FAT32)
 - 3️⃣ Btrfs (raiz)
 
-## 1. Usar o parted (automatico)
+## 1. Usando o parted (automatico)
 
 ```
 parted --script /dev/sda -- \
@@ -101,7 +101,7 @@ parted --script /dev/sda -- print
 
 ---
 
-## 2. Ou fdisk (manualmente)
+## 2. Usando fdisk (manualmente)
 
   1. Abrir o fdisk  
      ```
@@ -149,15 +149,18 @@ parted --script /dev/sda -- print
 ---
 
 # ▶️    5. Formatar as partições
+
+Formate cada partição com o sistema de arquivos correto:
 ```
-mkfs.fat -F32 /dev/sda2     # ESP (2ª partição)
-mkfs.btrfs -f /dev/sda3     # Btrfs (3ª partição)
+mkfs.fat -F32 /dev/sda2     # Formata a ESP (EFI System Partition)
+mkfs.btrfs -f /dev/sda3     # Formata a partição raiz em Btrfs
 ```
 
-- verifique:
+- Confirmar se tudo foi criado corretamente:
 ```
 lsblk -f /dev/sda
 ```
+
 ---
 
 # ▶️    6. Criar subvolumes Btrfs
