@@ -287,7 +287,7 @@ rm -f /swap/swapfile
 chattr +C /swap
 ```
 
-4. Criar o swapfile com o tamanho calculado
+4. Criar o swapfile com o tamanho definido anteriormente
 ```
 fallocate -l ${SWAP_GB}G /swap/swapfile
 chmod 600 /swap/swapfile
