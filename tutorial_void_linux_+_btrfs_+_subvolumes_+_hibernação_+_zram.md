@@ -150,7 +150,7 @@ parted --script /dev/sda -- print
 
 # ▶️    5. Formatar as partições
 
-Formate cada partição com o sistema de arquivos correto:
+- Formate cada partição com o sistema de arquivos correto:
 ```
 mkfs.fat -F32 /dev/sda2     # Formata a ESP (EFI System Partition)
 mkfs.btrfs -f /dev/sda3     # Formata a partição raiz em Btrfs
@@ -164,8 +164,9 @@ lsblk -f /dev/sda
 ---
 
 # ▶️    6. Criar subvolumes Btrfs
-A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
-```sh
+
+- A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
+```
 # Monta o subvolume padrão (ID 5) para criar os outros
 mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvolid=5 /dev/sda3 /mnt
 
@@ -322,7 +323,7 @@ mkswap /swap/swapfile
 swapon /swap/swapfile
 ```
 
-- Verificar:
+6. Verificar:
 ```
 swapon --show
 ```
@@ -332,6 +333,7 @@ swapon --show
 - Não precisa ser do tamanho total da RAM. 
 - 60% é suficiente para hibernação na maioria dos casos. 
 - Para cargas pesadas → use 70% ou 80%.
+
 
 7. Obter offset:
 ```
