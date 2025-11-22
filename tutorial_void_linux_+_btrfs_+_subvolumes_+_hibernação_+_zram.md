@@ -264,7 +264,7 @@ passwd
 
 # ▶️ 11. Criar swapfile com suporte a hibernação
 1. Calcular automaticamente o tamanho ideal do swapfile
-Recomendação moderna para hibernação: 60% da RAM total
+- Recomendação moderna para hibernação: 60% da RAM total
 ```
 SWAP_GB=$(LC_ALL=C awk '/MemTotal/ {print int($2 * 0.60 / 1024 / 1024)}' /proc/meminfo)
 echo "Swapfile recomendado: ${SWAP_GB}G"
@@ -322,7 +322,7 @@ UUID_EFI=$(blkid -s UUID -o value /dev/sda2)
 ```
 
 2. Configurar o GRUB com o UUID da partição e o offset do `swapfile`:
-Edite o arquivo /etc/default/grub e adicione/modifique a linha:
+- Edite o arquivo /etc/default/grub e adicione/modifique a linha:
 ```
 echo "GRUB_CMDLINE_LINUX=\"resume=UUID=$UUID resume_offset=$offset\"" >> /etc/default/grub
 ```
@@ -352,7 +352,7 @@ EOF
 
 # ▶️ 12. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
 1. Instalar GRUB para BIOS (Legacy)
-Usa a partição BIOS criada como primeira.
+- Usa a partição BIOS criada como primeira.
 ```
 grub-install --target=i386-pc /dev/sda
 ```
@@ -361,7 +361,7 @@ grub-install --target=i386-pc /dev/sda
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void
 ```
 3. Criar fallback UEFI (boot universal)
-Esse arquivo garante boot mesmo quando a NVRAM for apagada.
+- Esse arquivo garante boot mesmo quando a NVRAM for apagada.
 ```
 mkdir -p /boot/efi/EFI/BOOT
 cp -vf /boot/efi/EFI/Void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
