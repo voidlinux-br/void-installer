@@ -329,11 +329,12 @@ swapon --show
 ```
 
 ### Observações importantes
+```
 - Swapfile em Btrfs sempre aparece como **prealloc**, é normal. 
 - Não precisa ser do tamanho total da RAM. 
 - 60% é suficiente para hibernação na maioria dos casos. 
 - Para cargas pesadas → use 70% ou 80%.
-
+```
 
 7. Obter offset:
 ```
