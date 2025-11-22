@@ -28,6 +28,8 @@ https://voidlinux.org/download/
 
 1. Entre como root.
 ```
+login    : root
+password : voidlinux
 ```
 
 2. Troque o shell de sh para o bash. O dash/sh NÃO suporta várias coisas que muitos scripts usam.
