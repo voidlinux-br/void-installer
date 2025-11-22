@@ -92,7 +92,7 @@ A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 ---
 
 Criar as partições:
-Use o parted (automatico)
+- Use o parted (automatico)
 ```
 parted --script /dev/sda -- \
     mklabel gpt \
@@ -103,12 +103,12 @@ parted --script /dev/sda -- \
 parted --script /dev/sda -- print
 ```
 
-ou fdisk (manualmente)
+- ou fdisk (manualmente)
 ```
 fdisk /dev/sda
 ```
 
-No fdisk:
+- No fdisk:
 ```
 g                      # cria GPT
 
@@ -133,7 +133,7 @@ mkfs.fat -F32 /dev/sda2     # ESP (2ª partição)
 mkfs.btrfs -f /dev/sda3     # Btrfs (3ª partição)
 ```
 
-verifique:
+- verifique:
 ```
 lsblk -f /dev/sda
 ```
