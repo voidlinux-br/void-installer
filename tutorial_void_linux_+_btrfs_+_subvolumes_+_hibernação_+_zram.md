@@ -242,28 +242,45 @@ passwd
 ```
 
 # ▶️ 11. Criar swapfile com suporte a hibernação
-```sh
-# 1. Criar diretório
-mkdir /swap
+## 1. Calcular automaticamente o tamanho ideal do swapfile
 
+Recomendação moderna para hibernação: 60% da RAM total
+```
+SWAP_GB=$(LC_ALL=C awk '/MemTotal/ {print int($2 * 0.60 / 1024 / 1024)}' /proc/meminfo)
+echo "Swapfile recomendado: ${SWAP_GB}G"
+```
+## 2. Criar diretório para o swapfile
+```
+mkdir -p /swap
 swapoff -a 2>/dev/null
 rm -f /swap/swapfile
-
-# 2. Desabilitar COW (desabilita compressão automaticamente)
+```
+## 3. Desabilitar COW (obrigatório no Btrfs)
+```
 chattr +C /swap
-
-# 3. Criar swapfile sem buracos (fallocate, não truncate nem dd). Esse é o único método garantido:
-fallocate -l 16G /swap/swapfile
+```
+## 4. Criar o swapfile com o tamanho calculado
+```
+fallocate -l ${SWAP_GB}G /swap/swapfile
 chmod 600 /swap/swapfile
-
-# 4. Verifica:
-filefrag -v /swap/swapfile
-   #/swap/swapfile: 1 extent found  (Se isso aparecer → hibernação vai funcionar 100%)
-
-# 5. Criar swap e ativar
+```
+## 5. Formatar o swapfile
+```
 mkswap /swap/swapfile
+```
+## 6. Ativar o swap imediatamente
+```
 swapon /swap/swapfile
 ```
+Verificar:
+```
+swapon --show
+```
+### Observações importantes
+- Swapfile em Btrfs sempre aparece como **prealloc**, é normal. 
+- Não precisa ser do tamanho total da RAM. 
+- 60% é suficiente para hibernação na maioria dos casos. 
+- Para cargas pesadas → use 70% ou 80%.
 
 Obter offset:
 ```sh
