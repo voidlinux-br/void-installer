@@ -360,9 +360,7 @@ UUID_EFI=$(blkid -s UUID -o value /dev/sda2)
 ---
 
 # ▶️    13. Configurar o Kernel para hibernação (opcional)
-
-- Configurar o GRUB com o UUID da partição e o offset do `swapfile`
-
+Configurar o GRUB com o UUID da partição e o offset do `swapfile`
 - Edite o arquivo /etc/default/grub e adicione/modifique a linha:
 ```
 echo "GRUB_CMDLINE_LINUX=\"resume=UUID=$UUID resume_offset=$offset\"" >> /etc/default/grub
