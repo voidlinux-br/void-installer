@@ -301,15 +301,18 @@ dracut --force /boot/initramfs-${KVER}.img ${KVER}
 ```sh
 cat <<EOF >> /etc/fstab
 # ======== BTRFS – Subvolumes ========
-UUID=$UUID         /           btrfs noatime,compress=zstd,space_cache=v2,subvol=@           0 0
-UUID=$UUID         /home       btrfs noatime,compress=zstd,space_cache=v2,subvol=@home       0 0
-UUID=$UUID         /var/log    btrfs noatime,compress=zstd,space_cache=v2,subvol=@log        0 0
-UUID=$UUID         /var/cache  btrfs noatime,compress=zstd,space_cache=v2,subvol=@cache      0 0
-UUID=$UUID         /.snapshots btrfs noatime,compress=zstd,space_cache=v2,subvol=@snapshots  0 0
+defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300
+
+
+UUID=$UUID         /           btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@           0 0
+UUID=$UUID         /home       btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@home       0 0
+UUID=$UUID         /var/log    btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@log        0 0
+UUID=$UUID         /var/cache  btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@cache      0 0
+UUID=$UUID         /.snapshots btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@snapshots  0 0
 # ======== EFI System Partition ========
-UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077                             0 2
+UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077                                      0 2
 # ======== Swapfile ========
-/swap/swapfile                                    none        swap  sw                                                      0 0
+/swap/swapfile                                    none        swap  sw                                                               0 0
 EOF
 ```
 
