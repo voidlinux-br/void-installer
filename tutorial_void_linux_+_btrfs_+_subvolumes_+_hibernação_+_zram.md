@@ -350,14 +350,17 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 
 ---
 
-# ▶️    12. Configurar o Kernel para hibernação
+# ▶️    12. Configurar UUIDs
 1. Obter o UUIDs das partições:
 ```
 UUID=$(blkid -s UUID -o value /dev/sda3)
 UUID_EFI=$(blkid -s UUID -o value /dev/sda2)
 ```
+---
 
-2. Configurar o GRUB com o UUID da partição e o offset do `swapfile`:
+# ▶️    13. Configurar o Kernel para hibernação (opcional)
+
+1. Configurar o GRUB com o UUID da partição e o offset do `swapfile`:
 - Edite o arquivo /etc/default/grub e adicione/modifique a linha:
 ```
 echo "GRUB_CMDLINE_LINUX=\"resume=UUID=$UUID resume_offset=$offset\"" >> /etc/default/grub
@@ -368,8 +371,9 @@ echo "GRUB_CMDLINE_LINUX=\"resume=UUID=$UUID resume_offset=$offset\"" >> /etc/de
 KVER=$(ls /usr/lib/modules); echo $KVER
 dracut --force /boot/initramfs-${KVER}.img ${KVER}
 ```
+---
 
-4. Configurar montagem dos subvolumes no /etc/fstab
+# ▶️    14. Configurar montagem dos subvolumes no /etc/fstab
 ```
 cat <<EOF >> /etc/fstab
 # ======== BTRFS – Subvolumes ========
@@ -386,7 +390,7 @@ EOF
 ```
 ---
 
-# ▶️    13. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
+# ▶️    15. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
 1. Instalar GRUB para BIOS (Legacy)
 - Usa a partição BIOS criada como primeira.
 ```
@@ -409,7 +413,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 ---
 
-# ▶️    14. Alterar o shell padrão do usuário root para Bash
+# ▶️    16. Alterar o shell padrão do usuário root para Bash
 Por padrão, o Void Linux usa `/bin/sh` (dash) como shell mínimo.  
 - Para que o usuário **root** utilize o Bash ao fazer login (TTY/SSH), execute:
 ```
@@ -424,7 +428,7 @@ Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua 
 
 ---
 
-# ▶️    15. Personalizar o /etc/xbps.d/00-repository-main.conf (opcional)
+# ▶️    17. Personalizar o /etc/xbps.d/00-repository-main.conf (opcional)
 - Cria o diretório de configurações do XBPS (se ainda não existir) e adiciona uma lista de repositórios oficiais e alternativos.
 Os repositórios repo-fastly costumam ter melhor latência.
 ```
@@ -444,7 +448,7 @@ EOF
 ```
 ---
 
-# ▶️    16. Personalizar o /etc/rc.conf (opcional)
+# ▶️    18. Personalizar o /etc/rc.conf (opcional)
 - Define o fuso horário, layout do teclado e fonte padrão do console.
 ```
 cat << 'EOF' >> /etc/rc.conf
@@ -456,7 +460,7 @@ EOF
 
 ---
 
-# ▶️    17. Personalizar o .bashrc do root (opcional)
+# ▶️    19. Personalizar o .bashrc do root (opcional)
 - Cria um .bash_profile para o usuário root e garante que o .bashrc seja carregado automaticamente no login.
 O Void não carrega .bashrc para o root por padrão, então essa inclusão deixa o shell do root consistente com usuários comuns.
 ```
@@ -533,7 +537,7 @@ EOF
 
 ---
 
-# ▶️    18. Ativar ZRAM (opcional)
+# ▶️    20. Ativar ZRAM (opcional)
 O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
 1. Instalar o zramen
 ```
@@ -564,7 +568,7 @@ O ZRAM será ativado automaticamente em todos os boots
 
 ---
 
-# ▶️    19. Finalizar instalação
+# ▶️    21. Finalizar instalação
 1. Sair do chroot e desmontar os bind mounts:
 ```
 exit
