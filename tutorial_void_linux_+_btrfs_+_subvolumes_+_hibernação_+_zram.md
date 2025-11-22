@@ -495,7 +495,7 @@ O ZRAM será ativado automaticamente em todos os boots
 
 ---
 
-# ▶️ 13. Finalizar instalação
+# ▶️    14. Finalizar instalação
 1. Sair do chroot e desmontar os bind mounts:
 ```
 exit
