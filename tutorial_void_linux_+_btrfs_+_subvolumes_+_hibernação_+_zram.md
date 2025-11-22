@@ -488,6 +488,8 @@ sv status zramen
 O ZRAM será ativado automaticamente em todos os boots
 
 ---
+---
+
 
 # 🎉 SISTEMA COMPLETO, HÍBRIDO E À PROVA DE FUTURO
 - Boot BIOS + UEFI 
