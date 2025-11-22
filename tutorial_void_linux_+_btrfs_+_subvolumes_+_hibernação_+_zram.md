@@ -90,8 +90,6 @@ A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 - 2️⃣ ESP (EFI System, FAT32)
 - 3️⃣ Btrfs (raiz)
 
----
-
 ## 1. Usar o parted (automatico)
 
 ```
