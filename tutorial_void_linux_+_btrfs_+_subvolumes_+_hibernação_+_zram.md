@@ -296,7 +296,7 @@ passwd
 ```
 ---
 
-# ▶️    11. Criar swapfile com suporte a hibernação
+# ▶️    11. Criar swapfile com suporte a hibernação (opcional)
 
 ### Observações importantes
 ```
@@ -398,7 +398,7 @@ UUID=$UUID         /.snapshots btrfs defaults,noatime,ssd,compress=zstd:3,discar
 # ======== EFI System Partition ========
 UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077                                      0 2
 # ======== Swapfile ========
-/swap/swapfile                                    none        swap  sw                                                               0 0
+/swap/swapfile                                    none        swap  sw,nofail                                                        0 0
 EOF
 ```
 ---
@@ -414,7 +414,7 @@ grub-install --target=i386-pc /dev/sda
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void
 ```
 3. Criar fallback UEFI (boot universal)
-- Esse arquivo garante boot mesmo quando a NVRAM for apagada.
+> Esse arquivo garante boot mesmo quando a NVRAM for apagada.
 ```
 mkdir -p /boot/efi/EFI/BOOT
 cp -vf /boot/efi/EFI/Void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
@@ -437,7 +437,7 @@ chsh -s /bin/bash root
 ```
 getent passwd root         # A última coluna deve mostrar: /bin/bash
 ```
-Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
+> Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
 
 ---
 
@@ -462,7 +462,7 @@ EOF
 ---
 
 # ▶️    19. Personalizar o /etc/rc.conf (opcional)
-- Define o fuso horário, layout do teclado e fonte padrão do console.
+- Define o fuso horário, layout do teclado e fonte padrão do console. Altere conforme necessidade.
 ```
 cat << 'EOF' >> /etc/rc.conf
 TIMEZONE=America/Sao_Paulo
