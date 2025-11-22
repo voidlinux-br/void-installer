@@ -239,6 +239,7 @@ export PS1='(chroot)\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\
 $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
 \[\033[0m\]\$ '
 ```
+---
 
 # ▶️    10. Configurações iniciais (no chroot)
 1. Configurar hostname
@@ -285,6 +286,7 @@ ln -sfv /etc/sv/sshd /var/service
 ```
 passwd
 ```
+---
 
 # ▶️    11. Criar swapfile com suporte a hibernação
 1. Calcular automaticamente o tamanho ideal do swapfile
@@ -328,14 +330,6 @@ swapon /swap/swapfile
 swapon --show
 ```
 
-### Observações importantes
-```
-- Swapfile em Btrfs sempre aparece como **prealloc**, é normal. 
-- Não precisa ser do tamanho total da RAM. 
-- 60% é suficiente para hibernação na maioria dos casos. 
-- Para cargas pesadas → use 70% ou 80%.
-```
-
 7. Obter offset:
 ```
 # Instala o pacote para o filefrag
@@ -344,6 +338,15 @@ xbps-install -Sy e2fsprogs
 # Obtém o offset
 offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
+
+### Observações importantes
+```
+- Swapfile em Btrfs sempre aparece como **prealloc**, é normal. 
+- Não precisa ser do tamanho total da RAM. 
+- 60% é suficiente para hibernação na maioria dos casos. 
+- Para cargas pesadas → use 70% ou 80%.
+```
+---
 
 # ▶️    12. Configurar o Kernel para hibernação
 1. Obter o UUIDs das partições:
