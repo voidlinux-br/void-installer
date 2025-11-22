@@ -217,19 +217,19 @@ $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d
 
 # ▶️ 10. Configurações iniciais (no chroot)
 1. Configurar hostname
-Define o nome da máquina:
+- Define o nome da máquina:
 ```
 echo void > /etc/hostname
 ```
 
 2. Configurar timezone
-Define o fuso horário para America/Sao_Paulo:
+- Define o fuso horário para America/Sao_Paulo:
 ```
 ln -sfv /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 ```
 
 3. configure locales
-Edite o arquivo de locales:
+- Edite o arquivo de locales:
 ```
 nano /etc/default/libc-locales
 ```
