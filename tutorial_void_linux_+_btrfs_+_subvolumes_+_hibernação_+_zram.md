@@ -90,8 +90,7 @@ A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 - 2️⃣ ESP (EFI System, FAT32)
 - 3️⃣ Btrfs (raiz)
 
-1. Criar as partições:
-- Use o parted (automatico)
+1. Use o parted (automatico)
 ```
 parted --script /dev/sda -- \
     mklabel gpt \
@@ -101,16 +100,13 @@ parted --script /dev/sda -- \
     align-check optimal 1
 parted --script /dev/sda -- print
 ```
-
-- ou fdisk (manualmente)
-
-Abrir o fdisk
+2. ou fdisk (manualmente)
+   1. Abrir o fdisk
 ```
 fdisk /dev/sda
 ```
-
-Criar a partição BIOS Boot (1 MiB)
-- Essa partição é essencial para compatibilidade com BIOS antigas e para o GRUB em modo BIOS/Legacy.
+   2. Criar a partição BIOS Boot (1 MiB)
+   - Essa partição é essencial para compatibilidade com BIOS antigas e para o GRUB em modo BIOS/Legacy.
 ```
 g           # cria tabela GPT
 n           # nova partição
@@ -121,7 +117,7 @@ t           # mudar tipo
 4           # código = BIOS Boot (ef02)
 ```
 
-Criar a partição ESP (EFI System Partition – 512 MiB)
+   3. Criar a partição ESP (EFI System Partition – 512 MiB)
 ```
 n           # nova partição
 <ENTER>     # número 2
@@ -132,7 +128,7 @@ t           # mudar tipo
 1           # tipo EFI System (ef00)
 ```
 
-Criar a partição Btrfs (resto do disco)
+   4. Criar a partição Btrfs (resto do disco)
 ```
 n           # nova partição
 <ENTER>     # número 3
@@ -143,7 +139,7 @@ t           # mudar tipo
 30          # tipo Linux filesystem (8300)
 ```
 
-Gravar e sair
+   5. Gravar e sair
 ```
 w
 ```
