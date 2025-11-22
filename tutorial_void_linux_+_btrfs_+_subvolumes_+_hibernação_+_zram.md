@@ -74,22 +74,23 @@ Listar os discos disponíveis e anotar o nome do dispositivo (ex: `/dev/sda`, `/
 fdisk -l
 ```
 
-Assumiremos para o tutorial /dev/sda
+Assumiremos para o tutorial `/dev/sda`
+
 ---
 
-# ▶️ 4. Criar tabela GPT + Partições (ORDEM CORRETA)
+# ▶️ 4. Criar tabela GPT + Partições
 A partição BIOS **DEVE** ser a primeira. 
 Isso aumenta compatibilidade com placas-mãe antigas, bootloaders problemáticos e BIOS que esperam o código de boot nas primeiras áreas do disco.
 A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 
-### Ordem ideal:
+### Ordem ideal e correta:
 1️⃣ BIOS Boot (EF02)
 2️⃣ ESP (EFI System, FAT32)
 3️⃣ Btrfs (raiz)
 ---
 
-1. Criar as partições:
-Usando o parted (automatico)
+Criar as partições:
+Use o parted (automatico)
 ```
 parted --script /dev/sda -- \
     mklabel gpt \
@@ -100,7 +101,7 @@ parted --script /dev/sda -- \
 parted --script /dev/sda -- print
 ```
 
-ou use o fdisk (manualmente)
+ou fdisk (manualmente)
 ```
 fdisk /dev/sda
 ```
