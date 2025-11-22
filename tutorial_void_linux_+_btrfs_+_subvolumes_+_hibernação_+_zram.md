@@ -1,4 +1,4 @@
-# 🧩 TUTORIAL VOID LINUX + BTRFS + SUBVOLUMES + HIBERNAÇÃO + ZRAM  
+# 🧩   TUTORIAL VOID LINUX + BTRFS + SUBVOLUMES + HIBERNAÇÃO + ZRAM  
 ### VERSÃO REVISADA E VALIDADA — SISTEMA HÍBRIDO (UEFI + BIOS) — COM ORDEM CORRETA DAS PARTIÇÕES
 
 Este guia instala um Void Linux totalmente **híbrido**, capaz de dar boot em:
@@ -16,13 +16,11 @@ Este guia instala um Void Linux totalmente **híbrido**, capaz de dar boot em:
 ---
 
 # ▶️    1. Bootar o Live ISO
-
-Use a versão glibc pela compatibilidade superior:
-
+- Use a versão glibc pela compatibilidade superior:
 ```
 https://repo-default.voidlinux.org/live/current/void-live-x86_64-20250202-base.iso
 ```
-ou procure a última versão em:
+- ou procure a última versão em:
 ```
 https://voidlinux.org/download/
 ```
@@ -50,14 +48,14 @@ $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d
 ```
 
 # ▶️    2. Conectar à Internet
-Configurar Wi-Fi *(se estiver usando cabo, pule esta etapa)*:
+- Para Wi-Fi *(se estiver no cabo, pule esta etapa)*:
 ```
 wpa_passphrase "SSID" "SENHA" > wifi.conf
 wpa_supplicant -B -i wlan0 -c wifi.conf
 dhcpcd wlan0
 ```
 
-1. Testar conexão com a Internet:
+1. Testar a conexão:
 ```
 ping 8.8.8.8
 ping google.com
