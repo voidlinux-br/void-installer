@@ -289,6 +289,15 @@ passwd
 ---
 
 # ▶️    11. Criar swapfile com suporte a hibernação
+
+### Observações importantes
+```
+- Swapfile em Btrfs sempre aparece como **prealloc**, é normal. 
+- Não precisa ser do tamanho total da RAM. 
+- 60% é suficiente para hibernação na maioria dos casos. 
+- Para cargas pesadas → use 70% ou 80%.
+```
+
 1. Calcular automaticamente o tamanho ideal do swapfile
 - Recomendação moderna para hibernação: 60% da RAM total
 ```
@@ -339,13 +348,6 @@ xbps-install -Sy e2fsprogs
 offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
 
-### Observações importantes
-```
-- Swapfile em Btrfs sempre aparece como **prealloc**, é normal. 
-- Não precisa ser do tamanho total da RAM. 
-- 60% é suficiente para hibernação na maioria dos casos. 
-- Para cargas pesadas → use 70% ou 80%.
-```
 ---
 
 # ▶️    12. Configurar o Kernel para hibernação
