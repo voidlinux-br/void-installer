@@ -37,7 +37,7 @@ password : voidlinux
 bash
 ```
 
-3. Cole no terminal:
+3. Cole no terminal (opcional) — Prompt com cores, usuário@host:caminho e status do último comando (✔/✘). Útil e bonito.
 ```
 get_exit_status() {
   local status="$?"
