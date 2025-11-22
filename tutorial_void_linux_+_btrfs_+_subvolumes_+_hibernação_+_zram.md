@@ -3,13 +3,13 @@
 
 Este guia instala um Void Linux totalmente **híbrido**, capaz de dar boot em:
 
-- Máquinas UEFI novas  
-- Máquinas BIOS/Legacy antigas  
-- PCs com NVRAM apagada  
-- Sistemas OEM problemáticos  
-- Qualquer máquina onde você espetar o SSD  
+- Máquinas UEFI novas 
+- Máquinas BIOS/Legacy antigas 
+- PCs com NVRAM apagada 
+- Sistemas OEM problemáticos 
+- Qualquer máquina onde você espetar o SSD 
 
-📌 **Sem reinstalar GRUB, sem mudar partições, sem frescura.**  
+📌 **Sem reinstalar GRUB, sem mudar partições, sem frescura.** 
 📌 **Tudo graças ao uso conjunto de ESP + BIOS Boot + fallback UEFI.**
 
 ---
@@ -19,11 +19,11 @@ Este guia instala um Void Linux totalmente **híbrido**, capaz de dar boot em:
 Use a versão glibc pela compatibilidade superior:
 
 ```
-   https://repo-default.voidlinux.org/live/current/void-live-x86_64-20250202-base.iso
+https://repo-default.voidlinux.org/live/current/void-live-x86_64-20250202-base.iso
 ```
 ou procure a última versão em:
 ```
-   https://voidlinux.org/download/
+https://voidlinux.org/download/
 ```
 
 Entre como root.
@@ -31,12 +31,12 @@ Entre como root.
 ---
 
 Troque o shell de sh para o bash. O dash/sh NÃO suporta várias coisas que muitos scripts usam.
-```sh
+```
 bash
 ```
 
 Cole no terminal:
-```sh
+```
 get_exit_status() {
   local status="$?"
   [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
@@ -55,24 +55,18 @@ dhcpcd wlan0
 ```
 
 Instale alguns necessários pacotes:
-```sh
+```
 xbps-install -Sy xbps parted vpm vsv nano zstd xz
 ```
 ---
 
 # ▶️ 3. Identificar o disco
 
-```sh
-fdisk -l
 ```
-ou
-
-```sh
-parted -l
+fdisk -l
 ```
 
 Assumiremos para o tutorial **/dev/sda**
-
 ---
 
 # ▶️ 4. Criar tabela GPT + Partições (ORDEM CORRETA)
@@ -81,14 +75,14 @@ Isso aumenta compatibilidade com placas-mãe antigas, bootloaders problemáticos
 A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 
 ### Ordem ideal:
-1️⃣ BIOS Boot (EF02)  
-2️⃣ ESP (EFI System, FAT32)  
+1️⃣ BIOS Boot (EF02) 
+2️⃣ ESP (EFI System, FAT32) 
 3️⃣ Btrfs (raiz)
 
 ---
 
-### Criar as partições:
-```sh
+1. Criar as partições:
+```
 parted --script /dev/sda -- \
     mklabel gpt \
     mkpart primary fat32 1MiB 2MiB set 1 bios on name 1 BIOS \
@@ -98,9 +92,8 @@ parted --script /dev/sda -- \
 parted --script /dev/sda -- print
 ```
 
-OU
-
-```sh
+OU use o fdisk
+```
 fdisk /dev/sda
 ```
 
@@ -124,10 +117,11 @@ w
 ---
 
 # ▶️ 5. Formatar as partições
-```sh
+```
 mkfs.fat -F32 /dev/sda2     # ESP (2ª partição)
 mkfs.btrfs -f /dev/sda3     # Btrfs (3ª partição)
 ```
+
 verifique:
 ```
 lsblk -f /dev/sda
@@ -150,11 +144,12 @@ btrfs subvolume create /mnt/@cache
 # Desmonte
 umount /mnt
 ```
-
 ---
 
 # ▶️ 7. Montar subvolumes
-```sh
+
+1. montagem
+```
 # Monta o subvolume principal (@)
 mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@ /dev/sda3 /mnt
 
@@ -170,13 +165,14 @@ mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commi
 # Monta a ESP/UEFI corretamente em /boot/efi
 mount /dev/sda2 /mnt/boot/efi
 ```
-verifique a montagem:
+
+2. verifique a montagem:
 ```
 lsblk -f /dev/sda
 ```
 
-Copia as chaves do repositório (XBPS keys) para o /mnt
-```sh
+3. Copia as chaves do repositório (XBPS keys) para o /mnt
+```
 mkdir -pv /mnt/{etc,var/db/xbps/keys}
 cp -rpafv /var/db/xbps/keys/*.plist /mnt/var/db/xbps/keys/
 cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
@@ -184,49 +180,58 @@ cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
 ---
 
 # ▶️ 8. Instalar o Void Linux
-```sh
+```
 XBPS_ARCH=x86_64 \
 xbps-install -Sy -R https://repo-default.voidlinux.org/current \
   -r /mnt base-system btrfs-progs grub grub-x86_64-efi \
   linux-headers linux-firmware-network dhcpcd nano grc zstd xz
 ```
-
 ---
 
 # ▶️ 9. Entrar no sistema (chroot)
-```sh
+```
 for i in proc sys dev run; do mount --rbind /$i /mnt/$i; done
+
 chroot /mnt /bin/bash
+
 export PS1='(chroot)\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
 $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
 \[\033[0m\]\$ '
 ```
 
-# ▶️ 10. Configurações iniciais
-```sh
+# ▶️ 10. Configurações iniciais (no chroot)
+1. Configurar hostname
+Define o nome da máquina:
+```
 echo void > /etc/hostname
+```
+
+2. Configurar timezone
+Define o fuso horário para America/Sao_Paulo:
+```
 ln -sfv /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 ```
 
-```sh
+3. configure locales
+Edite o arquivo de locales:
+```
 nano /etc/default/libc-locales
 ```
-
-Descomente as linhas:
+Descomente as seguintes linhas:
 ```
 en_US.UTF-8 UTF-8
 pt_BR.UTF-8 UTF-8
 ```
 
 ou use o comando abaixo para fazer automaticamente:
-```sh
+```
 sed -i -e 's/^#\(en_US.UTF-8 UTF-8\)/\1/' \
        -e 's/^#\(pt_BR.UTF-8 UTF-8\)/\1/' \
        /etc/default/libc-locales
 ```
 
-Gere o locales:
-```sh
+4. Gere o locales:
+```
 xbps-reconfigure -f glibc-locales
 ```
 
@@ -236,46 +241,48 @@ ln -sfv /etc/sv/dhcpcd /var/service
 ln -sfv /etc/sv/sshd /var/service
 ```
 
-reconfigurar senha root:
-```sh
+5. reconfigurar senha root:
+```
 passwd
 ```
 
 # ▶️ 11. Criar swapfile com suporte a hibernação
-## 1. Calcular automaticamente o tamanho ideal do swapfile
-
+1. Calcular automaticamente o tamanho ideal do swapfile
 Recomendação moderna para hibernação: 60% da RAM total
 ```
 SWAP_GB=$(LC_ALL=C awk '/MemTotal/ {print int($2 * 0.60 / 1024 / 1024)}' /proc/meminfo)
 echo "Swapfile recomendado: ${SWAP_GB}G"
 ```
-## 2. Criar diretório para o swapfile
+
+2. Criar diretório para o swapfile
 ```
 mkdir -p /swap
 swapoff -a 2>/dev/null
 rm -f /swap/swapfile
 ```
-## 3. Desabilitar COW (obrigatório no Btrfs)
+
+3. Desabilitar COW (obrigatório no Btrfs)
 ```
 chattr +C /swap
 ```
-## 4. Criar o swapfile com o tamanho calculado
+
+4. Criar o swapfile com o tamanho calculado
 ```
 fallocate -l ${SWAP_GB}G /swap/swapfile
 chmod 600 /swap/swapfile
 ```
-## 5. Formatar o swapfile
+
+5. Formatar o swapfile e ativar o swap
 ```
 mkswap /swap/swapfile
-```
-## 6. Ativar o swap imediatamente
-```
 swapon /swap/swapfile
 ```
+
 Verificar:
 ```
 swapon --show
 ```
+
 ### Observações importantes
 - Swapfile em Btrfs sempre aparece como **prealloc**, é normal. 
 - Não precisa ser do tamanho total da RAM. 
