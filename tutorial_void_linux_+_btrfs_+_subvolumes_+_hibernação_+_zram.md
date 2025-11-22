@@ -188,7 +188,7 @@ cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
 XBPS_ARCH=x86_64 \
 xbps-install -Sy -R https://repo-default.voidlinux.org/current \
   -r /mnt base-system btrfs-progs grub grub-x86_64-efi \
-  linux-headers linux-firmware-network dhcpcd nano grc
+  linux-headers linux-firmware-network dhcpcd nano grc zstd xz
 ```
 
 ---
