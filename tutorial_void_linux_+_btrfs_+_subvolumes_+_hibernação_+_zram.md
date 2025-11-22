@@ -464,7 +464,7 @@ EOF
 
 ---
 
-# ▶️ 13. Ativar ZRAM (opcional)
+# ▶️    13. Ativar ZRAM (opcional)
 O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
 1. Instalar o zramen
 ```
