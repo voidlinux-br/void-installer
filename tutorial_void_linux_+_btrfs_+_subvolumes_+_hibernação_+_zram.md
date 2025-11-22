@@ -27,7 +27,6 @@ https://voidlinux.org/download/
 ```
 
 Entre como root.
-
 ---
 
 Troque o shell de sh para o bash. O dash/sh NÃO suporta várias coisas que muitos scripts usam.
@@ -48,7 +47,7 @@ $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d
 
 # ▶️ 2. Conectar à Internet
 Wi-Fi:
-```sh
+```
 wpa_passphrase "SSID" "SENHA" > wifi.conf
 wpa_supplicant -B -i wlan0 -c wifi.conf
 dhcpcd wlan0
@@ -241,7 +240,7 @@ xbps-reconfigure -f glibc-locales
 ```
 
 5. Ativar alguns serviços:
-```sh
+```
 ln -sfv /etc/sv/dhcpcd /var/service
 ln -sfv /etc/sv/sshd /var/service
 ```
@@ -453,18 +452,21 @@ exit
 for i in run dev sys proc; do umount -R /mnt/$i; done
 umount -R /mnt
 ```
-3. Reiniciar o sistema host:
-```reboot
+2. Reiniciar o sistema host:
+```
+reboot
 ```
 ---
 
 ## ▶️ 14. Ativar ZRAM (após o reboot no sistema instalado)
 O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
 1. Instalar o zramen
-```xbps-install -Sy zramen
+```
+xbps-install -Sy zramen
 ```
 2. Configurar o ZRAM
-```nano /etc/zramen.conf
+```
+nano /etc/zramen.conf
 ```
 Configuração recomendada:
 ```
@@ -474,11 +476,13 @@ zram_algorithm=zstd
 ```
 
 3. Ativar o serviço no runit
-```ln -s /etc/sv/zramen /var/service
+```
+   ln -s /etc/sv/zramen /var/service
 ```
 
 Verificar status:
-```sv status zramen
+```
+   sv status zramen
 ```
 O ZRAM será ativado automaticamente em todos os boots
 ---
