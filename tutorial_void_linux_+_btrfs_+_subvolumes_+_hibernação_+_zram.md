@@ -68,17 +68,16 @@ xbps-install -Sy xbps parted vpm vsv nano zstd xz
 ---
 
 # ▶️    3. Identificar o disco
-Listar os discos disponíveis e anotar o nome do dispositivo (ex: `/dev/sda`, `/dev/vda`, `/dev/nvme0n1`):
+- Listar os discos disponíveis e anotar o nome do dispositivo (ex: `/dev/sda`, `/dev/vda`, `/dev/nvme0n1`):
 ```
 fdisk -l
 ```
-
-Assumiremos para o tutorial `/dev/sda`
+- Assumiremos para o tutorial `/dev/sda`
 
 ---
 
 # ▶️    4. Criar tabela GPT + Partições
-A partição BIOS **DEVE** ser a primeira.  
+- A partição BIOS **DEVE** ser a primeira.  
 Isso aumenta compatibilidade com placas-mãe antigas, bootloaders problemáticos e BIOS que esperam o código de boot nas primeiras áreas do disco.  
 A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 
