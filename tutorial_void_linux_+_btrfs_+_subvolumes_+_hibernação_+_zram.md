@@ -112,7 +112,7 @@ fdisk /dev/sda
 ```
 
 2. Criar a partição BIOS Boot (1 MiB)
-Essa partição é essencial para compatibilidade com BIOS antigas e para o GRUB em modo BIOS/Legacy.
+- Essa partição é essencial para compatibilidade com BIOS antigas e para o GRUB em modo BIOS/Legacy.
 ```
 g           # cria tabela GPT
 n           # nova partição
