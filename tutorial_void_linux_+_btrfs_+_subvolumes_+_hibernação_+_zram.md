@@ -182,7 +182,7 @@ mount /dev/sda2 /mnt/boot/efi
 lsblk -f /dev/sda
 ```
 
-3. Copia as chaves do repositório (XBPS keys) para o /mnt
+3. Copie as chaves do repositório (XBPS keys) para ser usada no chroot depois (/mnt)
 ```
 mkdir -pv /mnt/{etc,var/db/xbps/keys}
 cp -rpafv /var/db/xbps/keys/*.plist /mnt/var/db/xbps/keys/
@@ -208,7 +208,7 @@ for i in proc sys dev run; do mount --rbind /$i /mnt/$i; done
 ```
 chroot /mnt /bin/bash
 ```
-3. Definir um prompt visível dentro do chroot:
+3. Definir um prompt visível dentro do chroot (opcional):
 ```
 export PS1='(chroot)\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
 $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
@@ -268,6 +268,11 @@ passwd
 ```
 SWAP_GB=$(LC_ALL=C awk '/MemTotal/ {print int($2 * 0.60 / 1024 / 1024)}' /proc/meminfo)
 echo "Swapfile recomendado: ${SWAP_GB}G"
+```
+- ou, defina manualmente o tamanho desejado:
+```
+SWAP_GB=4
+echo "Swapfile definido pelo usuario: ${SWAP_GB}G"
 ```
 
 2. Criar diretório para o swapfile
