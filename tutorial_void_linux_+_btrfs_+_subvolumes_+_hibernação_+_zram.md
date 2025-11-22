@@ -84,9 +84,11 @@ Isso aumenta compatibilidade com placas-mãe antigas, bootloaders problemáticos
 A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 
 ### Ordem ideal e correta:
-1️⃣ BIOS Boot (EF02)
-2️⃣ ESP (EFI System, FAT32)
-3️⃣ Btrfs (raiz)
+
+- 1️⃣ BIOS Boot (EF02)
+- 2️⃣ ESP (EFI System, FAT32)
+- 3️⃣ Btrfs (raiz)
+
 ---
 
 Criar as partições:
