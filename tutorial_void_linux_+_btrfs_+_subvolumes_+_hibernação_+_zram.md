@@ -233,13 +233,13 @@ Edite o arquivo de locales:
 ```
 nano /etc/default/libc-locales
 ```
-Descomente as seguintes linhas:
+- Descomente as seguintes linhas:
 ```
 en_US.UTF-8 UTF-8
 pt_BR.UTF-8 UTF-8
 ```
 
-ou use o comando abaixo para fazer automaticamente:
+- ou use o comando abaixo para fazer automaticamente:
 ```
 sed -i -e 's/^#\(en_US.UTF-8 UTF-8\)/\1/' \
        -e 's/^#\(pt_BR.UTF-8 UTF-8\)/\1/' \
@@ -294,7 +294,7 @@ mkswap /swap/swapfile
 swapon /swap/swapfile
 ```
 
-6. Verificar:
+- Verificar:
 ```
 swapon --show
 ```
@@ -373,12 +373,12 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 ### ▶️ Alterar o shell padrão do usuário root para Bash
 Por padrão, o Void Linux usa `/bin/sh` (dash) como shell mínimo.  
-Para que o usuário **root** utilize o Bash ao fazer login (TTY/SSH), execute:
+- Para que o usuário **root** utilize o Bash ao fazer login (TTY/SSH), execute:
 ```
 chsh -s /bin/bash root
 ```
 
-Verifique se a alteração foi aplicada:
+- Verifique se a alteração foi aplicada:
 ```
 getent passwd root         # A última coluna deve mostrar: /bin/bash
 ```
@@ -477,11 +477,12 @@ O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de 
 ```
 xbps-install -Sy zramen
 ```
+
 2. Configurar o ZRAM
 ```
 nano /etc/zramen.conf
 ```
-Configuração recomendada:
+- Configuração recomendada:
 ```
 zram_fraction=0.5
 zram_devices=1
@@ -493,7 +494,7 @@ zram_algorithm=zstd
 ln -s /etc/sv/zramen /var/service
 ```
 
-Verificar status:
+- Verificar status:
 ```
 sv status zramen
 ```
