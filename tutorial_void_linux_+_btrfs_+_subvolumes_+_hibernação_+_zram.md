@@ -586,7 +586,9 @@ umount -R /mnt
 ```
 reboot
 ```
----
+
+- Não esqueça de remover a mídia de instalação e dar boot pelo disco recém-instalado.
+
 ---
 
 # 🎉 SISTEMA COMPLETO, HÍBRIDO E À PROVA DE FUTURO
