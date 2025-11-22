@@ -447,23 +447,24 @@ EOF
 ```
 
 # ▶️ 13. Finalizar instalação
-```sh
+1. Sair do chroot e desmontar os bind mounts:
+```
 exit
 for i in run dev sys proc; do umount -R /mnt/$i; done
 umount -R /mnt
-reboot
+```
+3. Reiniciar o sistema host:
+```reboot
 ```
 ---
 
 ## ▶️ 14. Ativar ZRAM (após o reboot no sistema instalado)
 O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
 1. Instalar o zramen
-```
-xbps-install -Sy zramen
+```xbps-install -Sy zramen
 ```
 2. Configurar o ZRAM
-```
-nano /etc/zramen.conf
+```nano /etc/zramen.conf
 ```
 Configuração recomendada:
 ```
@@ -473,12 +474,11 @@ zram_algorithm=zstd
 ```
 
 3. Ativar o serviço no runit
+```ln -s /etc/sv/zramen /var/service
 ```
-ln -s /etc/sv/zramen /var/service
-```
+
 Verificar status:
-```
-sv status zramen
+```sv status zramen
 ```
 O ZRAM será ativado automaticamente em todos os boots
 ---
