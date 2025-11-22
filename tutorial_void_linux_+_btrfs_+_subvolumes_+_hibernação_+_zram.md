@@ -63,7 +63,7 @@ ping google.com
 
 2. Instale alguns necessários pacotes:
 ```
-xbps-install -Sy xbps parted vpm vsv nano zstd xz
+xbps-install -Sy xbps parted vpm vsv nano zstd xz bash-completion
 ```
 ---
 
@@ -216,15 +216,21 @@ cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
 ---
 
 # ▶️    8. Instalar o Void Linux
+
+- Instale o sistema base no disco recém-montado:
 ```
 XBPS_ARCH=x86_64 \
-xbps-install -Sy -R https://repo-default.voidlinux.org/current \
-  -r /mnt base-system btrfs-progs grub grub-x86_64-efi \
-  linux-headers linux-firmware-network dhcpcd nano grc zstd xz
+   xbps-install -Sy \
+      -R https://repo-default.voidlinux.org/current \
+      -r /mnt \
+      base-system btrfs-progs grub grub-x86_64-efi \
+      linux-headers linux-firmware-network dhcpcd \
+      nano grc zstd xz bash-completion
 ```
 ---
 
 # ▶️    9. Entrar no sistema (chroot)
+
 1. Montar os diretórios essenciais dentro do ambiente chroot:
 ```
 for i in proc sys dev run; do mount --rbind /$i /mnt/$i; done
@@ -483,22 +489,28 @@ cat << 'EOF' > /root/.bashrc
 # ============================
 # Só continua se for shell interativo
 [[ $- != *i* ]] && return
+
 # Histórico decente
 HISTSIZE=5000
 HISTFILESIZE=5000
 HISTCONTROL=ignoredups:erasedups
+
 # Editor padrão
 export EDITOR=vim
 export VISUAL=vim
+export ed=nano
+
 # Função de status (SEM COR – PS1 colore)
 get_exit_status() {
   local status="$?"
   [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
 }
+
 # Prompt ROOT — vermelho, com status ✔/✘ colorido
 export PS1='\[\033[1;31m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
 $( if [[ $? -eq 0 ]]; then printf "\033[1;32m✔"; else printf "\033[1;31m✘\033[1;35m%d" $?; fi ) \
 \[\033[0m\]# '
+
 # Alias úteis
 alias ll='ls -lh --color=auto'
 alias la='ls -A --color=auto'
@@ -506,12 +518,14 @@ alias l='ls --color=auto'
 alias grep='grep --color=auto'
 alias df='df -h'
 alias du='du -h'
-alias free='free -h'
+alias free='free -ht'
+
 # Segurança raiz (evita rm catastrófico)
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 alias ping='grc ping'
+
 # grc aliases
 alias ping='grc ping'
 alias ping6='grc ping6'
@@ -530,6 +544,7 @@ alias du='grc du'
 alias duf='grc duf'
 alias dig='grc dig'
 alias dmesg='grc dmesg'
+
 # Autocompletar (se existir)
 if [ -f /etc/bash/bashrc.d/complete.bash ]; then
   . /etc/bash/bashrc.d/complete.bash
@@ -547,7 +562,7 @@ O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de 
 ```
 xbps-install -Sy zramen
 ```
-2. Configurar o ZRAM - Configuração recomendada:
+2. Configurar o ZRAM (configuração recomendada):
 ```
 cat << 'EOF' > /etc/zramen.conf
 zram_fraction=0.5
