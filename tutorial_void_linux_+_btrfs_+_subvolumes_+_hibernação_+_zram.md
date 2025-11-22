@@ -66,7 +66,7 @@ xbps-install -Sy xbps parted vpm vsv nano zstd xz
 fdisk -l
 ```
 
-Assumiremos para o tutorial **/dev/sda**
+Assumiremos para o tutorial /dev/sda
 ---
 
 # ▶️ 4. Criar tabela GPT + Partições (ORDEM CORRETA)
@@ -75,13 +75,13 @@ Isso aumenta compatibilidade com placas-mãe antigas, bootloaders problemáticos
 A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 
 ### Ordem ideal:
-1️⃣ BIOS Boot (EF02) 
-2️⃣ ESP (EFI System, FAT32) 
+1️⃣ BIOS Boot (EF02)
+2️⃣ ESP (EFI System, FAT32)
 3️⃣ Btrfs (raiz)
-
 ---
 
 1. Criar as partições:
+Usando o parted (automatico)
 ```
 parted --script /dev/sda -- \
     mklabel gpt \
@@ -92,7 +92,7 @@ parted --script /dev/sda -- \
 parted --script /dev/sda -- print
 ```
 
-OU use o fdisk
+ou use o fdisk (manualmente)
 ```
 fdisk /dev/sda
 ```
@@ -189,11 +189,16 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current \
 ---
 
 # ▶️ 9. Entrar no sistema (chroot)
+1. Montar os diretórios essenciais dentro do ambiente chroot:
 ```
 for i in proc sys dev run; do mount --rbind /$i /mnt/$i; done
-
+```
+2. Entrar no chroot:
+```
 chroot /mnt /bin/bash
-
+```
+3. Definir um prompt visível dentro do chroot:
+```
 export PS1='(chroot)\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
 $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
 \[\033[0m\]\$ '
