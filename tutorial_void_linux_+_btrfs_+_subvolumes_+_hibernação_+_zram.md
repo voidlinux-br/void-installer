@@ -10,6 +10,7 @@ Este guia instala um Void Linux totalmente **híbrido**, capaz de dar boot em:
 - Qualquer máquina onde você espetar o SSD 
 
 📌 **Sem reinstalar GRUB, sem mudar partições, sem frescura.** 
+
 📌 **Tudo graças ao uso conjunto de ESP + BIOS Boot + fallback UEFI.**
 
 ---
