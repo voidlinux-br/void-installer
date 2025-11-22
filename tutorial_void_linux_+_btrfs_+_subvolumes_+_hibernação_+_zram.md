@@ -568,22 +568,24 @@ ln -s /etc/sv/zramen /var/service
 ```
 sv status zramen
 ```
-O ZRAM será ativado automaticamente em todos os boots
+- O ZRAM será ativado automaticamente em todos os boots
 
 ---
 
 # ▶️    22. Finalizar instalação
-1. Sair do chroot e desmontar os bind mounts:
+1. Sair do chroot:
 ```
 exit
+```
+2. Desmontar os bind mounts:
+```
 for i in run dev sys proc; do umount -R /mnt/$i; done
 umount -R /mnt
 ```
-2. Reiniciar o sistema host:
+3. Reiniciar o sistema host (iso):
 ```
 reboot
 ```
-
 ---
 ---
 
