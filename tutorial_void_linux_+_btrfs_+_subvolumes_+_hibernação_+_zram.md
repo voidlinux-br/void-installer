@@ -91,59 +91,60 @@ A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 - 3️⃣ Btrfs (raiz)
 
 1. Use o parted (automatico)
-```
-parted --script /dev/sda -- \
-    mklabel gpt \
-    mkpart primary fat32 1MiB 2MiB set 1 bios on name 1 BIOS \
-    mkpart primary fat32 2MiB 512MiB set 2 esp on name 2 EFI \
-    mkpart primary btrfs 512MiB 100% name 3 ROOT \
-    align-check optimal 1
-parted --script /dev/sda -- print
-```
+   ```
+   parted --script /dev/sda -- \
+       mklabel gpt \
+       mkpart primary fat32 1MiB 2MiB set 1 bios on name 1 BIOS \
+       mkpart primary fat32 2MiB 512MiB set 2 esp on name 2 EFI \
+       mkpart primary btrfs 512MiB 100% name 3 ROOT \
+       align-check optimal 1
+   parted --script /dev/sda -- print
+   ```
+
 2. ou fdisk (manualmente)
    1. Abrir o fdisk
-      ```   
-fdisk /dev/sda
       ```
+      fdisk /dev/sda
+      ```
+
    2. Criar a partição BIOS Boot (1 MiB)
-   - Essa partição é essencial para compatibilidade com BIOS antigas e para o GRUB em modo BIOS/Legacy.
+      - Essa partição é essencial para compatibilidade com BIOS antigas e para o GRUB em modo BIOS/Legacy.
       ```
-g           # cria tabela GPT
-n           # nova partição
-<ENTER>     # número 1
-<ENTER>     # início automático (setor 2048)
-+1M         # tamanho 1 MiB
-t           # mudar tipo
-4           # código = BIOS Boot (ef02)
+      g           # cria tabela GPT
+      n           # nova partição
+      <ENTER>     # número 1
+      <ENTER>     # início automático (setor 2048)
+      +1M         # tamanho 1 MiB
+      t           # mudar tipo
+      4           # código = BIOS Boot (ef02)
       ```
 
    3. Criar a partição ESP (EFI System Partition – 512 MiB)
       ```
-n           # nova partição
-<ENTER>     # número 2
-<ENTER>     # início automático
-+512M       # tamanho 512 MiB
-t           # mudar tipo
-2           # seleciona partição 2
-1           # tipo EFI System (ef00)
+      n           # nova partição
+      <ENTER>     # número 2
+      <ENTER>     # início automático
+      +512M       # tamanho 512 MiB
+      t           # mudar tipo
+      2           # seleciona partição 2
+      1           # tipo EFI System (ef00)
       ```
 
    4. Criar a partição Btrfs (resto do disco)
       ```
-n           # nova partição
-<ENTER>     # número 3
-<ENTER>     # início automático
-<ENTER>     # usa todo o restante do disco
-t           # mudar tipo
-3           # seleciona partição 3
-30          # tipo Linux filesystem (8300)
+      n           # nova partição
+      <ENTER>     # número 3
+      <ENTER>     # início automático
+      <ENTER>     # usa todo o restante do disco
+      t           # mudar tipo
+      3           # seleciona partição 3
+      30          # tipo Linux filesystem (8300)
       ```
 
    5. Gravar e sair
       ```
-w
+      w
       ```
-
 ---
 
 # ▶️    5. Formatar as partições
