@@ -15,7 +15,7 @@ Este guia instala um Void Linux totalmente **híbrido**, capaz de dar boot em:
 
 ---
 
-# ▶️ 1. Bootar o Live ISO
+# ▶️    1. Bootar o Live ISO
 
 Use a versão glibc pela compatibilidade superior:
 
@@ -49,7 +49,7 @@ $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d
 \[\033[0m\]\$ '
 ```
 
-# ▶️ 2. Conectar à Internet
+# ▶️    2. Conectar à Internet
 Configurar Wi-Fi *(se estiver usando cabo, pule esta etapa)*:
 ```
 wpa_passphrase "SSID" "SENHA" > wifi.conf
@@ -69,7 +69,7 @@ xbps-install -Sy xbps parted vpm vsv nano zstd xz
 ```
 ---
 
-# ▶️ 3. Identificar o disco
+# ▶️    3. Identificar o disco
 Listar os discos disponíveis e anotar o nome do dispositivo (ex: `/dev/sda`, `/dev/vda`, `/dev/nvme0n1`):
 ```
 fdisk -l
@@ -79,7 +79,7 @@ Assumiremos para o tutorial `/dev/sda`
 
 ---
 
-# ▶️ 4. Criar tabela GPT + Partições
+# ▶️   4. Criar tabela GPT + Partições
 A partição BIOS **DEVE** ser a primeira. 
 Isso aumenta compatibilidade com placas-mãe antigas, bootloaders problemáticos e BIOS que esperam o código de boot nas primeiras áreas do disco.
 A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
@@ -152,7 +152,7 @@ w
 
 ---
 
-# ▶️ 5. Formatar as partições
+# ▶️    5. Formatar as partições
 ```
 mkfs.fat -F32 /dev/sda2     # ESP (2ª partição)
 mkfs.btrfs -f /dev/sda3     # Btrfs (3ª partição)
@@ -164,7 +164,7 @@ lsblk -f /dev/sda
 ```
 ---
 
-# ▶️ 6. Criar subvolumes Btrfs
+# ▶️    6. Criar subvolumes Btrfs
 A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
 ```sh
 # Monta o subvolume padrão (ID 5) para criar os outros
@@ -182,7 +182,7 @@ umount /mnt
 ```
 ---
 
-# ▶️ 7. Montar subvolumes
+# ▶️    7. Montar subvolumes
 
 1. montagem
 ```
@@ -215,7 +215,7 @@ cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
 ```
 ---
 
-# ▶️ 8. Instalar o Void Linux
+# ▶️    8. Instalar o Void Linux
 ```
 XBPS_ARCH=x86_64 \
 xbps-install -Sy -R https://repo-default.voidlinux.org/current \
@@ -224,7 +224,7 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current \
 ```
 ---
 
-# ▶️ 9. Entrar no sistema (chroot)
+# ▶️    9. Entrar no sistema (chroot)
 1. Montar os diretórios essenciais dentro do ambiente chroot:
 ```
 for i in proc sys dev run; do mount --rbind /$i /mnt/$i; done
@@ -240,7 +240,7 @@ $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d
 \[\033[0m\]\$ '
 ```
 
-# ▶️ 10. Configurações iniciais (no chroot)
+# ▶️    10. Configurações iniciais (no chroot)
 1. Configurar hostname
 - Define o nome da máquina:
 ```
@@ -287,7 +287,7 @@ ln -sfv /etc/sv/sshd /var/service
 passwd
 ```
 
-# ▶️ 11. Criar swapfile com suporte a hibernação
+# ▶️    11. Criar swapfile com suporte a hibernação
 1. Calcular automaticamente o tamanho ideal do swapfile
 - Recomendação moderna para hibernação: 60% da RAM total
 ```
@@ -344,7 +344,7 @@ xbps-install -Sy e2fsprogs
 offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
 
-# Configurar o Kernel para hibernação:
+# ▶️    12. Configurar o Kernel para hibernação:
 1. Obter o UUIDs das partições:
 ```
 UUID=$(blkid -s UUID -o value /dev/sda3)
@@ -380,7 +380,7 @@ EOF
 ```
 ---
 
-# ▶️    12. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
+# ▶️    13. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
 1. Instalar GRUB para BIOS (Legacy)
 - Usa a partição BIOS criada como primeira.
 ```
@@ -403,7 +403,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 ---
 
-# ▶️ Alterar o shell padrão do usuário root para Bash
+# ▶️    Alterar o shell padrão do usuário root para Bash
 Por padrão, o Void Linux usa `/bin/sh` (dash) como shell mínimo.  
 - Para que o usuário **root** utilize o Bash ao fazer login (TTY/SSH), execute:
 ```
@@ -521,7 +521,7 @@ EOF
 
 ---
 
-# ▶️    13. Ativar ZRAM (opcional)
+# ▶️    14. Ativar ZRAM (opcional)
 O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
 1. Instalar o zramen
 ```
@@ -552,7 +552,7 @@ O ZRAM será ativado automaticamente em todos os boots
 
 ---
 
-# ▶️    14. Finalizar instalação
+# ▶️    15. Finalizar instalação
 1. Sair do chroot e desmontar os bind mounts:
 ```
 exit
