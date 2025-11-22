@@ -383,6 +383,7 @@ dracut --force /boot/initramfs-${KVER}.img ${KVER}
 ---
 
 # ▶️    15. Configurar montagem dos subvolumes no /etc/fstab
+
 > Não esquecer de configurar passo 12
 ```
 cat <<EOF >> /etc/fstab
@@ -578,7 +579,7 @@ ln -s /etc/sv/zramen /var/service
 ```
 sv status zramen
 ```
-- O ZRAM será ativado automaticamente em todos os boots
+> O ZRAM será ativado automaticamente em todos os boots
 
 ---
 
@@ -597,8 +598,8 @@ umount -R /mnt
 reboot
 ```
 
-- Não esqueça de remover a mídia de instalação e dar boot pelo disco recém-instalado.
-- Enjoy!
+> Não esqueça de remover a mídia de instalação e dar boot pelo disco recém-instalado.
+Enjoy!
 
 ---
 
