@@ -262,8 +262,7 @@ nano /etc/default/libc-locales
 en_US.UTF-8 UTF-8
 pt_BR.UTF-8 UTF-8
 ```
-
-- ou use o comando abaixo para fazer automaticamente:
+- Ou use o comando abaixo para habilitar automaticamente os locales necessários (ele apenas descomenta `en_US.UTF-8` e `pt_BR.UTF-8` no arquivo):
 ```
 sed -i -e 's/^#\(en_US.UTF-8 UTF-8\)/\1/' \
        -e 's/^#\(pt_BR.UTF-8 UTF-8\)/\1/' \
@@ -343,7 +342,7 @@ xbps-install -Sy e2fsprogs
 offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
 
-# ▶️    12. Configurar o Kernel para hibernação:
+# ▶️    12. Configurar o Kernel para hibernação
 1. Obter o UUIDs das partições:
 ```
 UUID=$(blkid -s UUID -o value /dev/sda3)
@@ -402,7 +401,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 ---
 
-# ▶️    Alterar o shell padrão do usuário root para Bash
+# ▶️    14. Alterar o shell padrão do usuário root para Bash
 Por padrão, o Void Linux usa `/bin/sh` (dash) como shell mínimo.  
 - Para que o usuário **root** utilize o Bash ao fazer login (TTY/SSH), execute:
 ```
@@ -415,7 +414,10 @@ getent passwd root         # A última coluna deve mostrar: /bin/bash
 ```
 Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
 
-# ▶️    Personalizar o /etc/xbps.d/00-repository-main.conf (opcional)
+---
+
+
+# ▶️    15. Personalizar o /etc/xbps.d/00-repository-main.conf (opcional)
 - Cria o diretório de configurações do XBPS (se ainda não existir) e adiciona uma lista de repositórios oficiais e alternativos.
 Os repositórios repo-fastly costumam ter melhor latência.
 ```
@@ -433,7 +435,7 @@ repository=https://void.chililinux.com/voidlinux/current
 #repository=https://void.chililinux.com/voidlinux/current/multilib/nonfree
 EOF
 ```
-# ▶️    Personalizar o /etc/rc.conf (opcional)
+# ▶️    16. Personalizar o /etc/rc.conf (opcional)
 - Define o fuso horário, layout do teclado e fonte padrão do console.
 ```
 cat << 'EOF' >> /etc/rc.conf
@@ -443,7 +445,7 @@ FONT=Lat2-Terminus16
 EOF
 ```
 
-# ▶️    Personalizar o .bashrc do root (opcional)
+# ▶️    17. Personalizar o .bashrc do root (opcional)
 - Cria um .bash_profile para o usuário root e garante que o .bashrc seja carregado automaticamente no login.
 O Void não carrega .bashrc para o root por padrão, então essa inclusão deixa o shell do root consistente com usuários comuns.
 ```
@@ -520,7 +522,7 @@ EOF
 
 ---
 
-# ▶️    14. Ativar ZRAM (opcional)
+# ▶️    18. Ativar ZRAM (opcional)
 O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
 1. Instalar o zramen
 ```
@@ -551,7 +553,7 @@ O ZRAM será ativado automaticamente em todos os boots
 
 ---
 
-# ▶️    15. Finalizar instalação
+# ▶️    19. Finalizar instalação
 1. Sair do chroot e desmontar os bind mounts:
 ```
 exit
