@@ -588,6 +588,7 @@ reboot
 ```
 
 - Não esqueça de remover a mídia de instalação e dar boot pelo disco recém-instalado.
+- Enjoy!
 
 ---
 
