@@ -416,7 +416,6 @@ Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua 
 
 ---
 
-
 # ▶️    15. Personalizar o /etc/xbps.d/00-repository-main.conf (opcional)
 - Cria o diretório de configurações do XBPS (se ainda não existir) e adiciona uma lista de repositórios oficiais e alternativos.
 Os repositórios repo-fastly costumam ter melhor latência.
@@ -435,6 +434,8 @@ repository=https://void.chililinux.com/voidlinux/current
 #repository=https://void.chililinux.com/voidlinux/current/multilib/nonfree
 EOF
 ```
+---
+
 # ▶️    16. Personalizar o /etc/rc.conf (opcional)
 - Define o fuso horário, layout do teclado e fonte padrão do console.
 ```
@@ -444,6 +445,8 @@ KEYMAP=br-abnt2
 FONT=Lat2-Terminus16
 EOF
 ```
+
+---
 
 # ▶️    17. Personalizar o .bashrc do root (opcional)
 - Cria um .bash_profile para o usuário root e garante que o .bashrc seja carregado automaticamente no login.
