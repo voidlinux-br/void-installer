@@ -456,6 +456,7 @@ umount -R /mnt
 ```
 reboot
 ```
+
 ---
 
 ## ▶️ 14. Ativar ZRAM (após o reboot no sistema instalado)
@@ -477,14 +478,15 @@ zram_algorithm=zstd
 
 3. Ativar o serviço no runit
 ```
-   ln -s /etc/sv/zramen /var/service
+ln -s /etc/sv/zramen /var/service
 ```
 
 Verificar status:
 ```
-   sv status zramen
+sv status zramen
 ```
 O ZRAM será ativado automaticamente em todos os boots
+
 ---
 
 # 🎉 SISTEMA COMPLETO, HÍBRIDO E À PROVA DE FUTURO
