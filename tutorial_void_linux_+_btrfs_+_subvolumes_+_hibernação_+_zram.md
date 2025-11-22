@@ -26,15 +26,16 @@ ou procure a última versão em:
 https://voidlinux.org/download/
 ```
 
-Entre como root.
----
+1. Entre como root.
+```
+```
 
-Troque o shell de sh para o bash. O dash/sh NÃO suporta várias coisas que muitos scripts usam.
+2. Troque o shell de sh para o bash. O dash/sh NÃO suporta várias coisas que muitos scripts usam.
 ```
 bash
 ```
 
-Cole no terminal:
+3. Cole no terminal:
 ```
 get_exit_status() {
   local status="$?"
@@ -46,21 +47,27 @@ $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d
 ```
 
 # ▶️ 2. Conectar à Internet
-Wi-Fi:
+Configurar Wi-Fi *(se estiver usando cabo, pule esta etapa)*:
 ```
 wpa_passphrase "SSID" "SENHA" > wifi.conf
 wpa_supplicant -B -i wlan0 -c wifi.conf
 dhcpcd wlan0
 ```
 
-Instale alguns necessários pacotes:
+1. Testar conexão com a Internet:
+```
+ping 8.8.8.8
+ping google.com
+```
+
+2. Instale alguns necessários pacotes:
 ```
 xbps-install -Sy xbps parted vpm vsv nano zstd xz
 ```
 ---
 
 # ▶️ 3. Identificar o disco
-
+Listar os discos disponíveis e anotar o nome do dispositivo (ex: `/dev/sda`, `/dev/vda`, `/dev/nvme0n1`):
 ```
 fdisk -l
 ```
