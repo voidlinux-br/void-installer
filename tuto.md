@@ -174,33 +174,34 @@ lsblk -f /dev/sda
 Agora vamos montar tudo na ordem correta para preparar a instalação.
 
 1. SE A RAIZ FOR BTRFS (/dev/sda3)
-- 1.1 Montar o subvolume padrão (ID 5):
+- A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
 ```
+# Monta o subvolume principal (@)
 mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvolid=5 /dev/sda3 /mnt
-```
 
-- 1.2 Criar os subvolumes principais:
-```
+# Cria os pontos de montagem
+mkdir -pv /mnt/{boot/efi,home,var/log,var/cache,.snapshots,swap}
+
+# Criar os subvolumes principais:
 btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@var
 btrfs subvolume create /mnt/@snapshots
-```
 
-- 1.3 Desmontar tudo:
-```
+# Desmonte
 umount /mnt
 ```
-> (⚠    Nota: A montagem final do subvolume @ será feita SOMENTE no próximo bloco, ao iniciar a instalação.)
+> ⚠    Nota: A montagem final do subvolume @ será feita SOMENTE no próximo bloco, ao iniciar a instalação.
 
 2. SE A RAIZ FOR EXT4 / XFS / JFS
-- 2.1 Montar diretamente a partição raiz:
 ```
+# Montar diretamente a partição raiz:
 mount /dev/sda3 /mnt
 ```
 
 3. MONTAR A ESP (UEFI)
 ```
+# Monta a ESP/UEFI corretamente em /boot/efi
 mkdir -p /mnt/boot/efi
 mount /dev/sda2 /mnt/boot/efi
 ```
