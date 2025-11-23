@@ -149,6 +149,10 @@ grub-mkconfig -o /boot/grub/grub.cfg
 ```bash
 # Instale o novo GRUB
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="VoidLinux" --recheck
+
+# Criar fallback UEFI (boot universal) - Esse arquivo garante boot mesmo quando a NVRAM for apagada.
+mkdir -p /boot/efi/EFI/BOOT
+cp -vf /boot/efi/EFI/VoidLinux/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
 ```
 
 ## Gerando o INITRAMFS
