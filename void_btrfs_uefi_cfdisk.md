@@ -29,7 +29,7 @@ fdisk -l
 ```bash
 cfdisk -z /dev/sda
 ```
-Selecione **GPT**.
+Selecione **GPT** para a tabela de partições
 
 - **ESP** — EFI System Partition — 512MB — tipo *EFI System*
 - **Sistema (Btrfs)** — resto do disco — tipo *Linux filesystem*
