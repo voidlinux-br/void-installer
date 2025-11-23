@@ -243,7 +243,7 @@ XBPS_ARCH=x86_64 \
       -r /mnt \
       base-system btrfs-progs grub grub-x86_64-efi \
       linux-headers linux-firmware-network dhcpcd \
-      nano grc zstd xz bash-completion
+      nano grc zstd xz bash-completion jfsutils xfsprogs
 ```
 ---
 
