@@ -174,12 +174,12 @@ lsblk -f /dev/sda
 Agora vamos montar tudo na ordem correta para preparar a instalação.
 
 1. SE A RAIZ FOR BTRFS (/dev/sda3)
-1.1 Montar o subvolume padrão (ID 5):
+- 1.1 Montar o subvolume padrão (ID 5):
 ```
 mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvolid=5 /dev/sda3 /mnt
 ```
 
-1.2 Criar os subvolumes principais:
+- 1.2 Criar os subvolumes principais:
 ```
 btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
@@ -187,16 +187,14 @@ btrfs subvolume create /mnt/@var
 btrfs subvolume create /mnt/@snapshots
 ```
 
-1.3 Desmontar tudo:
+- 1.3 Desmontar tudo:
 ```
 umount /mnt
 ```
-
 > (⚠    Nota: A montagem final do subvolume @ será feita SOMENTE no próximo bloco, ao iniciar a instalação.)
 
 2. SE A RAIZ FOR EXT4 / XFS / JFS
-
-2.1 Montar diretamente a partição raiz:
+- 2.1 Montar diretamente a partição raiz:
 ```
 mount /dev/sda3 /mnt
 ```
