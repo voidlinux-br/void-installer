@@ -52,7 +52,7 @@ mkfs.fat -F32 /dev/sda1
 
 ## Criar subvolumes BTRFS
 ```bash
-# Monte o dispositivo cryptroot em /mnt e crie nele seus subvolumes. (`@swap` foi adicionado para o `swapfile`):
+# Monte o dispositivo cryptroot em /mnt e crie nele seus subvolumes
 mount /dev/mapper/cryptroot /mnt
 
 # Cria subvolumes essenciais
@@ -61,8 +61,6 @@ btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@log
 btrfs subvolume create /mnt/@cache
 btrfs subvolume create /mnt/@snapshots
-btrfs subvolume create /mnt/@swap
-btrfs subvolume create /mnt/@boot
 
 # Desmonte o dispositivo:
 umount /mnt
@@ -82,10 +80,6 @@ mount -o subvol=@home,compress=zstd:3 /dev/mapper/cryptroot /mnt/home
 mount -o subvol=@log /dev/mapper/cryptroot /mnt/var/log
 mount -o subvol=@cache /dev/mapper/cryptroot /mnt/var/cache
 mount -o subvol=@snapshots,compress=zstd:3 /dev/mapper/cryptroot /mnt/.snapshots
-mount -o subvol=@swap /dev/mapper/cryptroot /mnt/swap
-
-# A ESP, em /dev/sda1 vai ser montado em /mnt/boot/efi
-mount -o subvol=@boot /dev/mapper/cryptroot /mnt/boot
 
 # Agora sim, monte EFI:
 mount /dev/sda1 /mnt/boot/efi
@@ -143,13 +137,13 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 ## Instalação do Boot Manager GRUB em UEFI
 ```bash
-# Instale o novo Grub:
+# Instale o novo GRUB
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="VoidLinux" --recheck
 ```
 
 ## Gerando o INITRAMFS
 ```
-KVER=$(ls /usr/lib/modules); echo $KVER
+KVER=$(ls /usr/lib/modules)
 dracut --force --kver ${KVER}
 ```
 
@@ -172,19 +166,23 @@ sed -i 's/#pt_BR.UTF-8/pt_BR.UTF-8/' /etc/default/libc-locales
 
 # Gerar locales:
 xbps-reconfigure -f glibc-locales
+
+# Ativar alguns serviços:
+ln -sf /etc/sv/dhcpcd /var/service
+ln -sf /etc/sv/sshd /var/service
 ```
 
-## Trocar senha de root:
+## Trocar senha de root (importante):
 ```bash
 passwd
 ```
 
 ## Criar swapfile em Btrfs (modo correto)
 ```
-btrfs filesystem mkswapfile --size 1G /swapfile
-chmod 600 /swapfile
-mkswap /swapfile
-echo "/swapfile none swap sw 0 0" >> /etc/fstab
+btrfs filesystem mkswapfile --size 1G /swap/swapfile
+chmod 600 /swap/swapfile
+mkswap /swap/swapfile
+echo "/swap/swapfile none swap sw 0 0" >> /etc/fstab
 ```
 
 ## Sair do chroot e reboot
