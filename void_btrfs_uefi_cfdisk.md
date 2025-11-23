@@ -73,7 +73,7 @@ umount /mnt
 mount -o subvol=@,compress=zstd:3 /dev/mapper/cryptroot /mnt
 
 # Cria os pontos de montagem (incluindo os do chroot)
-mkdir -p /mnt/{home,boot,var/log,var/cache,.snapshots,swap,dev,proc,sys,run}
+mkdir -p /mnt/{home,boot/efi,var/log,var/cache,.snapshots,dev,proc,sys,run}
 
 # Monta os subvolumes restantes
 mount -o subvol=@home,compress=zstd:3 /dev/mapper/cryptroot /mnt/home
@@ -81,8 +81,8 @@ mount -o subvol=@log /dev/mapper/cryptroot /mnt/var/log
 mount -o subvol=@cache /dev/mapper/cryptroot /mnt/var/cache
 mount -o subvol=@snapshots,compress=zstd:3 /dev/mapper/cryptroot /mnt/.snapshots
 
-# Agora sim, monte EFI:
-mount /dev/sda1 /mnt/boot/efi
+# monte EFI:
+mount -o umask=0077 /dev/sda1 /mnt/boot/efi
 ```
 
 ## Instalar o sistema base
@@ -90,7 +90,8 @@ mount /dev/sda1 /mnt/boot/efi
 xbps-install -Sy -R https://repo-default.voidlinux.org/current \
    -r /mnt \
    base-system btrfs-progs cryptsetup grub-x86_64-efi dracut linux \
-   linux-firmware linux-firmware-network glibc-locales xtools vim nano
+   linux-firmware linux-firmware-network glibc-locales xtools vim \
+   nano dhcpcd
 ```
 
 ## Isso garante:
@@ -106,6 +107,13 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current \
 ## Criar fstab
 ```
 xgenfstab -U /mnt > /mnt/etc/fstab
+
+# sobrescreve os pontos importantes do fstab
+sed -i 's|subvol=@ |subvol=@,compress=zstd:3,noatime,ssd,discard=async,space_cache=v2,commit=300 |' /mnt/etc/fstab
+sed -i 's|subvol=@home |subvol=@home,compress=zstd:3,noatime,ssd,discard=async,space_cache=v2,commit=300 |' /mnt/etc/fstab
+sed -i 's|subvol=@cache |subvol=@cache,noatime,ssd,discard=async,space_cache=v2,commit=300 |' /mnt/etc/fstab
+sed -i 's|subvol=@log |subvol=@log,noatime,ssd,discard=async,space_cache=v2,commit=300 |' /mnt/etc/fstab
+sed -i 's|subvol=@snapshots |subvol=@snapshots,compress=zstd:3,noatime,ssd,discard=async,space_cache=v2,commit=300 |' /mnt/etc/fstab
 ```
 
 ## Entrar no sistema (chroot)
@@ -121,12 +129,14 @@ chroot /mnt /bin/bash
 ## Configurar GRUB
 ```bash
 # Pegar a UUID da partição sda2:
-UUID=$(blkid /dev/sda2)
+UUID=$(blkid -s UUID -o value /dev/sda2)
 
 # Adicionando ao /etc/default/grub
-cat <<EOF >> /etc/default/grub
+cat << 'EOF' >> /etc/default/grub
 GRUB_ENABLE_CRYPTODISK=y
-GRUB_CMDLINE_LINUX_DEFAULT=\"loglevel=4 rd.luks.uuid=$UUID rd.luks.name=31c87e1e-dd47-4ed7-bd0c-780aa52cd1ea=cryptroot root=/dev/mapper/cryptroot\"
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4 rd.luks.uuid=${UUID} rd.luks.name=${UUID}=cryptroot root=/dev/mapper/cryptroot"
+GRUB_PRELOAD_MODULES="luks cryptodisk gcry_rijndael"
+EOF
 
 # Crie o path para suportar o grub
 mkdir -p /boot/grub
@@ -143,13 +153,14 @@ grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="Void
 
 ## Gerando o INITRAMFS
 ```
-KVER=$(ls /usr/lib/modules)
+mods=(/usr/lib/modules/*)
+KVER=$(basename "${mods[0]}")
 dracut --force --kver ${KVER}
 ```
 
 ## Criar um resolv.conf
 ```bash
-ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
 ```
 
 ## Configurações básicas
@@ -179,10 +190,10 @@ passwd
 
 ## Criar swapfile em Btrfs (modo correto)
 ```
-btrfs filesystem mkswapfile --size 1G /swap/swapfile
-chmod 600 /swap/swapfile
-mkswap /swap/swapfile
-echo "/swap/swapfile none swap sw 0 0" >> /etc/fstab
+btrfs filesystem mkswapfile --size 1G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+echo "/swapfile none swap sw 0 0" >> /etc/fstab
 ```
 
 ## Sair do chroot e reboot
