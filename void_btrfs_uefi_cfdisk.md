@@ -1,30 +1,34 @@
-# 🔥 Instalação do Void Linux com Btrfs + Subvolumes + Swapfile + UEFI (Guia Completo)
+# 🔥   Tutorial de instalação do Void Linux com Btrfs + Subvolumes + Swapfile + UEFI (Guia Completo)
 (Somente UEFI, sem BIOS/Legacy)
 
 ## Iniciar a Instalação
 Inicie pelo ISO do Void Linux (x86_64 glibc ou musl).
 
-- Entre como root.
+1. Entre como root
 ```
 login    : root
 password : voidlinux
 ```
-
-2. Troque o layout de teclado para ABNT2
+2. Troque o shell de sh para o bash. O dash/sh NÃO suporta várias coisas que muitos scripts usam.
+```
+bash
+```
+3. Troque o layout de teclado para ABNT2
 ```bash
 loadkeys br-abnt2
 ```
 
-3. Identificar o disco
+4. Identificar o disco
 ```bash
 fdisk -l
 ```
 
-4. Abrir o cfdisk
+## Particionar o disco
+
+1. Abrir o cfdisk
 ```bash
 cfdisk -z /dev/sda
 ```
-
 Selecione **GPT**.
 
 - **ESP** — EFI System Partition — 512MB — tipo *EFI System*
