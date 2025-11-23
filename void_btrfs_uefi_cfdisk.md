@@ -2,29 +2,28 @@
 
 ## (Somente UEFI, sem BIOS/Legacy)
 
-## Iniciar a Instalação
+1. Iniciar a Instalação
+Inicie pelo ISO do Void Linux (x86_64 glibc ou musl). Abra um terminal root.
 
-## Inicie pelo ISO do Void Linux (x86_64 glibc ou musl). Abra um terminal root.
-
-## Troque o layout de teclado para ABNT2
+2. Troque o layout de teclado para ABNT2
 ```bash
 loadkeys br-abnt2
 ```
 
-## Identificar o disco
+3. Identificar o disco
 ```bash
-lsblk
+fdisk -l
 ```
 
-## Abrir o cfdisk
+4. Abrir o cfdisk
 ```bash
 cfdisk -z /dev/sda
 ```
 
 - Selecione **GPT**.
 
-- 1. **ESP** — EFI System Partition — 512MB — tipo *EFI System*
-- 2. **Sistema (Btrfs)** — resto do disco — tipo *Linux filesystem*
+- **ESP** — EFI System Partition — 512MB — tipo *EFI System*
+- **Sistema (Btrfs)** — resto do disco — tipo *Linux filesystem*
 
 ## Salve e saia.
 
