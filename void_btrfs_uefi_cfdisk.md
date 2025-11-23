@@ -2,7 +2,7 @@
 
 ## (Somente UEFI, sem BIOS/Legacy)
 
-1. Iniciar a Instalação
+## Iniciar a Instalação
 Inicie pelo ISO do Void Linux (x86_64 glibc ou musl).
 
 - Entre como root.
