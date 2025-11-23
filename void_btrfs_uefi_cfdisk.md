@@ -132,7 +132,7 @@ chroot /mnt /bin/bash
 UUID=$(blkid -s UUID -o value /dev/sda2)
 
 # Adicionando ao /etc/default/grub
-cat << 'EOF' >> /etc/default/grub
+cat << EOF >> /etc/default/grub
 GRUB_ENABLE_CRYPTODISK=y
 GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4 rd.luks.uuid=${UUID} rd.luks.name=${UUID}=cryptroot root=/dev/mapper/cryptroot"
 GRUB_PRELOAD_MODULES="luks cryptodisk gcry_rijndael"
