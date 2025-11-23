@@ -553,7 +553,6 @@ HISTCONTROL=ignoredups:erasedups
 # Editor padrão
 export EDITOR=vim
 export VISUAL=vim
-export ed=nano
 
 # Função de status (SEM COR – PS1 colore)
 get_exit_status() {
@@ -570,10 +569,12 @@ $( if [[ $? -eq 0 ]]; then printf "\033[1;32m✔"; else printf "\033[1;31m✘\03
 alias ll='ls -lh --color=auto'
 alias la='ls -A --color=auto'
 alias l='ls --color=auto'
+alias dir='ls -la --color=auto'
 alias grep='grep --color=auto'
 alias df='df -h'
 alias du='du -h'
 alias free='free -ht'
+alias ed='nano'
 
 # Segurança raiz (evita rm catastrófico)
 alias rm='rm -i'
