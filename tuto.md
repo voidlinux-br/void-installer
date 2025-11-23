@@ -445,7 +445,7 @@ EOF
 4. Se a raiz /dev/sda3 for **JFS**
 ```
 cat <<EOF >> /etc/fstab
-# ======== XFS ========
+# ======== JFS ========
 UUID=$UUID         /           jfs   defaults,noatime             0 1
 # ======== EFI System Partition ========
 UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077  0 2
