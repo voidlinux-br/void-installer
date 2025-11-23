@@ -18,14 +18,12 @@ bash
 loadkeys br-abnt2
 ```
 
-4. Identificar o disco
+## Particionar o disco
+1. Identificar o disco
 ```bash
 fdisk -l
 ```
-
-## Particionar o disco
-
-1. Abrir o cfdisk
+2. Abrir o cfdisk
 ```bash
 cfdisk -z /dev/sda
 ```
