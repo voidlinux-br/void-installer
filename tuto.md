@@ -400,11 +400,11 @@ dracut --force /boot/initramfs-${KVER}.img ${KVER}
 ```
 ---
 
-# ▶️    15. Configurar montagem dos subvolumes no /etc/fstab
+# ▶️    15. Configurar montagem das partições no /etc/fstab
 
 > Não esquecer de configurar passo 12
 
-1. Se a raiz /dev/sda3 for btrfs
+1. Se a raiz /dev/sda3 for **BTRFS**
 ```
 cat <<EOF >> /etc/fstab
 # ======== BTRFS – Subvolumes ========
@@ -419,38 +419,38 @@ UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noa
 /swap/swapfile                                    none        swap  sw,nofail                                                        0 0
 EOF
 ```
-2. Se a raiz /dev/sda3 for ext4
+2. Se a raiz /dev/sda3 for **EXT4**
 ```
 cat <<EOF >> /etc/fstab
 # ======== EXT4 ========
-UUID=$UUID         /           ext4  defaults,noatime,discard=async   0 1
+UUID=$UUID         /           ext4  defaults,noatime,discard=async  0 1
 # ======== EFI System Partition ========
-UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077                                      0 2
+UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077     0 2
 # ======== Swapfile ========
-/swap/swapfile                                    none        swap  sw,nofail                                                        0 0
+/swap/swapfile                                    none        swap  sw,nofail                       0 0
 EOF
 ```
 
-3. Se a raiz /dev/sda3 for xfs
+3. Se a raiz /dev/sda3 for **XFS**
 ```
 cat <<EOF >> /etc/fstab
 # ======== XFS ========
-UUID=$UUID         /           xfs   rw,noatime,attr2,logbufs=8       0 1
+UUID=$UUID         /           xfs   rw,noatime,attr2,logbufs=8   0 1
 # ======== EFI System Partition ========
-UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077                                      0 2
+UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077  0 2
 # ======== Swapfile ========
-/swap/swapfile                                    none        swap  sw,nofail                                                        0 0
+/swap/swapfile                                    none        swap  sw,nofail                    0 0
 EOF
 ```
-4. Se a raiz /dev/sda3 for jfs
+4. Se a raiz /dev/sda3 for **JFS**
 ```
 cat <<EOF >> /etc/fstab
 # ======== XFS ========
-UUID=$UUID         /           jfs   defaults,noatime                 0 1
+UUID=$UUID         /           jfs   defaults,noatime             0 1
 # ======== EFI System Partition ========
-UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077                                      0 2
+UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077  0 2
 # ======== Swapfile ========
-/swap/swapfile                                    none        swap  sw,nofail                                                        0 0
+/swap/swapfile                                    none        swap  sw,nofail                    0 0
 EOF
 ```
 ---
