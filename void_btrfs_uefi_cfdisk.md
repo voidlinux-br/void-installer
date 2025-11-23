@@ -135,7 +135,7 @@ UUID=$(blkid -s UUID -o value /dev/sda2)
 cat << EOF >> /etc/default/grub
 GRUB_ENABLE_CRYPTODISK=y
 GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4 rd.luks.uuid=${UUID} rd.luks.name=${UUID}=cryptroot root=/dev/mapper/cryptroot"
-GRUB_PRELOAD_MODULES="luks cryptodisk gcry_rijndael"
+GRUB_PRELOAD_MODULES="luks2 luks cryptodisk gcry_rijndael"
 EOF
 
 # Crie o path para suportar o grub
