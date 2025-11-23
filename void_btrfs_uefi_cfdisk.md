@@ -38,20 +38,13 @@ Selecione **GPT**.
 ```bash
 # Criptografar partição Btrfs Confirmando com YES:  
 cryptsetup luksFormat /dev/sda2
-```
 
-```bash
 # Abra a partição com sua passphrase. Será montada e mapeada, escolha um nome qualquer, aqui escolheremos cryptroot:
 cryptsetup open /dev/sda2 cryptroot
-```
-
-Formatar como Btrfs o dispositivo montado pelo cryptsetup no /dev/mapper, com o nome que setamos cryptroot:
-```bash
+# Formatar como Btrfs o dispositivo montado pelo cryptsetup no /dev/mapper, com o nome que setamos cryptroot:
 mkfs.btrfs /dev/mapper/cryptroot
-```
 
-Formatar ESP:
-```bash
+# Formatar ESP:
 mkfs.fat -F32 /dev/sda1
 ```
 
