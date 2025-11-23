@@ -170,49 +170,7 @@ lsblk -f /dev/sda
 ```
 ---
 
-# ▶️    6. Montar as partições
-Agora vamos montar tudo na ordem correta para preparar a instalação.
-
-1. SE A RAIZ FOR BTRFS (/dev/sda3)
-- A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
-```
-# Monta o subvolume principal (@)
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvolid=5 /dev/sda3 /mnt
-
-# Cria os pontos de montagem
-mkdir -pv /mnt/{boot/efi,home,var/log,var/cache,.snapshots,swap}
-
-# Criar os subvolumes principais:
-btrfs subvolume create /mnt/@
-btrfs subvolume create /mnt/@home
-btrfs subvolume create /mnt/@var
-btrfs subvolume create /mnt/@snapshots
-
-# Desmonte
-umount /mnt
-```
-> ⚠    Nota: A montagem final do subvolume @ será feita SOMENTE no próximo bloco, ao iniciar a instalação.
-
-2. SE A RAIZ FOR EXT4 / XFS / JFS
-```
-# Montar diretamente a partição raiz:
-mount /dev/sda3 /mnt
-```
-
-3. MONTAR A ESP (UEFI)
-```
-# Monta a ESP/UEFI corretamente em /boot/efi
-mkdir -p /mnt/boot/efi
-mount /dev/sda2 /mnt/boot/efi
-```
-
-4. VERIFICAR MONTAGENS
-```
-lsblk -f
-```
----
-
-# ▶️    6. Criar subvolumes Btrfs
+# ▶️    6. Criar subvolumes Btrfs - SE A RAIZ FOR BTRFS (/dev/sda3)
 
 - A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
 ```
@@ -231,9 +189,8 @@ umount /mnt
 ```
 ---
 
-# ▶️    7. Montar subvolumes
-
-1. montagem
+# ▶️    7. Montar partições
+1. Montar subvolumes - SE A RAIZ FOR BTRFS (/dev/sda3)
 ```
 # Monta o subvolume principal (@)
 mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@ /dev/sda3 /mnt
@@ -251,7 +208,16 @@ mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commi
 mount /dev/sda2 /mnt/boot/efi
 ```
 
-2. verifique a montagem:
+2. Montar outras partições - SE A RAIZ FOR EXT4 / XFS / JFS (/dev/sda3)
+```
+# Montar diretamente a partição raiz:
+mount /dev/sda3 /mnt
+
+# Monta a ESP/UEFI corretamente em /boot/efi
+mount /dev/sda2 /mnt/boot/efi
+```
+
+3. verifique a montagem:
 ```
 lsblk -f /dev/sda
 ```
