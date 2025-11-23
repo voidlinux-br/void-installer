@@ -29,7 +29,7 @@ fdisk -l
 ```bash
 cfdisk -z /dev/sda
 ```
-Selecione **GPT** para a tabela de partições
+Selecione **GPT**
 
 - **ESP** — EFI System Partition — 512MB — tipo *EFI System*
 - **Sistema (Btrfs)** — resto do disco — tipo *Linux filesystem*
@@ -44,6 +44,7 @@ cryptsetup luksFormat /dev/sda2
 
 # Abra a partição com sua passphrase. Será montada e mapeada, escolha um nome qualquer, aqui escolheremos cryptroot:
 cryptsetup open /dev/sda2 cryptroot
+
 # Formatar como Btrfs o dispositivo montado pelo cryptsetup no /dev/mapper, com o nome que setamos cryptroot:
 mkfs.btrfs /dev/mapper/cryptroot
 
@@ -51,13 +52,12 @@ mkfs.btrfs /dev/mapper/cryptroot
 mkfs.fat -F32 /dev/sda1
 ```
 
-## Criar subvolumes
-
-### Monte o dispositivo cryptroot em /mnt e crie nele seus subvolumes. (`@swap` foi adicionado para o `swapfile`):
+## Criar subvolumes BTRFS
 ```bash
+# Monte o dispositivo cryptroot em /mnt e crie nele seus subvolumes. (`@swap` foi adicionado para o `swapfile`):
 mount /dev/mapper/cryptroot /mnt
-```
-```bash
+
+# Cria subvolumes essenciais
 btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@log
@@ -65,43 +65,28 @@ btrfs subvolume create /mnt/@cache
 btrfs subvolume create /mnt/@snapshots
 btrfs subvolume create /mnt/@swap
 btrfs subvolume create /mnt/@boot
-```
 
-### Desmonte o dispositivo:
-```bash
+# Desmonte o dispositivo:
 umount /mnt
 ```
 
 ## Montar os subvolumes do sda2/cryptroot no /mnt:
 
-### O subvolume principal (@)
 ```bash
+# O subvolume principal (@)
 mount -o subvol=@,compress=zstd:3 /dev/mapper/cryptroot /mnt
-```
 
-### Cria os pontos de montagem (incluindo os do chroot)
-```bash
-mkdir -p /mnt/{home,boot,var/log,var/cache,.snapshots,swap}
+# Cria os pontos de montagem (incluindo os do chroot)
+mkdir -p /mnt/{home,boot,var/log,var/cache,.snapshots,swap,dev,proc,sys,run}
 
-```
-```bash
-mkdir -p /mnt/{dev,proc,sys,run}
-```
-
-### Monta os subvolumes restantes
-```bash
+# Monta os subvolumes restantes
 mount -o subvol=@home,compress=zstd:3 /dev/mapper/cryptroot /mnt/home
 mount -o subvol=@log /dev/mapper/cryptroot /mnt/var/log
 mount -o subvol=@cache /dev/mapper/cryptroot /mnt/var/cache
 mount -o subvol=@snapshots,compress=zstd:3 /dev/mapper/cryptroot /mnt/.snapshots
 mount -o subvol=@swap /dev/mapper/cryptroot /mnt/swap
-```
 
 ### A ESP, em /dev/sda1 vai ser montado em /mnt/boot/efi
-
-## Monte /boot:
-
-```bash
 mount -o subvol=@boot /dev/mapper/cryptroot /mnt/boot
 ```
 
