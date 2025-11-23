@@ -170,7 +170,7 @@ lsblk -f /dev/sda
 ```
 ---
 
-# ▶️    6. Criar subvolumes Btrfs - SE A RAIZ FOR BTRFS (/dev/sda3)
+# ▶️    6. Criar subvolumes Btrfs - (Somente se a raiz /dev/sda3 for btrfs)
 
 - A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
 ```
@@ -190,7 +190,7 @@ umount /mnt
 ---
 
 # ▶️    7. Montar partições
-1. Montar subvolumes - SE A RAIZ FOR BTRFS (/dev/sda3)
+1. Montar subvolumes - (Somente se a raiz /dev/sda3 for btrfs)
 ```
 # Monta o subvolume principal (@)
 mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@ /dev/sda3 /mnt
@@ -213,6 +213,9 @@ mount /dev/sda2 /mnt/boot/efi
 # Montar diretamente a partição raiz:
 mount /dev/sda3 /mnt
 
+# Cria os pontos de montagem
+mkdir -pv /mnt/{boot/efi,swap}
+
 # Monta a ESP/UEFI corretamente em /boot/efi
 mount /dev/sda2 /mnt/boot/efi
 ```
@@ -222,7 +225,7 @@ mount /dev/sda2 /mnt/boot/efi
 lsblk -f /dev/sda
 ```
 
-3. Copie as chaves do repositório (XBPS keys) para ser usada no chroot depois (/mnt)
+4. Copie as chaves do repositório (XBPS keys) para ser usada no chroot depois (/mnt)
 ```
 mkdir -pv /mnt/{etc,var/db/xbps/keys}
 cp -rpafv /var/db/xbps/keys/*.plist /mnt/var/db/xbps/keys/
@@ -400,6 +403,8 @@ dracut --force /boot/initramfs-${KVER}.img ${KVER}
 # ▶️    15. Configurar montagem dos subvolumes no /etc/fstab
 
 > Não esquecer de configurar passo 12
+
+1. Se a raiz /dev/sda3 for btrfs
 ```
 cat <<EOF >> /etc/fstab
 # ======== BTRFS – Subvolumes ========
@@ -408,6 +413,40 @@ UUID=$UUID         /home       btrfs defaults,noatime,ssd,compress=zstd:3,discar
 UUID=$UUID         /var/log    btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@log        0 0
 UUID=$UUID         /var/cache  btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@cache      0 0
 UUID=$UUID         /.snapshots btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@snapshots  0 0
+# ======== EFI System Partition ========
+UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077                                      0 2
+# ======== Swapfile ========
+/swap/swapfile                                    none        swap  sw,nofail                                                        0 0
+EOF
+```
+2. Se a raiz /dev/sda3 for ext4
+```
+cat <<EOF >> /etc/fstab
+# ======== EXT4 ========
+UUID=$UUID         /           ext4  defaults,noatime,discard=async   0 1
+# ======== EFI System Partition ========
+UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077                                      0 2
+# ======== Swapfile ========
+/swap/swapfile                                    none        swap  sw,nofail                                                        0 0
+EOF
+```
+
+3. Se a raiz /dev/sda3 for xfs
+```
+cat <<EOF >> /etc/fstab
+# ======== XFS ========
+UUID=$UUID         /           xfs   rw,noatime,attr2,logbufs=8       0 1
+# ======== EFI System Partition ========
+UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077                                      0 2
+# ======== Swapfile ========
+/swap/swapfile                                    none        swap  sw,nofail                                                        0 0
+EOF
+```
+4. Se a raiz /dev/sda3 for jfs
+```
+cat <<EOF >> /etc/fstab
+# ======== XFS ========
+UUID=$UUID         /           jfs   defaults,noatime                 0 1
 # ======== EFI System Partition ========
 UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077                                      0 2
 # ======== Swapfile ========
