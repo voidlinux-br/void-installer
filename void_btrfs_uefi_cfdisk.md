@@ -86,27 +86,19 @@ mount -o subvol=@cache /dev/mapper/cryptroot /mnt/var/cache
 mount -o subvol=@snapshots,compress=zstd:3 /dev/mapper/cryptroot /mnt/.snapshots
 mount -o subvol=@swap /dev/mapper/cryptroot /mnt/swap
 
-### A ESP, em /dev/sda1 vai ser montado em /mnt/boot/efi
+# A ESP, em /dev/sda1 vai ser montado em /mnt/boot/efi
 mount -o subvol=@boot /dev/mapper/cryptroot /mnt/boot
-```
 
-## ❗ ATENÇÃO – Diretório /mnt/boot/efi SOME após montar /mnt/boot
-
-## Recrie ele:
-
-```bash
-mkdir -p /mnt/boot/efi
-```
-
-## Agora sim, monte EFI:
-
-```bash
+# Agora sim, monte EFI:
 mount /dev/sda1 /mnt/boot/efi
 ```
 
 ## Instalar o sistema base
 ```
-xbps-install -Sy -R https://repo-default.voidlinux.org/current -r /mnt base-system btrfs-progs cryptsetup grub-x86_64-efi dracut linux linux-firmware linux-firmware-network glibc-locales xtools vim
+xbps-install -Sy -R https://repo-default.voidlinux.org/current \
+   -r /mnt \
+   base-system btrfs-progs cryptsetup grub-x86_64-efi dracut linux \
+   linux-firmware linux-firmware-network glibc-locales xtools vim
 ```
 
 ## Isso garante:
