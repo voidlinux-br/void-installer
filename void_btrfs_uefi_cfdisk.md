@@ -96,7 +96,7 @@ mount /dev/sda1 /mnt/boot/efi
 xbps-install -Sy -R https://repo-default.voidlinux.org/current \
    -r /mnt \
    base-system btrfs-progs cryptsetup grub-x86_64-efi dracut linux \
-   linux-firmware linux-firmware-network glibc-locales xtools vim
+   linux-firmware linux-firmware-network glibc-locales xtools vim nano
 ```
 
 ## Isso garante:
@@ -115,105 +115,62 @@ xgenfstab -U /mnt > /mnt/etc/fstab
 ```
 
 ## Entrar no sistema (chroot)
-
-```bash
+1. Montar os diretórios essenciais dentro do ambiente chroot:
+```
 for i in /dev /proc /sys /run; do mount --rbind $i /mnt$i; done
 ```
-
-```bash
+2. Entrar no chroot:
+```
 chroot /mnt /bin/bash
 ```
 
 ## Configurar GRUB
-
-## Vamos validar a UUID da partição sda2:
-
 ```bash
-blkid /dev/sda2
-```
+# Pegar a UUID da partição sda2:
+UUID=$(blkid /dev/sda2)
 
-## Você receberá um UUID no modelo deste:
-
-```bash
-31c87e1e-dd47-4ed7-bd0c-780aa52cd1ea
-```
-
-## Que vamos apontar no arquivo do grub
-
-```bash
-vim /etc/default/grub
-```
-
-## Adicione/edite as linhas:
-
-```bash
+# Adicionando ao /etc/default/grub
+cat <<EOF >> /etc/default/grub
 GRUB_ENABLE_CRYPTODISK=y
-```
+GRUB_CMDLINE_LINUX_DEFAULT=\"loglevel=4 rd.luks.uuid=$UUID rd.luks.name=31c87e1e-dd47-4ed7-bd0c-780aa52cd1ea=cryptroot root=/dev/mapper/cryptroot\"
 
-```bash
-GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4 rd.luks.uuid=31c87e1e-dd47-4ed7-bd0c-780aa52cd1ea rd.luks.name=31c87e1e-dd47-4ed7-bd0c-780aa52cd1ea=cryptroot root=/dev/mapper/cryptroot"
-```
-
-## Crie o path para suportar o grub
-
-```bash
+# Crie o path para suportar o grub
 mkdir -p /boot/grub
-```
 
-## Gere o novo grub.cfg
-
-```bash
+# Gerar o novo grub.cfg
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
-## GRUB (UEFI)
-
-## Instale o novo Grub:
-
+## Instalação do Boot Manager GRUB em UEFI
 ```bash
+# Instale o novo Grub:
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="VoidLinux" --recheck
 ```
 
 ## Gerando o INITRAMFS
-
-## Descubra versão do kernel:
-
-```bash
-ls /lib/modules
 ```
-
-## Geralmente algo como: 6.12.58_1. Então:
-
-```bash
-dracut --kver 6.12.58_1 --force
+KVER=$(ls /usr/lib/modules); echo $KVER
+dracut --force --kver ${KVER}
 ```
 
 ## Criar um resolv.conf
 ```bash
-echo "nameserver 1.1.1.1" > /etc/resolv.conf
-echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
 ```
 
 ## Configurações básicas
-
-## Setar Hostname
 ```bash
+# Setar Hostname
 echo void > /etc/hostname
-```
 
-## Setar Localtime
-```bash
+# Setar Localtime
 ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
-```
 
-## Setar Locales
-```bash
+# Setar Locales
 sed -i 's/#en_US.UTF-8/en_US.UTF-8/' /etc/default/libc-locales
 sed -i 's/#pt_BR.UTF-8/pt_BR.UTF-8/' /etc/default/libc-locales
-```
 
-## Gerar locales:
-```sh
+# Gerar locales:
 xbps-reconfigure -f glibc-locales
 ```
 
