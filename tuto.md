@@ -152,36 +152,34 @@ parted --script /dev/sda -- print
 
 # ▶️    5. Formatar as partições
 
-- Formate cada partição com o sistema de arquivos correto:
+Formate cada partição com o sistema de arquivos correto:
 
-# ▶️ 5. Formatar a partição raiz
-
-A ESP deve ser formatada sempre:
+- A ESP deve ser formatada sempre:
 {{{
 mkfs.fat -F32 /dev/sda2
 }}}
 
 Escolha APENAS UM dos formatos para o sistema de arquivos raiz (/dev/sda3):
 
-## ▶️ 5A — BTRFS (recomendado — subvolumes, snapshots, compressão)
+- BTRFS (recomendado — subvolumes, snapshots, compressão)
 {{{
 mkfs.btrfs -f /dev/sda3
 }}}
 
-## ▶️ 5B — EXT4 (clássico, estável, simples)
+- EXT4 (clássico, estável, simples)
 {{{
 mkfs.ext4 -F /dev/sda3
 }}}
 
-## ▶️ 5C — XFS (alto desempenho, ótimo para SSD)
+- XFS (alto desempenho, ótimo para SSD)
 {{{
 mkfs.xfs -f /dev/sda3
 }}}
 
-## ▶️ 5D — JFS (leve, baixo consumo de CPU)
-{{{
+- JFS (leve, baixo consumo de CPU)
+```
 mkfs.jfs -q /dev/sda3
-}}}
+```
 
 - Confirmar se tudo foi criado corretamente:
 ```
