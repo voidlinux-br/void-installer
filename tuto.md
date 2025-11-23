@@ -211,13 +211,13 @@ mount /dev/sda2 /mnt/boot/efi
 2. Montar outras partições - SE A RAIZ FOR EXT4 / XFS / JFS (/dev/sda3)
 ```
 # Montar diretamente a partição raiz:
-mount /dev/sda3 /mnt
+mount -v /dev/sda3 /mnt
 
 # Cria os pontos de montagem
 mkdir -pv /mnt/{boot/efi,swap}
 
 # Monta a ESP/UEFI corretamente em /boot/efi
-mount /dev/sda2 /mnt/boot/efi
+mount -v /dev/sda2 /mnt/boot/efi
 ```
 
 3. verifique a montagem:
