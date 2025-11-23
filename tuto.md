@@ -168,18 +168,12 @@ mkfs.jfs -q  /dev/sda3        # - JFS (leve, baixo consumo de CPU)
 ```
 lsblk -f /dev/sda
 ```
-
 ---
 
-{{{
 # ▶️    6. Montar as partições
-
 Agora vamos montar tudo na ordem correta para preparar a instalação.
 
-============================================================
-1) SE A RAIZ FOR BTRFS (/dev/sda3)
-============================================================
-
+1. SE A RAIZ FOR BTRFS (/dev/sda3)
 1.1 Montar o subvolume padrão (ID 5):
 ```
 mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvolid=5 /dev/sda3 /mnt
@@ -194,41 +188,30 @@ btrfs subvolume create /mnt/@snapshots
 ```
 
 1.3 Desmontar tudo:
-[code]
+```
 umount /mnt
-[/code]
+```
 
-(⚠️ Nota: A montagem final do subvolume @ será feita SOMENTE no próximo bloco, ao iniciar a instalação.)
+> (⚠    Nota: A montagem final do subvolume @ será feita SOMENTE no próximo bloco, ao iniciar a instalação.)
 
-============================================================
-2) SE A RAIZ FOR EXT4 / XFS / JFS
-============================================================
+2. SE A RAIZ FOR EXT4 / XFS / JFS
 
 2.1 Montar diretamente a partição raiz:
-[code]
+```
 mount /dev/sda3 /mnt
-[/code]
+```
 
-============================================================
-3) MONTAR A ESP (UEFI)
-============================================================
-
-[code]
+3. MONTAR A ESP (UEFI)
+```
 mkdir -p /mnt/boot/efi
 mount /dev/sda2 /mnt/boot/efi
-[/code]
+```
 
-============================================================
-4) VERIFICAR MONTAGENS
-============================================================
-
-[code]
+4. VERIFICAR MONTAGENS
+```
 lsblk -f
-[/code]
-
+```
 ---
-}}}
-
 
 # ▶️    6. Criar subvolumes Btrfs
 
