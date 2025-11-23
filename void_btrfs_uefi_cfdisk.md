@@ -1,6 +1,5 @@
 # 🔥 Instalação do Void Linux com Btrfs + Subvolumes + Swapfile + UEFI (Guia Completo)
-
-## (Somente UEFI, sem BIOS/Legacy)
+(Somente UEFI, sem BIOS/Legacy)
 
 ## Iniciar a Instalação
 Inicie pelo ISO do Void Linux (x86_64 glibc ou musl).
