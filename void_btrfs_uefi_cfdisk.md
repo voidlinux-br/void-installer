@@ -3,7 +3,13 @@
 ## (Somente UEFI, sem BIOS/Legacy)
 
 1. Iniciar a Instalação
-Inicie pelo ISO do Void Linux (x86_64 glibc ou musl). Abra um terminal root.
+Inicie pelo ISO do Void Linux (x86_64 glibc ou musl).
+
+- Entre como root.
+```
+login    : root
+password : voidlinux
+```
 
 2. Troque o layout de teclado para ABNT2
 ```bash
