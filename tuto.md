@@ -306,7 +306,7 @@ ln -sfv /etc/sv/dhcpcd /var/service
 ln -sfv /etc/sv/sshd /var/service
 ```
 
-6. reconfigurar senha root:
+6. reconfigurar senha root (importante):
 ```
 passwd
 ```
