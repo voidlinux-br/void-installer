@@ -59,13 +59,13 @@ dhcpcd wlan0
 
 1. Testar a conexão:
 ```
-ping 8.8.8.8
-ping google.com
+ping -c3 8.8.8.8
+ping -c3 repo-default.voidlinux.org
 ```
 
 2. Instale alguns necessários pacotes:
 ```
-xbps-install -Sy xbps parted vpm vsv nano zstd xz bash-completion
+xbps-install -Sy xbps parted jfsutils xfsprogs nano zstd xz bash-completion
 ```
 ---
 
@@ -154,8 +154,8 @@ parted --script /dev/sda -- print
 
 - Formate cada partição com o sistema de arquivos correto:
 ```
-mkfs.fat -F32 /dev/sda2     # Formata a ESP (EFI System Partition)
-mkfs.btrfs -f /dev/sda3     # Formata a partição raiz em Btrfs
+mkfs.fat -F32 /dev/sda2 -n EFI     # Formata a ESP (EFI System Partition)
+mkfs.btrfs -f /dev/sda3 -L ROOT    # Formata a partição raiz em Btrfs
 ```
 
 - Confirmar se tudo foi criado corretamente:

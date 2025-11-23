@@ -59,13 +59,13 @@ dhcpcd wlan0
 
 1. Testar a conexão:
 ```
-ping 8.8.8.8
-ping google.com
+ping -c3 8.8.8.8
+ping -c3 repo-default.voidlinux.org
 ```
 
 2. Instale alguns necessários pacotes:
 ```
-xbps-install -Sy xbps parted vpm vsv nano zstd xz bash-completion
+xbps-install -Sy xbps parted jfsutils xfsprogs nano zstd xz bash-completion
 ```
 ---
 
@@ -155,14 +155,14 @@ parted --script /dev/sda -- print
 Formate cada partição com o sistema de arquivos correto:
 1. A ESP deve ser formatada sempre:
 ```
-mkfs.fat -F32 /dev/sda2
+mkfs.fat -F32 /dev/sda2 -n EFI
 ```
 2. Escolha APENAS UM dos formatos abaixo para o sistema de arquivos raiz (/dev/sda3):
 ```
-mkfs.btrfs -f /dev/sda3       # - BTRFS (recomendado — subvolumes, snapshots, compressão)
-mkfs.ext4 -F  /dev/sda3       # - EXT4 (clássico, estável, simples)
-mkfs.xfs -f  /dev/sda3        # - XFS (alto desempenho, ótimo para SSD)
-mkfs.jfs -q  /dev/sda3        # - JFS (leve, baixo consumo de CPU)
+mkfs.btrfs -f /dev/sda3 -L ROOT       # - BTRFS (recomendado — subvolumes, snapshots, compressão)
+mkfs.ext4 -F  /dev/sda3 -L ROOT       # - EXT4 (clássico, estável, simples)
+mkfs.xfs -f  /dev/sda3  -L ROOT       # - XFS (alto desempenho, ótimo para SSD)
+mkfs.jfs -q  /dev/sda3  -L ROOT       # - JFS (leve, baixo consumo de CPU)
 ```
 3. Confirmar se tudo foi criado corretamente:
 ```
