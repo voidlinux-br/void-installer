@@ -2,409 +2,273 @@
 
 ## (Somente UEFI, sem BIOS/Legacy)
 
-Este guia instala o Void Linux com:
+## Iniciar a Instalação
 
-- Partição LUKS2 para o sistema
-- Btrfs com subvolumes
-- Swapfile seguro dentro do Btrfs
-- Boot somente UEFI (sem suporte a BIOS/Legacy)
+## Inicie pelo ISO do Void Linux (x86_64 glibc ou musl). Abra um terminal root.
 
----
-
-## ▶️ 1. Iniciar a Instalação
-
-Inicie pelo ISO do Void Linux (x86_64 glibc ou musl).  
-Abra um terminal como root.
-
-### Trocar layout de teclado para ABNT2
-
-[code]
+## Troque o layout de teclado para ABNT2
+```bash
 loadkeys br-abnt2
-[/code]
+```
 
----
-
-## ▶️ 2. Identificar o disco
-
-[code]
+## Identificar o disco
+```bash
 lsblk
-[/code]
+```
 
-Identifique o disco onde o Void será instalado (ex.: /dev/sda).
-
----
-
-## ▶️ 3. Particionar com cfdisk (GPT)
-
-[code]
+## Abrir o cfdisk
+```bash
 cfdisk -z /dev/sda
-[/code]
+```
 
 - Selecione **GPT**.
 
-Crie as partições:
+- 1. **ESP** — EFI System Partition — 512MB — tipo *EFI System*
+- 2. **Sistema (Btrfs)** — resto do disco — tipo *Linux filesystem*
 
-1. **ESP** — EFI System Partition — 512MB — tipo: *EFI System*
-2. **Sistema (LUKS → Btrfs)** — resto do disco — tipo: *Linux filesystem*
+## Salve e saia.
 
-Salve e saia.
+## Formatar partições
 
----
-
-## ▶️ 4. Criptografar e formatar
-
-### Criptografar a partição de sistema (Btrfs dentro de LUKS)
-
-Confirme com `YES`:
-
-[code]
+## Criptografar partição Btrfs Confirmando com YES:  
+```bash
 cryptsetup luksFormat /dev/sda2
-[/code]
+```
 
-### Abrir a partição criptografada
-
-Vamos mapear como `cryptroot`:
-
-[code]
+## Abra a partição com sua passphrase. Será montada e mapeada, escolha um nome qualquer, aqui escolheremos cryptroot:
+```bash
 cryptsetup open /dev/sda2 cryptroot
-[/code]
+```
 
-### Formatar o volume Btrfs
-
-[code]
+### Formatar como Btrfs o dispositivo montado pelo cryptsetup no /dev/mapper, com o nome que setamos cryptroot:
+```bash
 mkfs.btrfs /dev/mapper/cryptroot
-[/code]
+```
 
-### Formatar a ESP como FAT32
-
-[code]
+### Formatar ESP:
+```bash
 mkfs.fat -F32 /dev/sda1
-[/code]
+```
 
----
+## Criar subvolumes
 
-## ▶️ 5. Criar subvolumes Btrfs
-
-Monte o dispositivo Btrfs para criar os subvolumes:
-
-[code]
+### Monte o dispositivo cryptroot em /mnt e crie nele seus subvolumes. (`@swap` foi adicionado para o `swapfile`):
+```bash
 mount /dev/mapper/cryptroot /mnt
-[/code]
-
-Crie os subvolumes principais:
-
-[code]
+```
+```bash
 btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@log
 btrfs subvolume create /mnt/@cache
 btrfs subvolume create /mnt/@snapshots
-[/code]
+btrfs subvolume create /mnt/@swap
+btrfs subvolume create /mnt/@boot
+```
 
-> Observação:
-> - Não criamos mais **@swap** nem **@boot**.
-> - O swapfile ficará em `/swapfile` no subvolume `@`.
-> - `/boot` será apenas um diretório dentro do `@`, e a ESP será montada em `/boot/efi`.
-
-Desmonte:
-
-[code]
+### Desmonte o dispositivo:
+```bash
 umount /mnt
-[/code]
+```
 
----
+## Montar os subvolumes do sda2/cryptroot no /mnt:
 
-## ▶️ 6. Montar os subvolumes
-
-### Montar o subvolume raiz (@)
-
-[code]
+### O subvolume principal (@)
+```bash
 mount -o subvol=@,compress=zstd:3 /dev/mapper/cryptroot /mnt
-[/code]
+```
 
-### Criar pontos de montagem
+### Cria os pontos de montagem (incluindo os do chroot)
+```bash
+mkdir -p /mnt/{home,boot,var/log,var/cache,.snapshots,swap}
 
-[code]
-mkdir -p /mnt/{home,var/log,var/cache,.snapshots}
-mkdir -p /mnt/boot
-mkdir -p /mnt/boot/efi
-[/code]
+```
+```bash
+mkdir -p /mnt/{dev,proc,sys,run}
+```
 
-> Note que agora `/boot` é só diretório normal dentro do `@`, e não há mais subvolume `@boot`.
-
-### Montar os subvolumes restantes
-
-[code]
+### Monta os subvolumes restantes
+```bash
 mount -o subvol=@home,compress=zstd:3 /dev/mapper/cryptroot /mnt/home
 mount -o subvol=@log /dev/mapper/cryptroot /mnt/var/log
 mount -o subvol=@cache /dev/mapper/cryptroot /mnt/var/cache
 mount -o subvol=@snapshots,compress=zstd:3 /dev/mapper/cryptroot /mnt/.snapshots
-[/code]
+mount -o subvol=@swap /dev/mapper/cryptroot /mnt/swap
+```
 
-### Montar a ESP em /boot/efi
+### A ESP, em /dev/sda1 vai ser montado em /mnt/boot/efi
 
-[code]
+## Monte /boot:
+
+```bash
+mount -o subvol=@boot /dev/mapper/cryptroot /mnt/boot
+```
+
+## ❗ ATENÇÃO – Diretório /mnt/boot/efi SOME após montar /mnt/boot
+
+## Recrie ele:
+
+```bash
+mkdir -p /mnt/boot/efi
+```
+
+## Agora sim, monte EFI:
+
+```bash
 mount /dev/sda1 /mnt/boot/efi
-[/code]
+```
 
-> Não há mais montagem de `/mnt/boot` como subvolume separado.
-> Tudo que ficar em `/boot` estará dentro do Btrfs em `@`, e a ESP estará em `/boot/efi`.
-
----
-
-## ▶️ 7. Instalar o sistema base
-
-[code]
+## Instalar o sistema base
+```
 xbps-install -Sy -R https://repo-default.voidlinux.org/current -r /mnt base-system btrfs-progs cryptsetup grub-x86_64-efi dracut linux linux-firmware linux-firmware-network glibc-locales xtools vim
-[/code]
+```
 
-Isso garante:
+## Isso garante:
 
-- `btrfs-progs` → suporte ao Btrfs e subvolumes
-- `cryptsetup` → LUKS
-- `dracut` → initramfs com suporte a LUKS
-- `grub-x86_64-efi` → bootloader UEFI
-- `linux` → kernel
-- `linux-firmware-network` → drivers de rede
-- `glibc-locales` → locales
-- `xtools` → necessário para usar `xgenfstab`
-- `vim` → editor básico
+- btrfs-progs → necessário para os subvolumes
+- cryptsetup → para LUKS
+- dracut → initramfs com suporte a LUKS
+- grub-x86_64-efi → bootloader UEFI
+- linux → kernel
+- linux-firmware-network → drivers de rede
+- xtools → obrigatório para usar xgenfstab sem falhas
 
----
-
-## ▶️ 8. Gerar fstab
-
-[code]
+## Criar fstab
+```
 xgenfstab -U /mnt > /mnt/etc/fstab
-[/code]
+```
 
-Depois, confira o conteúdo de `/mnt/etc/fstab` para garantir que os subvolumes foram detectados corretamente.
+## Entrar no sistema (chroot)
 
----
-
-## ▶️ 9. Preparar chroot
-
-Monte bind dos pseudo-sistemas:
-
-[code]
+```bash
 for i in /dev /proc /sys /run; do mount --rbind $i /mnt$i; done
-[/code]
+```
 
-Entrar no chroot:
-
-[code]
+```bash
 chroot /mnt /bin/bash
-[/code]
+```
 
----
+## Configurar GRUB
 
-## ▶️ 10. Configurar o GRUB (LUKS + Btrfs)
+## Vamos validar a UUID da partição sda2:
 
-Primeiro, pegue a UUID da partição LUKS (`/dev/sda2`):
-
-[code]
+```bash
 blkid /dev/sda2
-[/code]
+```
 
-Você verá algo como:
+## Você receberá um UUID no modelo deste:
 
-[code]
-/dev/sda2: UUID="31c87e1e-dd47-4ed7-bd0c-780aa52cd1ea" TYPE="crypto_LUKS"
-[/code]
+```bash
+31c87e1e-dd47-4ed7-bd0c-780aa52cd1ea
+```
 
-Anote o UUID (sem aspas).
+## Que vamos apontar no arquivo do grub
 
-Edite o `/etc/default/grub`:
-
-[code]
+```bash
 vim /etc/default/grub
-[/code]
+```
 
-Adicione/edite as linhas:
+## Adicione/edite as linhas:
 
-[code]
+```bash
 GRUB_ENABLE_CRYPTODISK=y
-[/code]
+```
 
-[code]
+```bash
 GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4 rd.luks.uuid=31c87e1e-dd47-4ed7-bd0c-780aa52cd1ea rd.luks.name=31c87e1e-dd47-4ed7-bd0c-780aa52cd1ea=cryptroot root=/dev/mapper/cryptroot"
-[/code]
+```
 
-> Substitua o UUID pelo seu real.
-> Aqui estamos dizendo pro initramfs:
-> - qual LUKS abrir
-> - qual nome dar pro mapeamento (`cryptroot`)
-> - onde está a raiz (`root=/dev/mapper/cryptroot`)
+## Crie o path para suportar o grub
 
-Crie o path para o grub (caso ainda não exista):
-
-[code]
+```bash
 mkdir -p /boot/grub
-[/code]
+```
 
-Gerar o `grub.cfg`:
+## Gere o novo grub.cfg
 
-[code]
+```bash
 grub-mkconfig -o /boot/grub/grub.cfg
-[/code]
+```
 
----
+## GRUB (UEFI)
 
-## ▶️ 11. Instalar o GRUB em modo UEFI
+## Instale o novo Grub:
 
-Instalar o GRUB apontando para a ESP em `/boot/efi`:
-
-[code]
+```bash
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="VoidLinux" --recheck
-[/code]
+```
 
----
+## Gerando o INITRAMFS
 
-## ▶️ 12. Gerar o INITRAMFS com Dracut
+## Descubra versão do kernel:
 
-Descobrir a versão do kernel instalada:
-
-[code]
+```bash
 ls /lib/modules
-[/code]
+```
 
-Você verá algo como:
+## Geralmente algo como: 6.12.58_1. Então:
 
-[code]
-6.12.58_1
-[/code]
-
-Gere o initramfs:
-
-[code]
+```bash
 dracut --kver 6.12.58_1 --force
-[/code]
+```
 
-> Ajuste a versão (`6.12.58_1`) conforme a sua saída do `ls /lib/modules`.
-
----
-
-## ▶️ 13. Configurações básicas de sistema
-
-### Resolver DNS provisório
-
-[code]
+## Criar um resolv.conf
+```bash
 echo "nameserver 1.1.1.1" > /etc/resolv.conf
 echo "nameserver 8.8.8.8" >> /etc/resolv.conf
-[/code]
+```
 
-### Hostname
+## Configurações básicas
 
-[code]
+## Setar Hostname
+```bash
 echo void > /etc/hostname
-[/code]
+```
 
-### Timezone
-
-[code]
+## Setar Localtime
+```bash
 ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
-[/code]
+```
 
-### Locales
-
-Edite as linhas necessárias em `/etc/default/libc-locales`:
-
-[code]
+## Setar Locales
+```bash
 sed -i 's/#en_US.UTF-8/en_US.UTF-8/' /etc/default/libc-locales
 sed -i 's/#pt_BR.UTF-8/pt_BR.UTF-8/' /etc/default/libc-locales
-[/code]
+```
 
-Gerar os locales:
-
-[code]
+## Gerar locales:
+```sh
 xbps-reconfigure -f glibc-locales
-[/code]
+```
 
----
-
-## ▶️ 14. Senha de root
-
-[code]
+## Trocar senha de root:
+```bash
 passwd
-[/code]
+```
 
-Defina a senha do usuário root.
-
----
-
-## ▶️ 15. Criar swapfile em Btrfs (modo correto)
-
-Agora, com o Btrfs montado em `/`, crie o swapfile na raiz (sem subvolume separado):
-
-[code]
+## Criar swapfile em Btrfs (modo correto)
+```
 btrfs filesystem mkswapfile --size 1G /swapfile
 chmod 600 /swapfile
 mkswap /swapfile
-[/code]
-
-Adicione a entrada do swapfile no `/etc/fstab`:
-
-[code]
 echo "/swapfile none swap sw 0 0" >> /etc/fstab
-[/code]
+```
 
-> Observações importantes:
-> - O comando `btrfs filesystem mkswapfile` cuida de desativar COW e garantir contiguidade.
-> - Não usamos mais `/swap/swapfile`, nem subvolume `@swap`.
-> - Simples e totalmente compatível com hibernação futura (desde que configurada corretamente).
-
----
-
-## ▶️ 16. Finalizar, sair do chroot e reboot
-
-Sair do chroot:
-
-[code]
+## Sair do chroot e reboot
+```
 exit
-[/code]
-
-Desmontar tudo recursivamente:
-
-[code]
 umount -R /mnt
-[/code]
-
-Desativar swap (se ainda estiver ativa):
-
-[code]
 swapoff -a
-[/code]
-
-Fechar o LUKS:
-
-[code]
 cryptsetup close cryptroot
-[/code]
-
-Reiniciar:
-
-[code]
 reboot
-[/code]
+```
 
 ---
 
-## 🎉 Conclusão
-
-Após o reboot:
-
-- O firmware UEFI deve detectar a entrada **VoidLinux** criada pelo GRUB.
-- Ao dar boot:
-  - O GRUB vai pedir a passphrase do LUKS.
-  - O initramfs abrirá `/dev/sda2` como `cryptroot`.
-  - O Btrfs será montado com o subvolume `@` como `/`.
-  - Os subvolumes serão montados conforme seu `/etc/fstab`.
-  - O swapfile em `/swapfile` estará ativo normalmente.
-
-Você agora tem:
+# 🎉 Fim!
+O Void Linux agora está instalado com:
 
 - 🔐 LUKS2  
-- 🗂️ Btrfs com subvolumes bem organizados  
-- 📁 Swapfile seguro no próprio Btrfs (sem gambi de subvolume)  
-- ⚙️ Boot UEFI limpo com GRUB
-
+- 🗂️ Btrfs + subvolumes  
+- 📁 swapfile dentro do Btrfs (seguro)  
+- ⚙️ Boot UEFI limpo  
