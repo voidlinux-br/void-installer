@@ -43,7 +43,7 @@ ping -c3 repo-default.voidlinux.org
 
 2. Instale alguns necessários pacotes:
 ```
-xbps-install -Sy xbps parted jfsutils xfsprogs nano zstd xz bash-completion
+xbps-install -Sy xbps parted nano zstd xz bash-completion
 ```
 
 ## Particionar o disco
