@@ -1,4 +1,4 @@
-# 🔥   Tutorial de instalação do Void Linux com Btrfs + Subvolumes + Swapfile + UEFI (Guia Completo)
+# 🔥   Tutorial de instalação do Void Linux com Btrfs + Subvolumes + LUKS + Swapfile + UEFI (Guia Completo)
 (Somente UEFI, sem BIOS/Legacy)
 
 ## Iniciar a Instalação
@@ -231,7 +231,7 @@ reboot
 # 🎉 Fim!
 O Void Linux agora está instalado com:
 
-- 🔐 LUKS2  
+- 🔐 LUKS  
 - 🗂️ Btrfs + subvolumes  
 - 📁 swapfile dentro do Btrfs (seguro)  
 - ⚙️ Boot UEFI limpo  
