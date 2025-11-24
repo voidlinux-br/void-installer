@@ -134,13 +134,14 @@ for i in /dev /proc /sys /run; do mount --rbind $i /mnt$i; done
 ```
 2. Entrar no chroot:
 ```
-xchroot /mnt
+xchroot /mnt /bin/bash
 ```
 
 ## Configurar GRUB
 ```bash
 # Pegar a UUID da partição sda2:
 UUID=$(blkid -s UUID -o value /dev/sda2)
+echo ${UUID}
 
 # Adicionando ao /etc/default/grub
 cat << EOF >> /etc/default/grub
@@ -166,13 +167,14 @@ grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=void 
 
 # Criar fallback UEFI (boot universal) - Esse arquivo garante boot mesmo quando a NVRAM for apagada.
 mkdir -p /boot/efi/EFI/BOOT
-cp -vf /boot/efi/EFI/VoidLinux/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
+cp -vf /boot/efi/EFI/void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
 ```
 
 ## Gerando o INITRAMFS
 ```
 mods=(/usr/lib/modules/*)
 KVER=$(basename "${mods[0]}")
+echo ${KVER}
 dracut --force --kver ${KVER}
 ```
 
@@ -214,12 +216,18 @@ mkswap /swapfile
 echo "/swapfile none swap sw 0 0" >> /etc/fstab
 ```
 
-## Sair do chroot e reboot
+## Sair do chroot
 ```
 exit
+```
+```
+# Desmonta todas as partições montadas em /mnt (subvolumes e /boot/efi)
 umount -R /mnt
+# Desativa qualquer swapfile ou swap partition que tenha sido ativada dentro do chroot
 swapoff -a
+# Fecha o mapeamento LUKS (desbloqueio do cryptroot)
 cryptsetup close cryptroot
+# Reinicia a máquina física ou a VM para testar o boot real
 reboot
 ```
 
