@@ -170,20 +170,20 @@ Quando o GRUB abre o LUKS, o initramfs normalmente pede a senha de novo.
 Para evitar isso, vamos criar um keyfile, colocar dentro do initramfs e deixar o root abrir sozinho.
 ```
 #criar o keyfile
-dd if=/dev/urandom of=/volume.key bs=64 count=1
-chmod 000 /volume.key
+dd if=/dev/urandom of=/boot/volume.key bs=64 count=1
+chmod 000 /boot/volume.key
 
 #Adicionar o keyfile ao LUKS
-cryptsetup luksAddKey /dev/sda2 /volume.key     # Digite sua senha LUKS (a mesma usada no GRUB).
+cryptsetup luksAddKey /dev/sda2 /boot/volume.key     # Digite sua senha LUKS (a mesma usada no GRUB).
 
 #Configurar o /etc/crypttab
 cat << EOF >> /etc/crypttab
-cryptroot  /dev/sda2  /volume.key  luks
+cryptroot  /dev/sda2  /boot/volume.key  luks
 EOF
 
 #Incluir o keyfile no initramfs
 cat << EOF >> /etc/dracut.conf.d/10-crypt.conf
-install_items+=" /volume.key /etc/crypttab "
+install_items+=" /boot/volume.key /etc/crypttab "
 EOF
 
 #Regenerar o initramfs
