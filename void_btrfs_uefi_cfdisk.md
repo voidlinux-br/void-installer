@@ -245,10 +245,13 @@ exit
 ```
 # Desmonta todas as partições montadas em /mnt (subvolumes e /boot/efi)
 umount -R /mnt
+
 # Desativa qualquer swapfile ou swap partition que tenha sido ativada dentro do chroot
 swapoff -a
+
 # Fecha o mapeamento LUKS (desbloqueio do cryptroot)
 cryptsetup close cryptroot
+
 # Reinicia a máquina física ou a VM para testar o boot real
 reboot
 ```
