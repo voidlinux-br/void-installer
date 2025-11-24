@@ -101,8 +101,8 @@ mount /dev/sda1 /mnt/boot/efi
 xbps-install -Sy -R https://repo-default.voidlinux.org/current \
    -r /mnt \
    base-system btrfs-progs cryptsetup grub-x86_64-efi dracut linux \
-   linux-firmware linux-firmware-network glibc-locales xtools vim \
-   nano dhcpcd
+   linux-headers linux-firmware linux-firmware-network glibc-locales xtools \
+   dhcpcd vim nano grc zstd xz bash-completion
 ```
 
 ## Isso garante:
