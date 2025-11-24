@@ -37,8 +37,9 @@ Selecione **GPT**
 ## Formatar partições
 
 ```bash
+# Criptografar a partição raiz em LUKS1 (compatível com GRUB)
 # Criptografar partição Btrfs Confirmando com YES:  
-cryptsetup luksFormat /dev/sda2
+cryptsetup luksFormat --type luks1 /dev/sda2
 
 # Abra a partição com sua passphrase. Será montada e mapeada, escolha um nome qualquer, aqui escolheremos cryptroot:
 cryptsetup open /dev/sda2 cryptroot
@@ -70,19 +71,19 @@ umount /mnt
 
 ```bash
 # O subvolume principal (@)
-mount -o subvol=@,compress=zstd:3 /dev/mapper/cryptroot /mnt
+mount -o subvol=@ /dev/mapper/cryptroot /mnt
 
 # Cria os pontos de montagem (incluindo os do chroot)
 mkdir -p /mnt/{home,boot/efi,var/log,var/cache,.snapshots,dev,proc,sys,run}
 
 # Monta os subvolumes restantes
-mount -o subvol=@home,compress=zstd:3 /dev/mapper/cryptroot /mnt/home
-mount -o subvol=@log /dev/mapper/cryptroot /mnt/var/log
-mount -o subvol=@cache /dev/mapper/cryptroot /mnt/var/cache
-mount -o subvol=@snapshots,compress=zstd:3 /dev/mapper/cryptroot /mnt/.snapshots
+mount -o subvol=@home      /dev/mapper/cryptroot /mnt/home
+mount -o subvol=@log       /dev/mapper/cryptroot /mnt/var/log
+mount -o subvol=@cache     /dev/mapper/cryptroot /mnt/var/cache
+mount -o subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
 
 # monte EFI:
-mount -o umask=0077 /dev/sda1 /mnt/boot/efi
+mount /dev/sda1 /mnt/boot/efi
 ```
 
 ## Instalar o sistema base
@@ -123,7 +124,7 @@ for i in /dev /proc /sys /run; do mount --rbind $i /mnt$i; done
 ```
 2. Entrar no chroot:
 ```
-chroot /mnt /bin/bash
+xchroot /mnt
 ```
 
 ## Configurar GRUB
@@ -133,9 +134,12 @@ UUID=$(blkid -s UUID -o value /dev/sda2)
 
 # Adicionando ao /etc/default/grub
 cat << EOF >> /etc/default/grub
-GRUB_ENABLE_CRYPTODISK=y
+# Linha de parâmetros do kernel — LUKS1 abre no GRUB sem drama
 GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4 rd.luks.uuid=${UUID} rd.luks.name=${UUID}=cryptroot root=/dev/mapper/cryptroot"
-GRUB_PRELOAD_MODULES="luks2 luks cryptodisk gcry_rijndael"
+# Habilita suporte a criptografia no GRUB
+GRUB_ENABLE_CRYPTODISK=y
+# Módulos necessários (LUKS1)
+GRUB_PRELOAD_MODULES="luks cryptodisk gcry_rijndael"
 EOF
 
 # Crie o path para suportar o grub
@@ -148,7 +152,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 ## Instalação do Boot Manager GRUB em UEFI
 ```bash
 # Instale o novo GRUB
-grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="VoidLinux" --recheck
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=void --recheck
 
 # Criar fallback UEFI (boot universal) - Esse arquivo garante boot mesmo quando a NVRAM for apagada.
 mkdir -p /boot/efi/EFI/BOOT
