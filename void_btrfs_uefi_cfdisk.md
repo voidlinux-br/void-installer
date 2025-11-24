@@ -165,7 +165,7 @@ mkdir -p /boot/efi/EFI/BOOT
 cp -vf /boot/efi/EFI/void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
 ```
 
-# Criar o keyfile para evitar pedir senha duas vezes
+## Criar o keyfile para evitar pedir senha duas vezes
 Quando o GRUB abre o LUKS, o initramfs normalmente pede a senha de novo.
 Para evitar isso, vamos criar um keyfile, colocar dentro do initramfs e deixar o root abrir sozinho.
 ```
