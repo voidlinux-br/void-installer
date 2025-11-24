@@ -246,7 +246,8 @@ passwd ${NEWUSER}
 ```
 
 ## Personalizar o .bashrc do usuario (opcional)
-- Cria um .bash_profile para o usuário e garante que o .bashrc seja carregado automaticamente no login.
+Cria um .bash_profile para o usuário e garante que o .bashrc seja carregado automaticamente no login.
+- confira se criou o usuário no passo anterior
 ```
 cat << 'EOF' > /home/${NEWUSER}/.bash_profile
 # ~/.bash_profile — carrega o .bashrc no Void
