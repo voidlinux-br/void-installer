@@ -128,15 +128,10 @@ sed -i 's|subvol=@snapshots |subvol=@snapshots,compress=zstd:3,noatime,ssd,disca
 ```
 
 ## Entrar no sistema (chroot)
-1. Montar os diretórios essenciais dentro do ambiente chroot:
-```
-for i in /dev /proc /sys /run; do mount --rbind $i /mnt$i; done
-```
-2. Entrar no chroot:
+1. Entrar no chroot:
 ```
 xchroot /mnt /bin/bash
 ```
-
 ## Configurar GRUB
 ```bash
 # Pegar a UUID da partição sda2:
