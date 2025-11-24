@@ -165,6 +165,14 @@ mkdir -p /boot/efi/EFI/BOOT
 cp -vf /boot/efi/EFI/void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
 ```
 
+## Gerando o INITRAMFS
+```
+mods=(/usr/lib/modules/*)
+KVER=$(basename "${mods[0]}")
+echo ${KVER}
+dracut --force --kver ${KVER}
+```
+
 ## Criar o keyfile para evitar pedir senha duas vezes
 Quando o GRUB abre o LUKS, o initramfs normalmente pede a senha de novo.
 Para evitar isso, vamos criar um keyfile, colocar dentro do initramfs e deixar o root abrir sozinho.
@@ -194,19 +202,6 @@ xbps-reconfigure -fa
 - crypttab incluído
 - hooks de LUKS funcionando
 
-## Gerando o INITRAMFS
-```
-mods=(/usr/lib/modules/*)
-KVER=$(basename "${mods[0]}")
-echo ${KVER}
-dracut --force --kver ${KVER}
-```
-
-## Criar um resolv.conf
-```bash
-printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
-```
-
 ## Configurações básicas
 ```bash
 # Setar Hostname
@@ -225,6 +220,9 @@ xbps-reconfigure -f glibc-locales
 # Ativar alguns serviços:
 ln -sf /etc/sv/dhcpcd /var/service
 ln -sf /etc/sv/sshd /var/service
+
+# Criar um resolv.conf
+printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
 ```
 
 ## Trocar senha de root (importante):
