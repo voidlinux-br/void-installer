@@ -17,6 +17,16 @@ bash
 ```bash
 loadkeys br-abnt2
 ```
+4. Cole no terminal (opcional) — Prompt com cores, usuário@host:caminho e status do último comando (✔/✘). Útil e bonito.
+```
+get_exit_status() {
+  local status="$?"
+  [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
+}
+export PS1='\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
+$( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
+\[\033[0m\]\$ '
+```
 
 ## Particionar o disco
 1. Identificar o disco
