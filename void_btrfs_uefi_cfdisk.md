@@ -258,7 +258,7 @@ reboot
 
 ---
 
-# 🎉 Fim!
+# 🎉   Enjoy!
 O Void Linux agora está instalado com:
 
 - 🔐 LUKS  
