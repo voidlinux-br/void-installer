@@ -202,6 +202,14 @@ xbps-reconfigure -fa
 - crypttab incluído
 - hooks de LUKS funcionando
 
+## Criar swapfile em Btrfs (modo correto)
+```
+btrfs filesystem mkswapfile --size 1G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+echo "/swapfile none swap sw 0 0" >> /etc/fstab
+```
+
 ## Configurações básicas
 ```bash
 # Setar Hostname
@@ -223,14 +231,102 @@ ln -sf /etc/sv/sshd /var/service
 
 # Criar um resolv.conf
 printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
+
+#Configurar sudo - grupo wheel (opcional)
+cat << 'EOF' > /etc/sudoers.d/g_wheel
+%wheel ALL=(ALL:ALL) NOPASSWD: ALL
+EOF
+#Permissões obrigatórias
+chmod 440 /etc/sudoers.d/g_wheel
+
+# Criar o usuário (opcional)
+NEWUSER=teunomeaqui
+useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
+passwd ${NEWUSER}
 ```
 
-## Criar swapfile em Btrfs (modo correto)
+## Personalizar o .bashrc do usuario (opcional)
+- Cria um .bash_profile para o usuário e garante que o .bashrc seja carregado automaticamente no login.
 ```
-btrfs filesystem mkswapfile --size 1G /swapfile
-chmod 600 /swapfile
-mkswap /swapfile
-echo "/swapfile none swap sw 0 0" >> /etc/fstab
+cat << 'EOF' > /home/${NEWUSER}/.bash_profile
+# ~/.bash_profile — carrega o .bashrc no Void
+
+# Se o .bashrc existir, carregue
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+EOF
+
+cat << 'EOF' > /home/${NEWUSER}/.bashrc
+# ============================
+#   .bashrc ROOT — Void Linux
+# ============================
+# Só continua se for shell interativo
+[[ $- != *i* ]] && return
+
+# Histórico decente
+HISTSIZE=5000
+HISTFILESIZE=5000
+HISTCONTROL=ignoredups:erasedups
+
+# Editor padrão
+export EDITOR=vim
+export VISUAL=vim
+
+# Função de status (SEM COR – PS1 colore)
+get_exit_status() {
+  local status="$?"
+  [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
+}
+
+# Prompt ROOT — vermelho, com status ✔/✘ colorido
+export PS1='\[\033[1;31m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
+$( if [[ $? -eq 0 ]]; then printf "\033[1;32m✔"; else printf "\033[1;31m✘\033[1;35m%d" $?; fi ) \
+\[\033[0m\]# '
+
+# Alias úteis
+alias ll='ls -lh --color=auto'
+alias la='ls -A --color=auto'
+alias l='ls --color=auto'
+alias dir='ls -la --color=auto'
+alias grep='grep --color=auto'
+alias df='df -h'
+alias du='du -h'
+alias free='free -ht'
+alias ed='nano'
+
+# Segurança raiz (evita rm catastrófico)
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+alias ping='grc ping'
+
+# grc aliases
+alias ping='grc ping'
+alias ping6='grc ping6'
+alias traceroute='grc traceroute'
+alias traceroute6='grc traceroute6'
+alias netstat='grc netstat'
+alias ifconfig='grc ifconfig'
+alias ip='grc ip'
+alias mount='grc mount'
+alias ps='grc ps'
+alias diff='grc diff'
+alias gcc='grc gcc'
+alias make='grc make'
+alias df='grc df'
+alias du='grc du'
+alias duf='grc duf'
+alias dig='grc dig'
+alias dmesg='grc dmesg'
+
+# Autocompletar (se existir)
+if [ -f /etc/bash/bashrc.d/complete.bash ]; then
+  . /etc/bash/bashrc.d/complete.bash
+fi
+# PATH extra
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+EOF
 ```
 
 ## Trocar senha de root (importante):
