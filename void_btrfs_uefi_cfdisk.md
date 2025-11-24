@@ -295,12 +295,8 @@ alias df='df -h'
 alias du='du -h'
 alias free='free -ht'
 alias ed='nano'
-
-# Segurança raiz (evita rm catastrófico)
-alias rm='rm -i'
-alias cp='cp -i'
-alias mv='mv -i'
-alias ping='grc ping'
+alias xcopy='cp -Rpva'
+alias ddel='find -name | xargs sudo rm -fvR'
 
 # grc aliases
 alias ping='grc ping'
