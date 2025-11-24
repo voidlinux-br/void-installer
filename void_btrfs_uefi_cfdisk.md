@@ -225,17 +225,17 @@ ln -sf /etc/sv/sshd /var/service
 printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
 ```
 
-## Trocar senha de root (importante):
-```bash
-passwd
-```
-
 ## Criar swapfile em Btrfs (modo correto)
 ```
 btrfs filesystem mkswapfile --size 1G /swapfile
 chmod 600 /swapfile
 mkswap /swapfile
 echo "/swapfile none swap sw 0 0" >> /etc/fstab
+```
+
+## Trocar senha de root (importante):
+```bash
+passwd
 ```
 
 ## Sair do chroot
