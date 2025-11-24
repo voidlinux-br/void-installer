@@ -51,7 +51,7 @@ xbps-install -Sy xbps parted nano zstd xz bash-completion
 ```bash
 fdisk -l
 ```
-- Assumiremos para o tutorial `/dev/sda`
+> Assumiremos para o tutorial `/dev/sda`
 
 2. Usando o parted (automatico)
 ```
