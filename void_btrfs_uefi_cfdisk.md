@@ -27,6 +27,24 @@ export PS1='\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
 $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
 \[\033[0m\]\$ '
 ```
+# Conectar à Internet
+- Para Wi-Fi *(se estiver no cabo, pule esta etapa)*:
+```
+wpa_passphrase "SSID" "SENHA" > wifi.conf
+wpa_supplicant -B -i wlan0 -c wifi.conf
+dhcpcd wlan0
+```
+
+1. Testar a conexão:
+```
+ping -c3 8.8.8.8
+ping -c3 repo-default.voidlinux.org
+```
+
+2. Instale alguns necessários pacotes:
+```
+xbps-install -Sy xbps parted jfsutils xfsprogs nano zstd xz bash-completion
+```
 
 ## Particionar o disco
 1. Identificar o disco
@@ -101,8 +119,8 @@ mount /dev/sda1 /mnt/boot/efi
 xbps-install -Sy -R https://repo-default.voidlinux.org/current \
    -r /mnt \
    base-system btrfs-progs cryptsetup grub-x86_64-efi dracut linux \
-   linux-headers linux-firmware linux-firmware-network glibc-locales xtools \
-   dhcpcd vim nano grc zstd xz bash-completion
+   linux-headers linux-firmware linux-firmware-network glibc-locales \
+   xtools dhcpcd vim nano grc zstd xz bash-completion vpm vsv
 ```
 
 ## Isso garante:
