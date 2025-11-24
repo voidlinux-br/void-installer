@@ -190,9 +190,9 @@ EOF
 xbps-reconfigure -fa
 ```
 >Isso recria o initramfs com:
-    1 - keyfile incluído
-    2 - crypttab incluído
-    3 - hooks de LUKS funcionando
+- keyfile incluído
+- crypttab incluído
+- hooks de LUKS funcionando
 
 ## Gerando o INITRAMFS
 ```
