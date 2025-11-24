@@ -165,6 +165,35 @@ mkdir -p /boot/efi/EFI/BOOT
 cp -vf /boot/efi/EFI/void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
 ```
 
+# Criar o keyfile para evitar pedir senha duas vezes
+Quando o GRUB abre o LUKS, o initramfs normalmente pede a senha de novo.
+Para evitar isso, vamos criar um keyfile, colocar dentro do initramfs e deixar o root abrir sozinho.
+```
+#criar o keyfile
+dd if=/dev/urandom of=/volume.key bs=64 count=1
+chmod 000 /volume.key
+
+#Adicionar o keyfile ao LUKS
+cryptsetup luksAddKey /dev/sda2 /volume.key     # Digite sua senha LUKS (a mesma usada no GRUB).
+
+#Configurar o /etc/crypttab
+cat << EOF >> /etc/crypttab
+cryptroot  /dev/sda2  /volume.key  luks
+EOF
+
+#Incluir o keyfile no initramfs
+cat << EOF >> /etc/dracut.conf.d/10-crypt.conf
+install_items+=" /volume.key /etc/crypttab "
+EOF
+
+#Regenerar o initramfs
+xbps-reconfigure -fa
+```
+>Isso recria o initramfs com:
+    keyfile incluído
+    crypttab incluído
+    hooks de LUKS funcionando
+
 ## Gerando o INITRAMFS
 ```
 mods=(/usr/lib/modules/*)
