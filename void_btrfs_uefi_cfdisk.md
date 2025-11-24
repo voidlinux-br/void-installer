@@ -51,7 +51,16 @@ xbps-install -Sy xbps parted nano zstd xz bash-completion
 ```bash
 fdisk -l
 ```
-2. Abrir o cfdisk
+2. Usando o parted (automatico)
+```
+parted --script /dev/sda -- \
+    mklabel gpt \
+    mkpart ESP fat32 1MiB 512MiB set 1 esp on name 1 EFI \
+    mkpart ROOT btrfs 512MiB 100% name 2 ROOT \
+    align-check optimal 1
+parted --script /dev/sda -- print
+```
+3. Usando o cfdisk (manualmente)
 ```bash
 cfdisk -z /dev/sda
 ```
