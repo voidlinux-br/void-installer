@@ -244,7 +244,7 @@ XBPS_ARCH=x86_64 \
       base-system btrfs-progs grub grub-x86_64-efi \
       linux-headers linux-firmware-network dhcpcd \
       nano grc zstd xz bash-completion jfsutils xfsprogs \
-      socklog-void wget net-tools
+      socklog-void wget net-tools tmate
 ```
 ---
 
