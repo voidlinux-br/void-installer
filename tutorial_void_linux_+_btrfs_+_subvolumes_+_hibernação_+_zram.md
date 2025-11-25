@@ -487,12 +487,13 @@ grub-mkconfig -o /boot/grub/grub.cfg
 Por padrão, o Void Linux usa `/bin/sh` (dash) como shell mínimo.  
 - Para que o usuário **root** utilize o Bash ao fazer login (TTY/SSH), execute:
 ```
+@ para que o usuário root utilize o Bash ao fazer login (TTY/SSH), execute:
 chsh -s /bin/bash root
 ```
 > Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
 
 
-## Personalizar o /etc/xbps.d/00-repository-main.conf (opcional)
+## Personalizar o /etc/xbps.d/00-repository-main.conf
 - Cria o diretório de configurações do XBPS (se ainda não existir) e adiciona uma lista de repositórios oficiais e alternativos.
 Os repositórios repo-fastly costumam ter melhor latência.
 ```
@@ -511,7 +512,7 @@ repository=https://void.chililinux.com/voidlinux/current
 EOF
 ```
 
-## Personalizar o /etc/rc.conf (opcional)
+## Personalizar o /etc/rc.conf
 - Define o fuso horário, layout do teclado e fonte padrão do console. Altere conforme necessidade.
 ```
 cat << 'EOF' >> /etc/rc.conf
@@ -521,7 +522,7 @@ FONT=Lat2-Terminus16
 EOF
 ```
 
-## Personalizar o .bashrc do root (opcional)
+## Personalizar o .bashrc do root
 Cria um .bash_profile para o usuário e garante que o .bashrc seja carregado automaticamente no login.
 > confira se criou o usuário no passo anterior
 ```
@@ -554,14 +555,7 @@ chown "${NEWUSER}:${NEWUSER}" "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}
 chmod 644 "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}/.bashrc"
 ```
 
-## baixar ps1 customizado (opcional):
-```
-wget --quiet --no-check-certificate -O /root/.ps1kali "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.ps1kali"
-chown root:root /root/.ps1kali
-chmod 644 /root/.ps1kali
-```
-
-## baixar svlogtail customizado (opcional):
+## baixar svlogtail customizado
 ```
 wget --quiet --no-check-certificate \
   -O /usr/bin/svlogtail \
