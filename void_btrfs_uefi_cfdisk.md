@@ -131,7 +131,7 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current \
    -r /mnt \
    base-system btrfs-progs cryptsetup grub-x86_64-efi dracut linux \
    linux-headers linux-firmware linux-firmware-network glibc-locales \
-   xtools dhcpcd vim nano grc zstd xz bash-completion vpm vsv
+   xtools dhcpcd openssh vim nano grc zstd xz bash-completion vpm vsv
 ```
 
 ## Isso garante:
@@ -381,6 +381,28 @@ fi
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 EOF
 ```
+## configurar ssh
+```
+mkdir /etc/ssh/sshd_config.d/
+cat << 'EOF' > /etc/ssh/sshd_config.d/10-custom.conf
+PermitTTY yes
+PrintMotd yes
+PrintLastLog yes
+Banner /etc/issue.net
+
+PermitRootLogin yes
+KbdInteractiveAuthentication yes
+X11Forwarding yes
+PubkeyAuthentication yes
+PubkeyAcceptedKeyTypes=+ssh-rsa
+AuthorizedKeysFile .ssh/authorized_keys
+PasswordAuthentication yes
+ChallengeResponseAuthentication yes
+UsePAM yes
+
+Subsystem sftp internal-sftp
+EOF
+```
 
 ## Trocar senha de root (importante):
 ```bash
@@ -391,6 +413,7 @@ passwd
 ```
 exit
 ```
+
 ```
 # Desmonta todas as partições montadas em /mnt (subvolumes e /boot/efi)
 umount -R /mnt
@@ -400,7 +423,9 @@ swapoff -a
 
 # Fecha o mapeamento LUKS (desbloqueio do cryptroot)
 cryptsetup close cryptroot
+```
 
+```
 # Reinicia a máquina física ou a VM para testar o boot real
 reboot
 ```
