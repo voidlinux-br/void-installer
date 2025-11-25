@@ -357,7 +357,6 @@ echo "GRUB_CMDLINE_LINUX=\"resume=UUID=$UUID resume_offset=$offset\"" >> /etc/de
 
 # ▶️    14. Recriar o initrd
 
-- Refazer o `initrd`
 ```
 mods=(/usr/lib/modules/*)
 KVER=$(basename "${mods[0]}")

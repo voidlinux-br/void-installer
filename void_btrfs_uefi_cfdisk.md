@@ -434,4 +434,15 @@ O Void Linux agora está instalado com:
 - 📁 swapfile dentro do Btrfs (seguro)  
 - ⚙️ Boot UEFI limpo  
 
+# DISCLAIMER
+
+```
+Este tutorial é livre: você pode usar, copiar, modificar e redistribuir como quiser.  
+O conteúdo é disponibilizado sob a **Licença MIT**, e pode incluir trechos ou comandos derivados de softwares de código aberto sujeitos às suas próprias licenças.
+
+Nenhuma garantia é fornecida — tudo aqui é entregue “no estado em que se encontra”.  
+Use por sua conta e risco. Nem o autor, nem colaboradores, nem o Void Linux são responsáveis por perdas, danos, falhas de sistema ou qualquer consequência do uso deste material.
+
+Se desejar, você pode obter o código-fonte, revisar, adaptar e gerar sua própria versão deste tutorial.
+```
 
