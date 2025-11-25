@@ -276,16 +276,6 @@ ln -sfv /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 ```
 
 3. configure locales
-- Edite o arquivo de locales:
-```
-nano /etc/default/libc-locales
-```
-- Descomente as seguintes linhas:
-```
-en_US.UTF-8 UTF-8
-pt_BR.UTF-8 UTF-8
-```
-- Ou use o comando abaixo para habilitar automaticamente os locales necessários (ele apenas descomenta `en_US.UTF-8` e `pt_BR.UTF-8` no arquivo):
 ```
 sed -i -e 's/^#\(en_US.UTF-8 UTF-8\)/\1/' \
        -e 's/^#\(pt_BR.UTF-8 UTF-8\)/\1/' \
