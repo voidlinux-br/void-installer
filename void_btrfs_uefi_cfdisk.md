@@ -405,6 +405,24 @@ cryptsetup close cryptroot
 reboot
 ```
 
+## Trocar a senha principal do LUKS
+1. Esse é o comando oficial, limpo e correto:
+```
+cryptsetup luksChangeKey /dev/sda2
+```
+> Ele vai pedir:
+- Senha atual
+- Nova senha
+- Confirmar a nova senha
+- Só isso.
+
+2. Testar se a nova senha funciona
+```
+cryptsetup open /dev/nvme0n1p3 testpass
+cryptsetup close testpass
+```
+> Se abrir → senha nova OK.
+
 ---
 
 # 🎉   Enjoy!
@@ -414,3 +432,5 @@ O Void Linux agora está instalado com:
 - 🗂️ Btrfs + subvolumes  
 - 📁 swapfile dentro do Btrfs (seguro)  
 - ⚙️ Boot UEFI limpo  
+
+
