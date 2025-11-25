@@ -189,7 +189,7 @@ lsblk -f ${DEVICE}
 ```
 ---
 
-# ▶️    8. Instalar o Void Linux
+# ▶️    8. Instalar o Void Linux no chroot
 
 1. Copie as chaves do repositório (XBPS keys) para ser usada no chroot (/mnt)
 ```
@@ -249,7 +249,7 @@ sed -i -e 's/^#\(en_US.UTF-8 UTF-8\)/\1/' \
 xbps-reconfigure -f glibc-locales
 ```
 
-5. Corrigir possivel erro no symlink do /var/service (importante):
+5. Corrigir possível erro no symlink do /var/service (importante):
 ```
 rm -f /var/service
 ln -sf /etc/runit/runsvdir/default /var/service
@@ -263,7 +263,7 @@ ln -sf /etc/sv/nanoklogd /var/service/
 ln -sf /etc/sv/socklog-unix /var/service/
 ```
 
-7. Criar o usuário
+7. Criar usuário
 ```
 NEWUSER=seunomeaqui
 useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
@@ -340,10 +340,10 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 
 # ▶️    12. Configurar UUIDs
 
-- Obter o UUIDs das partições:
+- Obter o UUIDs das partições (importante):
 ```
-UUID=$(blkid -s UUID -o value /dev/sda3)
-UUID_EFI=$(blkid -s UUID -o value /dev/sda2)
+UUID=$(blkid -s UUID -o value ${DEV_RAIZ})
+UUID_EFI=$(blkid -s UUID -o value ${DEV_EFI})
 ```
 ---
 
@@ -368,7 +368,7 @@ dracut --force /boot/initramfs-${KVER}.img ${KVER}
 
 > Não esquecer de configurar passo 12
 
-1. Se a raiz /dev/sda3 for **BTRFS**
+1. Se a raiz for **BTRFS**
 ```
 cat <<EOF >> /etc/fstab
 # ======== BTRFS – Subvolumes ========
@@ -383,7 +383,7 @@ UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noa
 /swap/swapfile                                    none        swap  sw,nofail                                                        0 0
 EOF
 ```
-2. Se a raiz /dev/sda3 for **EXT4**
+2. Se a raiz for **EXT4**
 ```
 cat <<EOF >> /etc/fstab
 # ======== EXT4 ========
@@ -395,7 +395,7 @@ UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noa
 EOF
 ```
 
-3. Se a raiz /dev/sda3 for **XFS**
+3. Se a raiz for **XFS**
 ```
 cat <<EOF >> /etc/fstab
 # ======== XFS ========
@@ -406,7 +406,7 @@ UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noa
 /swap/swapfile                                    none        swap  sw,nofail                    0 0
 EOF
 ```
-4. Se a raiz /dev/sda3 for **JFS**
+4. Se a raiz for **JFS**
 ```
 cat <<EOF >> /etc/fstab
 # ======== JFS ========
@@ -423,7 +423,7 @@ EOF
 1. Instalar GRUB para BIOS (Legacy)
 ```
 # usa a partição BIOS criada como primeira
-grub-install --target=i386-pc /dev/sda
+grub-install --target=i386-pc ${DEVICE}
 ```
 2. Instalar GRUB para UEFI
 ```
