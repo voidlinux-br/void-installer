@@ -17,7 +17,7 @@ bash
 ```bash
 loadkeys br-abnt2
 ```
-4. Cole no terminal (opcional) — Prompt com cores, usuário@host:caminho e status do último comando (✔/✘). Útil e bonito.
+4. Cole no terminal (opcional, mas recomendável) — Prompt com cores, usuário@host:caminho e status do último comando (✔/✘). Útil e bonito.
 ```
 get_exit_status() {
   local status="$?"
@@ -277,7 +277,7 @@ EOF
 #Permissões obrigatórias
 chmod 440 /etc/sudoers.d/g_wheel
 
-# Criar o usuário (opcional)
+# Criar o usuário
 NEWUSER=seunomeaqui
 useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
 passwd ${NEWUSER}
@@ -288,7 +288,7 @@ passwd ${NEWUSER}
 passwd root
 ```
 
-## Criar swapfile em Btrfs (opcional)
+## Criar swapfile em Btrfs (opcional, mas recomendável):
 ```
 btrfs filesystem mkswapfile --size 1G /swapfile
 chmod 600 /swapfile
@@ -296,7 +296,7 @@ mkswap /swapfile
 echo "/swapfile none swap sw 0 0" >> /etc/fstab
 ```
 
-## Personalizar o /etc/xbps.d/00-repository-main.conf (opcional)
+## Personalizar o /etc/xbps.d/00-repository-main.conf (opcional, mas recomendável):
 - Cria o diretório de configurações do XBPS (se ainda não existir) e adiciona uma lista de repositórios oficiais e alternativos.
 Os repositórios repo-fastly costumam ter melhor latência.
 ```
@@ -314,7 +314,7 @@ repository=https://void.chililinux.com/voidlinux/current
 #repository=https://void.chililinux.com/voidlinux/current/multilib/nonfree
 EOF
 ```
-## Personalizar o /etc/rc.conf (opcional)
+## Personalizar o /etc/rc.conf (opcional, mas recomendável):
 - Define o fuso horário, layout do teclado e fonte padrão do console. Altere conforme necessidade.
 ```
 cat << 'EOF' >> /etc/rc.conf
@@ -324,7 +324,7 @@ FONT=Lat2-Terminus16
 EOF
 ```
 
-## Personalizar o .bashrc do usuario (opcional)
+## Personalizar o .bashrc do usuario (opcional, mas recomendável):
 Cria um .bash_profile para o usuário e garante que o .bashrc seja carregado automaticamente no login.
 > confira se criou o usuário no passo anterior
 ```
@@ -344,7 +344,7 @@ fi
 EOF
 ```
 
-## configurar ssh (opcional)
+## configurar ssh (opcional, mas recomendável):
 ```
 mkdir -pv /etc/ssh/sshd_config.d/
 cat << 'EOF' > /etc/ssh/sshd_config.d/10-custom.conf
