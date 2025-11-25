@@ -53,11 +53,11 @@ fdisk -l
 ```
 > Assumiremos para o tutorial `/dev/sda`
 
-- Altere abaixo:
+2. Altere abaixo:
 DEV_UFI=/dev/sda1
 DEV_RAIZ=/dev/sda2
 
-2. Usando o parted (automatico)
+3. Usando o parted (automatico)
 ```
 parted --script /dev/sda -- \
     mklabel gpt \
@@ -66,7 +66,7 @@ parted --script /dev/sda -- \
     align-check optimal 1
 parted --script /dev/sda -- print
 ```
-3. Usando o cfdisk (manualmente)
+4. Usando o cfdisk (manualmente)
 ```bash
 cfdisk -z /dev/sda
 ```
