@@ -179,7 +179,7 @@ mount -v ${DEV_RAIZ} /mnt
 ```
 mkdir -pv /mnt/{boot/efi,swap}
 ```
-4. Monta a ESP/UEFI corretamente em /boot/efi
+4. Monta a ESP/UEFI corretamente em /boot/efi do chroot
 ```
 mount -v ${DEV_EFI} /mnt/boot/efi
 ```
@@ -191,7 +191,7 @@ lsblk -f ${DEVICE}
 
 # ▶️    8. Instalar o Void Linux
 
-1. Copie as chaves do repositório (XBPS keys) para ser usada no chroot depois (/mnt)
+1. Copie as chaves do repositório (XBPS keys) para ser usada no chroot (/mnt)
 ```
 mkdir -pv /mnt/{etc,var/db/xbps/keys}
 cp -rpafv /var/db/xbps/keys/*.plist /mnt/var/db/xbps/keys/
@@ -210,7 +210,7 @@ xbps-install -Sy \
 ```
 ---
 
-# ▶️    9. Entrar no sistema (chroot)
+# ▶️    9. Acessar o sistema instalado usando chroot
 
 1. Entrar no chroot:
 ```
