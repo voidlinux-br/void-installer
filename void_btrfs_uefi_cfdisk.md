@@ -411,11 +411,11 @@ Inicie com o live iso
 ```
 cryptsetup luksChangeKey /dev/sda2
 ```
-> **Ele vai pedir:**
-> Senha atual
-> Nova senha
-> Confirmar a nova senha
-> Só isso.
+> **Ele vai pedir:**  
+> • Senha atual  
+> • Nova senha  
+> • Confirmar a nova senha  
+> • Só isso.
 
 2. Testar se a nova senha funciona
 ```
