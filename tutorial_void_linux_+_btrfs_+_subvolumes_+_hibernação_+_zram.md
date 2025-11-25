@@ -38,9 +38,9 @@ password : voidlinux
 bash
 ```
 
-3. Troque o shell de sh para o bash. O dash/sh NÃO suporta várias coisas que muitos scripts usam.
-```
-bash
+3. Troque o layout de teclado para ABNT2
+```bash
+loadkeys br-abnt2
 ```
 
 4. Cole no terminal (opcional) — Prompt com cores, usuário@host:caminho e status do último comando (✔/✘). Útil e bonito.
