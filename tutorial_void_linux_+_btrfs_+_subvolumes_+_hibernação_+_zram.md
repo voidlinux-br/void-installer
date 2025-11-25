@@ -305,7 +305,6 @@ xbps-reconfigure -f glibc-locales
 ```
 rm -f /var/service
 ln -sf /etc/runit/runsvdir/default /var/service
-ln -sf /etc/sv/nanoklogd /var/service/
 ```
 
 6. Ativar alguns serviços:
@@ -331,7 +330,7 @@ useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
 passwd ${NEWUSER}
 ```
 
-0. reconfigurar senha root (importante):
+9. reconfigurar senha root (importante):
 ```
 passwd root
 ```
@@ -578,7 +577,7 @@ chown "${NEWUSER}:${NEWUSER}" "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}
 chmod 644 "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}/.bashrc"
 ```
 
-# baixar ps1 customizado (opcional):
+## baixar ps1 customizado (opcional):
 ```
 wget --quiet --no-check-certificate -O /root/.ps1kali "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.ps1kali"
 chown root:root /root/.ps1kali
