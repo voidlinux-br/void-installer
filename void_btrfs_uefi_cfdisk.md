@@ -53,7 +53,7 @@ fdisk -l
 ```
 > Assumiremos para o tutorial `/dev/sda`
 
-2. Altere abaixo, conforme o disco que será usado:
+2. Altere abaixo, conforme o disco que será usado (IMPORTANTE):
 ```
 DEVICE=/dev/sda
 DEV_UFI=/dev/sda1
@@ -62,16 +62,16 @@ DEV_RAIZ=/dev/sda2
 
 3. Usando o parted (automatico)
 ```
-parted --script /dev/sda -- \
+parted --script #{DEVICE} -- \
     mklabel gpt \
     mkpart ESP fat32 1MiB 512MiB set 1 esp on name 1 EFI \
     mkpart ROOT btrfs 512MiB 100% name 2 ROOT \
     align-check optimal 1
-parted --script /dev/sda -- print
+parted --script ${DEVICE} -- print
 ```
 4. Usando o cfdisk (manualmente)
 ```bash
-cfdisk -z /dev/sda
+cfdisk -z ${DEVICE}
 ```
 Selecione **GPT**
 
@@ -85,16 +85,16 @@ Selecione **GPT**
 ```bash
 # Criptografar a partição raiz em LUKS1 (compatível com GRUB)
 # Criptografar partição Btrfs Confirmando com YES:  
-cryptsetup luksFormat --type luks1 /dev/sda2
+cryptsetup luksFormat --type luks1 ${DEV_RAIZ}
 
 # Abra a partição com sua passphrase. Será montada e mapeada, escolha um nome qualquer, aqui escolheremos cryptroot:
-cryptsetup open /dev/sda2 cryptroot
+cryptsetup open ${DEV_RAIZ} cryptroot
 
 # Formatar como Btrfs o dispositivo montado pelo cryptsetup no /dev/mapper, com o nome que setamos cryptroot:
 mkfs.btrfs /dev/mapper/cryptroot
 
 # Formatar ESP:
-mkfs.fat -F32 /dev/sda1
+mkfs.fat -F32 ${DEV_EFI}
 ```
 
 ## Criar subvolumes BTRFS
@@ -129,7 +129,7 @@ mount -o subvol=@cache     /dev/mapper/cryptroot /mnt/var/cache
 mount -o subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
 
 # monte EFI:
-mount /dev/sda1 /mnt/boot/efi
+mount ${DEV_EFI} /mnt/boot/efi
 ```
 
 ## Instalar o sistema base
@@ -171,7 +171,7 @@ xchroot /mnt /bin/bash
 ## Configurar GRUB
 ```bash
 # Pegar a UUID da partição sda2:
-UUID=$(blkid -s UUID -o value /dev/sda2)
+UUID=$(blkid -s UUID -o value ${DEV_RAIZ})
 echo ${UUID}
 
 # Adicionando ao /etc/default/grub
@@ -218,11 +218,11 @@ dd if=/dev/urandom of=/boot/volume.key bs=64 count=1
 chmod 000 /boot/volume.key
 
 #Adicionar o keyfile ao LUKS
-cryptsetup luksAddKey /dev/sda2 /boot/volume.key     # Digite sua senha LUKS (a mesma usada no GRUB).
+cryptsetup luksAddKey ${DEV_RAIZ} /boot/volume.key     # Digite sua senha LUKS (a mesma usada no GRUB).
 
 #Configurar o /etc/crypttab
 cat << EOF >> /etc/crypttab
-cryptroot  /dev/sda2  /boot/volume.key  luks
+cryptroot ${DEV_RAIZ} /boot/volume.key  luks
 EOF
 
 #Incluir o keyfile no initramfs
