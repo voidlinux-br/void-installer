@@ -265,7 +265,9 @@ ln -sf /etc/sv/nanoklogd /var/service/
 ln -sf /etc/sv/socklog-unix /var/service/
 
 # baixar svlogtail customizado (opcional, mas recomendável):
-wget --quiet --no-check-certificate -O /usr/bin/svlogtail "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/svlogtail" && chmod +x /usr/bin/svlogtail
+wget --quiet --no-check-certificate -O /usr/bin/svlogtail \
+   "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/svlogtail" && \
+   chmod +x /usr/bin/svlogtail
 
 # Criar um resolv.conf
 printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
@@ -328,13 +330,15 @@ EOF
 Cria um .bash_profile para o usuário e garante que o .bashrc seja carregado automaticamente no login.
 > confira se criou o usuário no passo anterior
 ```
-wget --quiet --no-check-certificate -O /home/${NEWUSER}/.ps1kali "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.bashrc"
-chown "${NEWUSER}:${NEWUSER}" "/home/${NEWUSER}/.bashrc"
-chmod 644 "/home/${NEWUSER}/.bashrc"
+wget --quiet --no-check-certificate \
+   -O /etc//skel/.bashrc \
+   "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.bashrc"
+chown root:root /etc/skel/.bashrc
+chmod 644 /etc/skel/.bashrc
 ```
 
 ```
-cat << 'EOF' > /home/${NEWUSER}/.bash_profile
+cat << 'EOF' > /etc/skel/.bash_profile
 # ~/.bash_profile — carrega o .bashrc no Void
 
 # Se o .bashrc existir, carregue
@@ -342,6 +346,17 @@ if [ -f ~/.bashrc ]; then
   source ~/.bashrc
 fi
 EOF
+```
+
+```
+# copia para o root e usuario
+for d in /root "/home/${NEWUSER}"; do
+   cp -f /etc/skel/.bash_profile "$d/"
+   cp -f /etc/skel/.bashrc "$d/"
+done
+
+chown "${NEWUSER}:${NEWUSER}" "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}/.bashrc"
+chmod 644 "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}/.bashrc"
 ```
 
 ## configurar ssh (opcional, mas recomendável):
