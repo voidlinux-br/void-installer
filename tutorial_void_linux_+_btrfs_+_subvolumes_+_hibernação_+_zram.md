@@ -38,7 +38,12 @@ password : voidlinux
 bash
 ```
 
-3. Cole no terminal (opcional) — Prompt com cores, usuário@host:caminho e status do último comando (✔/✘). Útil e bonito.
+3. Troque o shell de sh para o bash. O dash/sh NÃO suporta várias coisas que muitos scripts usam.
+```
+bash
+```
+
+4. Cole no terminal (opcional) — Prompt com cores, usuário@host:caminho e status do último comando (✔/✘). Útil e bonito.
 ```
 get_exit_status() {
   local status="$?"
@@ -70,11 +75,18 @@ xbps-install -Sy xbps parted jfsutils xfsprogs nano zstd xz bash-completion
 ---
 
 # ▶️    3. Identificar o disco
-- Listar os discos disponíveis e anotar o nome do dispositivo (ex: `/dev/sda`, `/dev/vda`, `/dev/nvme0n1`):
+1. Listar os discos disponíveis e anotar o nome do dispositivo (ex: `/dev/sda`, `/dev/vda`, `/dev/nvme0n1`):
 ```
 fdisk -l
 ```
 - Assumiremos para o tutorial `/dev/sda`
+
+2. Altere abaixo, conforme o disco que será usado (IMPORTANTE):
+```
+DEVICE=/dev/sda
+DEV_UFI=/dev/sda1
+DEV_RAIZ=/dev/sda2
+```
 
 ---
 
