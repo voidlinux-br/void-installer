@@ -429,6 +429,8 @@ cryptsetup close cryptroot
 # Reinicia a máquina física ou a VM para testar o boot real
 reboot
 ```
+---
+---
 
 ## DICA: Trocar a senha principal do LUKS
 > Inicie com o live iso
