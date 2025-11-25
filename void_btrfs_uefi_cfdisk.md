@@ -62,7 +62,7 @@ DEV_RAIZ=/dev/sda2
 
 3. Usando o parted (automatico)
 ```
-parted --script #{DEVICE} -- \
+parted --script ${DEVICE} -- \
     mklabel gpt \
     mkpart ESP fat32 1MiB 512MiB set 1 esp on name 1 EFI \
     mkpart ROOT btrfs 512MiB 100% name 2 ROOT \
