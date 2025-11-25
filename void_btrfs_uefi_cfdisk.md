@@ -231,7 +231,7 @@ xbps-reconfigure -fa
 - crypttab incluído
 - hooks de LUKS funcionando
 
-## Criar swapfile em Btrfs (modo correto)
+## Criar swapfile em Btrfs (opcional)
 ```
 btrfs filesystem mkswapfile --size 1G /swapfile
 chmod 600 /swapfile
