@@ -250,15 +250,11 @@ XBPS_ARCH=x86_64 \
 
 # ▶️    9. Entrar no sistema (chroot)
 
-1. Montar os diretórios essenciais dentro do ambiente chroot:
+1. Entrar no chroot:
 ```
-for i in proc sys dev run; do mount --rbind /$i /mnt/$i; done
+xchroot /mnt /bin/bash
 ```
-2. Entrar no chroot:
-```
-chroot /mnt /bin/bash
-```
-3. Definir um prompt visível dentro do chroot (opcional):
+2. Definir um prompt visível dentro do chroot (opcional):
 ```
 export PS1='(chroot)\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
 $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
@@ -315,22 +311,14 @@ ln -sf /etc/sv/nanoklogd /var/service/
 ln -sf /etc/sv/socklog-unix /var/service/
 ```
 
-7. baixar svlogtail customizado (opcional):
-```
-wget --quiet --no-check-certificate \
-  -O /usr/bin/svlogtail \
-  "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/svlogtail" \
-  && chmod +x /usr/bin/svlogtail
-```
-
-8. Criar o usuário
+7. Criar o usuário
 ```
 NEWUSER=seunomeaqui
 useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
 passwd ${NEWUSER}
 ```
 
-9. reconfigurar senha root (importante):
+8. reconfigurar senha root (importante):
 ```
 passwd root
 ```
@@ -580,6 +568,14 @@ chmod 644 "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}/.bashrc"
 wget --quiet --no-check-certificate -O /root/.ps1kali "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.ps1kali"
 chown root:root /root/.ps1kali
 chmod 644 /root/.ps1kali
+```
+
+## baixar svlogtail customizado (opcional):
+```
+wget --quiet --no-check-certificate \
+  -O /usr/bin/svlogtail \
+  "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/svlogtail" \
+  && chmod +x /usr/bin/svlogtail
 ```
 
 ---
