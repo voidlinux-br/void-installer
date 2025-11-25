@@ -302,13 +302,13 @@ xbps-reconfigure -f glibc-locales
 
 5. Ativar alguns serviços:
 ```
-ln -sfv /etc/sv/dhcpcd /var/service
-ln -sfv /etc/sv/sshd /var/service
+ln -sfv /etc/sv/dhcpcd /var/service/
+ln -sfv /etc/sv/sshd /var/service/
 ```
 
 6. reconfigurar senha root (importante):
 ```
-passwd
+passwd root
 ```
 ---
 
