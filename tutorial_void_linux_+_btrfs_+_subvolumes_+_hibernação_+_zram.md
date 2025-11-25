@@ -510,8 +510,8 @@ chmod 644 "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}/.bashrc"
 ```
 wget --quiet --no-check-certificate \
   -O /usr/bin/svlogtail \
-  "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/svlogtail" \
-  && chmod +x /usr/bin/svlogtail
+  "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/svlogtail"
+chmod +x /usr/bin/svlogtail
 ```
 
 ---
@@ -551,7 +551,7 @@ exit
 ```
 umount -R /mnt
 ```
-3. Desativa qualquer swapfile ou swap partition que tenha sido ativada dentro do chroot
+3. Desativa qualquer swapfile ou swap partition que tenha sido ativada dentro do chroot:
 ```
 swapoff -a
 ```
