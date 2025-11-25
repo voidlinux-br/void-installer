@@ -53,7 +53,7 @@ fdisk -l
 ```
 > Assumiremos para o tutorial `/dev/sda`
 
-2. Altere abaixo:
+2. Altere abaixo:  
 DEV_UFI=/dev/sda1
 DEV_RAIZ=/dev/sda2
 
