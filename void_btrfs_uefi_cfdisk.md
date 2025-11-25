@@ -273,6 +273,33 @@ NEWUSER=teunomeaqui
 useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
 passwd ${NEWUSER}
 ```
+## Personalizar o /etc/xbps.d/00-repository-main.conf (opcional)
+- Cria o diretório de configurações do XBPS (se ainda não existir) e adiciona uma lista de repositórios oficiais e alternativos.
+Os repositórios repo-fastly costumam ter melhor latência.
+```
+mkdir -pv /etc/xbps.d
+cat << 'EOF' >> /etc/xbps.d/00-repository-main.conf
+repository=https://repo-fastly.voidlinux.org/current
+#repository=https://repo-fastly.voidlinux.org/current/nonfree
+#repository=https://repo-fastly.voidlinux.org/current/multilib
+#repository=https://repo-fastly.voidlinux.org/current/multilib/nonfree
+
+repository=https://void.chililinux.com/voidlinux/current
+#repository=https://void.chililinux.com/voidlinux/current/extras
+#repository=https://void.chililinux.com/voidlinux/current/nonfree
+#repository=https://void.chililinux.com/voidlinux/current/multilib
+#repository=https://void.chililinux.com/voidlinux/current/multilib/nonfree
+EOF
+```
+## Personalizar o /etc/rc.conf (opcional)
+- Define o fuso horário, layout do teclado e fonte padrão do console. Altere conforme necessidade.
+```
+cat << 'EOF' >> /etc/rc.conf
+TIMEZONE=America/Sao_Paulo
+KEYMAP=br-abnt2
+FONT=Lat2-Terminus16
+EOF
+```
 
 ## Personalizar o .bashrc do usuario (opcional)
 Cria um .bash_profile para o usuário e garante que o .bashrc seja carregado automaticamente no login.
