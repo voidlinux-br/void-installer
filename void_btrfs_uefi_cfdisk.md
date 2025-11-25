@@ -430,8 +430,9 @@ cryptsetup close cryptroot
 reboot
 ```
 
-## Trocar a senha principal do LUKS
-Inicie com o live iso
+## DICA: Trocar a senha principal do LUKS
+> Inicie com o live iso
+
 1. Esse é o comando oficial, limpo e correto:
 ```
 cryptsetup luksChangeKey /dev/sda2
@@ -440,11 +441,10 @@ cryptsetup luksChangeKey /dev/sda2
 > • Senha atual  
 > • Nova senha  
 > • Confirmar a nova senha  
-> • Só isso.
 
 2. Testar se a nova senha funciona
 ```
-cryptsetup open /dev/nvme0n1p3 testpass
+cryptsetup open /dev/sda2 testpass
 cryptsetup close testpass
 ```
 > Se abrir → senha nova OK.
