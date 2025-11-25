@@ -84,7 +84,7 @@ fdisk -l
 2. Altere abaixo, conforme o disco que será usado (IMPORTANTE):
 ```
 DEVICE=/dev/sda
-DEV_UFI=/dev/sda1
+DEV_EFI=/dev/sda1
 DEV_RAIZ=/dev/sda2
 ```
 
@@ -118,20 +118,20 @@ parted --script ${DEVICE} -- print
 # ▶️    5. Formatar as partições
 
 Formate cada partição com o sistema de arquivos correto:
-1. A ESP deve ser formatada sempre:
 ```
-mkfs.fat -F32 /dev/sda2 -n EFI
+@ a ESP deve ser formatada sempre
+mkfs.fat -F32 ${DEV_EFI} -n EFI
 ```
-2. Escolha APENAS UM dos formatos abaixo para o sistema de arquivos raiz (/dev/sda3):
+2. Escolha **APENAS UM** dos formatos abaixo para o sistema de arquivos raiz:
 ```
-mkfs.btrfs -f /dev/sda3 -L ROOT       # - BTRFS (recomendado — subvolumes, snapshots, compressão)
-mkfs.ext4 -F  /dev/sda3 -L ROOT       # - EXT4 (clássico, estável, simples)
-mkfs.xfs -f  /dev/sda3  -L ROOT       # - XFS (alto desempenho, ótimo para SSD)
-mkfs.jfs -q  /dev/sda3  -L ROOT       # - JFS (leve, baixo consumo de CPU)
+mkfs.btrfs -f ${DEV_RAIZ} -L ROOT       # - BTRFS (recomendado — subvolumes, snapshots, compressão)
+mkfs.ext4 -F  ${DEV_RAIZ} -L ROOT       # - EXT4 (clássico, estável, simples)
+mkfs.xfs -f   ${DEV_RAIZ} -L ROOT       # - XFS (alto desempenho, ótimo para SSD)
+mkfs.jfs -q   ${DEV_RAIZ} -L ROOT       # - JFS (leve, baixo consumo de CPU)
 ```
 3. Confirmar se tudo foi criado corretamente:
 ```
-lsblk -f /dev/sda
+lsblk -f ${DEVICE}
 ```
 ---
 
