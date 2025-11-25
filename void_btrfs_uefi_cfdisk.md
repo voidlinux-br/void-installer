@@ -253,6 +253,10 @@ sed -i 's/#pt_BR.UTF-8/pt_BR.UTF-8/' /etc/default/libc-locales
 # Gerar locales:
 xbps-reconfigure -f glibc-locales
 
+# Corrigir possivel erro no symlink do /var/service (importante):
+rm -f /var/service
+ln -sf /etc/runit/runsvdir/default /var/service
+
 # Ativar alguns serviços:
 ln -sf /etc/sv/dhcpcd /var/service/
 ln -sf /etc/sv/sshd /var/service/

@@ -300,13 +300,19 @@ sed -i -e 's/^#\(en_US.UTF-8 UTF-8\)/\1/' \
 xbps-reconfigure -f glibc-locales
 ```
 
-5. Ativar alguns serviços:
+5. Corrigir possivel erro no symlink do /var/service (importante):
+```
+rm -f /var/service
+ln -sf /etc/runit/runsvdir/default /var/service
+```
+
+6. Ativar alguns serviços:
 ```
 ln -sfv /etc/sv/dhcpcd /var/service/
 ln -sfv /etc/sv/sshd /var/service/
 ```
 
-6. reconfigurar senha root (importante):
+7. reconfigurar senha root (importante):
 ```
 passwd root
 ```
