@@ -326,7 +326,13 @@ EOF
 
 ## Personalizar o .bashrc do usuario (opcional)
 Cria um .bash_profile para o usuário e garante que o .bashrc seja carregado automaticamente no login.
-- confira se criou o usuário no passo anterior
+> confira se criou o usuário no passo anterior
+```
+wget --quiet --no-check-certificate -O /home/${NEWUSER}/.ps1kali "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.bashrc"
+chown "${NEWUSER}:${NEWUSER}" "/home/${NEWUSER}/.bashrc"
+chmod 644 "/home/${NEWUSER}/.bashrc"
+```
+
 ```
 cat << 'EOF' > /home/${NEWUSER}/.bash_profile
 # ~/.bash_profile — carrega o .bashrc no Void
@@ -337,13 +343,6 @@ if [ -f ~/.bashrc ]; then
 fi
 EOF
 ```
-
-```
-wget --quiet --no-check-certificate -O /home/${NEWUSER}/.ps1kali "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.bashrc"
-chown "${NEWUSER}:${NEWUSER}" "/home/${NEWUSER}/.bashrc"
-chmod 644 "/home/${NEWUSER}/.bashrc"
-```
-
 
 ## configurar ssh (opcional)
 ```
