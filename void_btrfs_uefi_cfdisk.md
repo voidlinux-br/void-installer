@@ -265,10 +265,7 @@ ln -sf /etc/sv/nanoklogd /var/service/
 ln -sf /etc/sv/socklog-unix /var/service/
 
 # baixar svlogtail customizado (opcional):
-wget --quiet --no-check-certificate \
-  -O /usr/bin/svlogtail \
-  "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/svlogtail" \
-  && chmod +x /usr/bin/svlogtail
+wget --quiet --no-check-certificate -O /usr/bin/svlogtail "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/svlogtail" && chmod +x /usr/bin/svlogtail
 
 # Criar um resolv.conf
 printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
@@ -407,8 +404,17 @@ if [ -f /etc/bash/bashrc.d/complete.bash ]; then
 fi
 # PATH extra
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+[ -f .ps1kali ] && source .ps1kali 
 EOF
 ```
+
+# baixar ps1 customizado (opcional):
+```
+wget --quiet --no-check-certificate -O /home/${NEWUSER}/.ps1kali "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.ps1kali"
+chown "${NEWUSER}:${NEWUSER}" "/home/${NEWUSER}/.ps1kali"
+chmod 644 "/home/${NEWUSER}/.ps1kali"
+```
+
 ## configurar ssh (opcional)
 ```
 mkdir -pv /etc/ssh/sshd_config.d/

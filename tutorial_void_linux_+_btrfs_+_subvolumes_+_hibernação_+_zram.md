@@ -622,7 +622,15 @@ if [ -f /etc/bash/bashrc.d/complete.bash ]; then
 fi
 # PATH extra
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+[ -f .ps1kali ] && source .ps1kali
 EOF
+```
+
+# baixar ps1 customizado (opcional):
+```
+wget --quiet --no-check-certificate -O /root/.ps1kali "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.ps1kali"
+chown root:root /root/.ps1kali
+chmod 644 /root/.ps1kali
 ```
 
 ---
