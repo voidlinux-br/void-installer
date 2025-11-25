@@ -170,7 +170,7 @@ mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commi
 mount -v ${DEV_EFI} /mnt/boot/efi
 ```
 
-# ▶️    7. Montar outras partições (se a raiz for EXT4 / XFS / JFS - NÃO BTRFS)
+# ▶️    7. Montar partições EXT4/XFS/JFS  (se a raiz NÃO for BTRFS)
 ```
 # Montar diretamente a partição raiz:
 mount -v ${DEV_RAIZ} /mnt
