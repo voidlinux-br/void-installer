@@ -315,7 +315,7 @@ ln -sfv /etc/sv/sshd /var/service/
 ln -sf /etc/sv/socklog-unix /var/service/
 ```
 
-7. baixar svlogtail customizado
+7. baixar svlogtail customizado (opcional):
 ```
 wget --quiet --no-check-certificate \
   -O /usr/bin/svlogtail \

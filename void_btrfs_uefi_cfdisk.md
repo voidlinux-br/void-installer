@@ -264,7 +264,7 @@ ln -sf /etc/sv/sshd /var/service/
 ln -sf /etc/sv/nanoklogd /var/service/
 ln -sf /etc/sv/socklog-unix /var/service/
 
-# baixar svlogtail customizado
+# baixar svlogtail customizado (opcional):
 wget --quiet --no-check-certificate \
   -O /usr/bin/svlogtail \
   "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/svlogtail" \
