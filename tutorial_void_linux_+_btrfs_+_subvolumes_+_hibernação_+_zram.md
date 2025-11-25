@@ -135,12 +135,12 @@ lsblk -f ${DEVICE}
 ```
 ---
 
-# ▶️    6. Criar subvolumes Btrfs - (Somente se a raiz /dev/sda3 for btrfs)
+# ▶️    6. Criar subvolumes Btrfs - (Somente se a raiz for btrfs)
 
 - A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
 ```
 # Monta o subvolume padrão (ID 5) para criar os outros
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvolid=5 /dev/sda3 /mnt
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvolid=5 ${DEV_RAIZ} /mnt
 
 # Cria subvolumes essenciais
 btrfs subvolume create /mnt/@
@@ -155,39 +155,39 @@ umount /mnt
 ---
 
 # ▶️    7. Montar partições
-1. Montar subvolumes - (Somente se a raiz /dev/sda3 for btrfs)
+1. Montar subvolumes - (Somente se a raiz for btrfs)
 ```
 # Monta o subvolume principal (@)
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@ /dev/sda3 /mnt
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@ ${DEV_RAIZ} /mnt
 
 # Cria os pontos de montagem
 mkdir -pv /mnt/{boot/efi,home,var/log,var/cache,.snapshots,swap}
 
 # Monta os subvolumes restantes
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@home      /dev/sda3 /mnt/home
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@snapshots /dev/sda3 /mnt/.snapshots
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@log       /dev/sda3 /mnt/var/log
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@cache     /dev/sda3 /mnt/var/cache
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@home      ${DEV_RAIZ} /mnt/home
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@cache     ${DEV_RAIZ} /mnt/var/cache
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@log       ${DEV_RAIZ} /mnt/var/log
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@snapshots ${DEV_RAIZ} /mnt/.snapshots
 
 # Monta a ESP/UEFI corretamente em /boot/efi
-mount /dev/sda2 /mnt/boot/efi
+mount -v ${DEV_EFI} /mnt/boot/efi
 ```
 
-2. Montar outras partições - SE A RAIZ FOR EXT4 / XFS / JFS (/dev/sda3)
+2. Montar outras partições (se a raiz for EXT4 / XFS / JFS - NÃO BTRFS)
 ```
 # Montar diretamente a partição raiz:
-mount -v /dev/sda3 /mnt
+mount -v ${DEV_RAIZ} /mnt
 
 # Cria os pontos de montagem
 mkdir -pv /mnt/{boot/efi,swap}
 
 # Monta a ESP/UEFI corretamente em /boot/efi
-mount -v /dev/sda2 /mnt/boot/efi
+mount -v ${DEV_EFI} /mnt/boot/efi
 ```
 
 3. verifique a montagem:
 ```
-lsblk -f /dev/sda
+lsblk -f ${DEVICE}
 ```
 
 4. Copie as chaves do repositório (XBPS keys) para ser usada no chroot depois (/mnt)
@@ -202,14 +202,13 @@ cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
 
 - Instale o sistema base no disco recém-montado:
 ```
-XBPS_ARCH=x86_64 \
-   xbps-install -Sy \
-      -R https://repo-default.voidlinux.org/current \
-      -r /mnt \
-      base-system btrfs-progs grub grub-x86_64-efi \
-      linux-headers linux-firmware-network dhcpcd \
-      nano grc zstd xz bash-completion jfsutils xfsprogs \
-      socklog-void wget net-tools tmate ncurses
+xbps-install -Sy \
+   -R https://repo-default.voidlinux.org/current \
+   -r /mnt \
+   base-system btrfs-progs grub grub-x86_64-efi \
+   linux-headers linux-firmware-network dhcpcd \
+   nano grc zstd xz bash-completion jfsutils xfsprogs \
+   socklog-void wget net-tools tmate ncurses
 ```
 ---
 
