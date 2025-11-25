@@ -310,8 +310,9 @@ ln -sf /etc/sv/nanoklogd /var/service/
 
 6. Ativar alguns serviços:
 ```
-ln -sfv /etc/sv/dhcpcd /var/service/
-ln -sfv /etc/sv/sshd /var/service/
+ln -sf /etc/sv/dhcpcd /var/service/
+ln -sf /etc/sv/sshd /var/service/
+ln -sf /etc/sv/nanoklogd /var/service/
 ln -sf /etc/sv/socklog-unix /var/service/
 ```
 
@@ -323,7 +324,14 @@ wget --quiet --no-check-certificate \
   && chmod +x /usr/bin/svlogtail
 ```
 
-8. reconfigurar senha root (importante):
+8. Criar o usuário
+```
+NEWUSER=seunomeaqui
+useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
+passwd ${NEWUSER}
+```
+
+0. reconfigurar senha root (importante):
 ```
 passwd root
 ```
@@ -501,11 +509,6 @@ Por padrão, o Void Linux usa `/bin/sh` (dash) como shell mínimo.
 ```
 chsh -s /bin/bash root
 ```
-
-- Verifique se a alteração foi aplicada:
-```
-getent passwd root         # A última coluna deve mostrar: /bin/bash
-```
 > Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
 
 ---
@@ -543,10 +546,18 @@ EOF
 ---
 
 # ▶️    20. Personalizar o .bashrc do root (opcional)
-- Cria um .bash_profile para o usuário root e garante que o .bashrc seja carregado automaticamente no login.
-O Void não carrega .bashrc para o root por padrão, então essa inclusão deixa o shell do root consistente com usuários comuns.
+Cria um .bash_profile para o usuário e garante que o .bashrc seja carregado automaticamente no login.
+> confira se criou o usuário no passo anterior
 ```
-cat << 'EOF' > /root/.bash_profile
+wget --quiet --no-check-certificate \
+   -O /etc//skel/.bashrc \
+   "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.bashrc"
+chown root:root /etc/skel/.bashrc
+chmod 644 /etc/skel/.bashrc
+```
+
+```
+cat << 'EOF' > /etc/skel/.bash_profile
 # ~/.bash_profile — carrega o .bashrc no Void
 
 # Se o .bashrc existir, carregue
@@ -554,76 +565,17 @@ if [ -f ~/.bashrc ]; then
   source ~/.bashrc
 fi
 EOF
+```
 
-cat << 'EOF' > /root/.bashrc
-# ============================
-#   .bashrc ROOT — Void Linux
-# ============================
-# Só continua se for shell interativo
-[[ $- != *i* ]] && return
+```
+# copia para o root e usuario
+for d in /root "/home/${NEWUSER}"; do
+   cp -f /etc/skel/.bash_profile "$d/"
+   cp -f /etc/skel/.bashrc "$d/"
+done
 
-# Histórico decente
-HISTSIZE=5000
-HISTFILESIZE=5000
-HISTCONTROL=ignoredups:erasedups
-
-# Editor padrão
-export EDITOR=vim
-export VISUAL=vim
-
-# Função de status (SEM COR – PS1 colore)
-get_exit_status() {
-  local status="$?"
-  [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
-}
-
-# Prompt ROOT — vermelho, com status ✔/✘ colorido
-export PS1='\[\033[1;31m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
-$( if [[ $? -eq 0 ]]; then printf "\033[1;32m✔"; else printf "\033[1;31m✘\033[1;35m%d" $?; fi ) \
-\[\033[0m\]# '
-
-# Alias úteis
-alias ll='ls -lh --color=auto'
-alias la='ls -A --color=auto'
-alias l='ls --color=auto'
-alias dir='ls -la --color=auto'
-alias grep='grep --color=auto'
-alias df='df -h'
-alias du='du -h'
-alias free='free -ht'
-alias ed='nano'
-alias xcopy='cp -Rpva'
-alias ddel='find -name | xargs sudo rm -fvR'
-
-# ----- GRC-RS Configuration -----
-GRC="/usr/bin/grc"
-if tty -s && [ -n "$TERM" ] && [ "$TERM" != "dumb" ] && command -v "$GRC" >/dev/null 2>&1; then
-  alias colourify="$GRC"
-  commands=(
-    ant blkid configure df diff dig dnf docker-machine ls docker images
-    docker info docker network docker ps docker pull docker search docker version
-    du fdisk findmnt go-test ifconfig ip ipaddr ipneighbor iproute iptables
-    irclog iwconfig kubectl last ldap lolcat lsattr lsblk lsmod lsof lspci
-    lsusb mount mtr mvn netstat nmap ntpdate ping proftpd pv
-    semanage boolean semanage fcontext semanage user sensors showmount sockstat
-    ss stat sysctl tcpdump traceroute tune2fs ulimit uptime vmstat wdiff yaml efibootmgr duf
-  )
-  for cmd in "${commands[@]}"; do
-    if command -v "$cmd" >/dev/null 2>&1; then
-      alias "$cmd"="colourify $cmd"
-    fi
-  done
-  unset commands cmd
-fi
-
-# Autocompletar (se existir)
-if [ -f /etc/bash/bashrc.d/complete.bash ]; then
-  . /etc/bash/bashrc.d/complete.bash
-fi
-# PATH extra
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
-[ -f .ps1kali ] && source .ps1kali
-EOF
+chown "${NEWUSER}:${NEWUSER}" "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}/.bashrc"
+chmod 644 "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}/.bashrc"
 ```
 
 # baixar ps1 customizado (opcional):
