@@ -55,7 +55,8 @@ fdisk -l
 
 2. Altere abaixo:
 ```
-DEV_UFI=/dev/sda1  
+DEVICE=/dev/sda
+DEV_UFI=/dev/sda1
 DEV_RAIZ=/dev/sda2
 ```
 
