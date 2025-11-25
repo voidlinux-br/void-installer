@@ -53,7 +53,7 @@ fdisk -l
 ```
 > Assumiremos para o tutorial `/dev/sda`
 
-2. Altere abaixo:
+2. Altere abaixo, conforme o disco que será usado:
 ```
 DEVICE=/dev/sda
 DEV_UFI=/dev/sda1
