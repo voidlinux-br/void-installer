@@ -265,13 +265,13 @@ $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d
 # ▶️    10. Configurações iniciais (no chroot)
 1. Configurar hostname
 ```
-#Define o nome da máquina:
+# define o nome da máquina:
 echo void > /etc/hostname
 ```
 
 2. Configurar timezone
 ```
-#Define o fuso horário para America/Sao_Paulo, altere se necessário:
+# define o fuso horário para America/Sao_Paulo, altere se necessário:
 ln -sfv /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 ```
 
@@ -325,8 +325,8 @@ passwd root
 ```
 
 1. Calcular automaticamente o tamanho ideal do swapfile
-- Recomendação moderna para hibernação: 60% da RAM total
 ```
+# recomendação moderna para hibernação: 60% da RAM total
 SWAP_GB=$(LC_ALL=C awk '/MemTotal/ {print int($2 * 0.60 / 1024 / 1024)}' /proc/meminfo)
 echo "Swapfile recomendado: ${SWAP_GB}G"
 ```
@@ -387,8 +387,8 @@ UUID_EFI=$(blkid -s UUID -o value /dev/sda2)
 
 # ▶️    13. Configurar o Kernel para hibernação (opcional)
 Configurar o GRUB com o UUID da partição e o offset do `swapfile`
-- Adcione a linha abaixo no arquivo /etc/default/grub
 ```
+#adicione a linha abaixo no arquivo /etc/default/grub
 echo "GRUB_CMDLINE_LINUX=\"resume=UUID=$UUID resume_offset=$offset\"" >> /etc/default/grub
 ```
 ---
@@ -459,8 +459,8 @@ EOF
 
 # ▶️    16. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
 1. Instalar GRUB para BIOS (Legacy)
-- Usa a partição BIOS criada como primeira.
 ```
+# usa a partição BIOS criada como primeira
 grub-install --target=i386-pc /dev/sda
 ```
 2. Instalar GRUB para UEFI
