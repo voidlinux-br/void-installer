@@ -79,7 +79,7 @@ xbps-install -Sy xbps parted jfsutils xfsprogs nano zstd xz bash-completion
 ```
 fdisk -l
 ```
-- Assumiremos para o tutorial `/dev/sda`
+> Assumiremos para o tutorial `/dev/sda`
 
 2. Altere abaixo, conforme o disco que será usado (IMPORTANTE):
 ```
