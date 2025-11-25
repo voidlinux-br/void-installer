@@ -532,7 +532,7 @@ EOF
 ```
 3. Ativar o serviço no runit
 ```
-ln -s /etc/sv/zramen /var/service
+ln -s /etc/sv/zramen /var/service/
 ```
 4. Verificar status:
 ```
@@ -547,17 +547,19 @@ sv status zramen
 ```
 exit
 ```
-2. Desmontar os bind mounts:
+2. Desmonta todas as partições montadas em /mnt (subvolumes e /boot/efi):
 ```
-for i in run dev sys proc; do umount -R /mnt/$i; done
 umount -R /mnt
 ```
-3. Reiniciar o sistema host (iso):
+3. Desativa qualquer swapfile ou swap partition que tenha sido ativada dentro do chroot
+```
+swapoff -a
+```
+4. Reinicia a máquina física ou a VM para testar o boot real:
 ```
 reboot
 ```
-
-> Não esqueça de remover a mídia de instalação e dar boot pelo disco recém-instalado.
+> Não esqueça de remover a mídia de instalação e dar boot pelo disco recém-instalado.  
 Enjoy!
 
 ---
