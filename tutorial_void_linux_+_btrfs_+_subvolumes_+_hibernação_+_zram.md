@@ -359,8 +359,10 @@ echo "GRUB_CMDLINE_LINUX=\"resume=UUID=$UUID resume_offset=$offset\"" >> /etc/de
 
 - Refazer o `initrd`
 ```
-KVER=$(ls /usr/lib/modules); echo $KVER
-dracut --force /boot/initramfs-${KVER}.img ${KVER}
+mods=(/usr/lib/modules/*)
+KVER=$(basename "${mods[0]}")
+echo ${KVER}
+dracut --force --kver ${KVER}
 ```
 ---
 
@@ -422,20 +424,17 @@ EOF
 # ▶️    16. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
 1. Instalar GRUB para BIOS (Legacy)
 ```
-# usa a partição BIOS criada como primeira
 grub-install --target=i386-pc ${DEVICE}
 ```
 2. Instalar GRUB para UEFI
 ```
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void
 ```
-3. Criar fallback UEFI (boot universal)
+3. Criar fallback UEFI (boot universal). Esse arquivo garante boot mesmo quando a NVRAM for apagada.
 ```
 mkdir -p /boot/efi/EFI/BOOT
 cp -vf /boot/efi/EFI/Void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
 ```
-> Esse arquivo garante boot mesmo quando a NVRAM for apagada.
-
 4. Gerar arquivo final do GRUB
 ```
 grub-mkconfig -o /boot/grub/grub.cfg
