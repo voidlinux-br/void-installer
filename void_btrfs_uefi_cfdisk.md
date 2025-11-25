@@ -273,6 +273,12 @@ NEWUSER=teunomeaqui
 useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
 passwd ${NEWUSER}
 ```
+
+## Trocar senha de root (importante):
+```bash
+passwd
+```
+
 ## Personalizar o /etc/xbps.d/00-repository-main.conf (opcional)
 - Cria o diretório de configurações do XBPS (se ainda não existir) e adiciona uma lista de repositórios oficiais e alternativos.
 Os repositórios repo-fastly costumam ter melhor latência.
@@ -381,7 +387,7 @@ fi
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 EOF
 ```
-## configurar ssh
+## configurar ssh (opcional)
 ```
 mkdir /etc/ssh/sshd_config.d/
 cat << 'EOF' > /etc/ssh/sshd_config.d/10-custom.conf
@@ -402,11 +408,6 @@ UsePAM yes
 
 Subsystem sftp internal-sftp
 EOF
-```
-
-## Trocar senha de root (importante):
-```bash
-passwd
 ```
 
 ## Sair do chroot
