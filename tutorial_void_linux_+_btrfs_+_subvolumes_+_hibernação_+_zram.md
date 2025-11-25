@@ -154,7 +154,7 @@ umount /mnt
 ```
 ---
 
-# ▶️    7. Montar partições
+# ▶️    7. Montar partições BTRFS e subvolumes
 1. Montar subvolumes - (Somente se a raiz for btrfs)
 ```
 # Monta o subvolume principal (@)
