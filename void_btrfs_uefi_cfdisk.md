@@ -53,6 +53,10 @@ fdisk -l
 ```
 > Assumiremos para o tutorial `/dev/sda`
 
+- Altere abaixo:
+DEV_UFI=/dev/sda1
+DEV_RAIZ=/dev/sda2
+
 2. Usando o parted (automatico)
 ```
 parted --script /dev/sda -- \
@@ -247,8 +251,8 @@ sed -i 's/#pt_BR.UTF-8/pt_BR.UTF-8/' /etc/default/libc-locales
 xbps-reconfigure -f glibc-locales
 
 # Ativar alguns serviços:
-ln -sf /etc/sv/dhcpcd /var/service
-ln -sf /etc/sv/sshd /var/service
+ln -sf /etc/sv/dhcpcd /var/service/
+ln -sf /etc/sv/sshd /var/service/
 
 # Criar um resolv.conf
 printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
@@ -261,14 +265,14 @@ EOF
 chmod 440 /etc/sudoers.d/g_wheel
 
 # Criar o usuário (opcional)
-NEWUSER=teunomeaqui
+NEWUSER=seunomeaqui
 useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
 passwd ${NEWUSER}
 ```
 
 ## Trocar senha de root (importante):
 ```bash
-passwd
+passwd root
 ```
 
 ## Criar swapfile em Btrfs (opcional)
@@ -389,7 +393,7 @@ EOF
 ```
 ## configurar ssh (opcional)
 ```
-mkdir /etc/ssh/sshd_config.d/
+mkdir -pv /etc/ssh/sshd_config.d/
 cat << 'EOF' > /etc/ssh/sshd_config.d/10-custom.conf
 PermitTTY yes
 PrintMotd yes
