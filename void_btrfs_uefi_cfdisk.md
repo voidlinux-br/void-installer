@@ -264,13 +264,13 @@ ln -sf /etc/sv/sshd /var/service/
 ln -sf /etc/sv/nanoklogd /var/service/
 ln -sf /etc/sv/socklog-unix /var/service/
 
-# baixar svlogtail customizado (opcional):
+# baixar svlogtail customizado (opcional, mas recomendável):
 wget --quiet --no-check-certificate -O /usr/bin/svlogtail "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/svlogtail" && chmod +x /usr/bin/svlogtail
 
 # Criar um resolv.conf
 printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
 
-#Configurar sudo - grupo wheel (opcional)
+#Configurar sudo - grupo wheel (opcional, mas recomendável)
 cat << 'EOF' > /etc/sudoers.d/g_wheel
 %wheel ALL=(ALL:ALL) NOPASSWD: ALL
 EOF
@@ -336,84 +336,14 @@ if [ -f ~/.bashrc ]; then
   source ~/.bashrc
 fi
 EOF
-
-cat << 'EOF' > /home/${NEWUSER}/.bashrc
-# ============================
-#   .bashrc ROOT — Void Linux
-# ============================
-# Só continua se for shell interativo
-[[ $- != *i* ]] && return
-
-# Histórico decente
-HISTSIZE=5000
-HISTFILESIZE=5000
-HISTCONTROL=ignoredups:erasedups
-
-# Editor padrão
-export EDITOR=vim
-export VISUAL=vim
-
-# Função de status (SEM COR – PS1 colore)
-get_exit_status() {
-  local status="$?"
-  [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
-}
-
-# Prompt ROOT — vermelho, com status ✔/✘ colorido
-export PS1='\[\033[1;31m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
-$( if [[ $? -eq 0 ]]; then printf "\033[1;32m✔"; else printf "\033[1;31m✘\033[1;35m%d" $?; fi ) \
-\[\033[0m\]# '
-
-# Alias úteis
-alias ll='ls -lh --color=auto'
-alias la='ls -A --color=auto'
-alias l='ls --color=auto'
-alias dir='ls -la --color=auto'
-alias grep='grep --color=auto'
-alias df='df -h'
-alias du='du -h'
-alias free='free -ht'
-alias ed='nano'
-alias xcopy='cp -Rpva'
-alias ddel='find -name | xargs sudo rm -fvR'
-
-# ----- GRC-RS Configuration -----
-GRC="/usr/bin/grc"
-if tty -s && [ -n "$TERM" ] && [ "$TERM" != "dumb" ] && command -v "$GRC" >/dev/null 2>&1; then
-  alias colourify="$GRC"
-  commands=(
-    ant blkid configure df diff dig dnf docker-machine ls docker images
-    docker info docker network docker ps docker pull docker search docker version
-    du fdisk findmnt go-test ifconfig ip ipaddr ipneighbor iproute iptables
-    irclog iwconfig kubectl last ldap lolcat lsattr lsblk lsmod lsof lspci
-    lsusb mount mtr mvn netstat nmap ntpdate ping proftpd pv
-    semanage boolean semanage fcontext semanage user sensors showmount sockstat
-    ss stat sysctl tcpdump traceroute tune2fs ulimit uptime vmstat wdiff yaml efibootmgr duf
-  )
-  for cmd in "${commands[@]}"; do
-    if command -v "$cmd" >/dev/null 2>&1; then
-      alias "$cmd"="colourify $cmd"
-    fi
-  done
-  unset commands cmd
-fi
-
-# Autocompletar (se existir)
-if [ -f /etc/bash/bashrc.d/complete.bash ]; then
-  . /etc/bash/bashrc.d/complete.bash
-fi
-# PATH extra
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
-[ -f .ps1kali ] && source .ps1kali 
-EOF
 ```
 
-# baixar ps1 customizado (opcional):
 ```
-wget --quiet --no-check-certificate -O /home/${NEWUSER}/.ps1kali "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.ps1kali"
-chown "${NEWUSER}:${NEWUSER}" "/home/${NEWUSER}/.ps1kali"
-chmod 644 "/home/${NEWUSER}/.ps1kali"
+wget --quiet --no-check-certificate -O /home/${NEWUSER}/.ps1kali "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.bashrc"
+chown "${NEWUSER}:${NEWUSER}" "/home/${NEWUSER}/.bashrc"
+chmod 644 "/home/${NEWUSER}/.bashrc"
 ```
+
 
 ## configurar ssh (opcional)
 ```
