@@ -135,9 +135,9 @@ lsblk -f ${DEVICE}
 ```
 ---
 
-# ▶️    6. Criar subvolumes Btrfs - (Somente se a raiz for btrfs)
+# ▶️    6. Criar subvolumes Btrfs e montar - (Somente se a raiz for btrfs)
 
-- A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
+1. A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
 ```
 # Monta o subvolume padrão (ID 5) para criar os outros
 mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvolid=5 ${DEV_RAIZ} /mnt
@@ -152,10 +152,7 @@ btrfs subvolume create /mnt/@cache
 # Desmonte
 umount /mnt
 ```
----
-
-# ▶️    7. Montar partições BTRFS e subvolumes
-1. Montar subvolumes - (Somente se a raiz for btrfs)
+2. Montar subvolumes - (Somente se a raiz for btrfs)
 ```
 # Monta o subvolume principal (@)
 mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@ ${DEV_RAIZ} /mnt
@@ -173,7 +170,7 @@ mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commi
 mount -v ${DEV_EFI} /mnt/boot/efi
 ```
 
-2. Montar outras partições (se a raiz for EXT4 / XFS / JFS - NÃO BTRFS)
+# ▶️    7. Montar outras partições (se a raiz for EXT4 / XFS / JFS - NÃO BTRFS)
 ```
 # Montar diretamente a partição raiz:
 mount -v ${DEV_RAIZ} /mnt
@@ -189,18 +186,18 @@ mount -v ${DEV_EFI} /mnt/boot/efi
 ```
 lsblk -f ${DEVICE}
 ```
+---
 
-4. Copie as chaves do repositório (XBPS keys) para ser usada no chroot depois (/mnt)
+# ▶️    8. Instalar o Void Linux
+
+1. Copie as chaves do repositório (XBPS keys) para ser usada no chroot depois (/mnt)
 ```
 mkdir -pv /mnt/{etc,var/db/xbps/keys}
 cp -rpafv /var/db/xbps/keys/*.plist /mnt/var/db/xbps/keys/
 cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
 ```
----
 
-# ▶️    8. Instalar o Void Linux
-
-- Instale o sistema base no disco recém-montado:
+2. Instale o sistema base no disco recém-montado:
 ```
 xbps-install -Sy \
    -R https://repo-default.voidlinux.org/current \
