@@ -171,18 +171,19 @@ mount -v ${DEV_EFI} /mnt/boot/efi
 ```
 
 # ▶️    7. Montar partições EXT4/XFS/JFS  (se a raiz NÃO for BTRFS)
+1. Montar diretamente a partição raiz:
 ```
-# Montar diretamente a partição raiz:
 mount -v ${DEV_RAIZ} /mnt
-
-# Cria os pontos de montagem
+```
+2. Cria os pontos de montagem
+```
 mkdir -pv /mnt/{boot/efi,swap}
-
-# Monta a ESP/UEFI corretamente em /boot/efi
+```
+4. Monta a ESP/UEFI corretamente em /boot/efi
+```
 mount -v ${DEV_EFI} /mnt/boot/efi
 ```
-
-3. verifique a montagem:
+5. verifique a montagem:
 ```
 lsblk -f ${DEVICE}
 ```
