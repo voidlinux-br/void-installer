@@ -231,14 +231,6 @@ xbps-reconfigure -fa
 - crypttab incluído
 - hooks de LUKS funcionando
 
-## Criar swapfile em Btrfs (opcional)
-```
-btrfs filesystem mkswapfile --size 1G /swapfile
-chmod 600 /swapfile
-mkswap /swapfile
-echo "/swapfile none swap sw 0 0" >> /etc/fstab
-```
-
 ## Configurações básicas
 ```bash
 # Setar Hostname
@@ -277,6 +269,14 @@ passwd ${NEWUSER}
 ## Trocar senha de root (importante):
 ```bash
 passwd
+```
+
+## Criar swapfile em Btrfs (opcional)
+```
+btrfs filesystem mkswapfile --size 1G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+echo "/swapfile none swap sw 0 0" >> /etc/fstab
 ```
 
 ## Personalizar o /etc/xbps.d/00-repository-main.conf (opcional)
