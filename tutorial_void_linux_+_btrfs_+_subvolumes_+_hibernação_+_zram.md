@@ -468,11 +468,12 @@ grub-install --target=i386-pc /dev/sda
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void
 ```
 3. Criar fallback UEFI (boot universal)
-> Esse arquivo garante boot mesmo quando a NVRAM for apagada.
 ```
 mkdir -p /boot/efi/EFI/BOOT
 cp -vf /boot/efi/EFI/Void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
 ```
+> Esse arquivo garante boot mesmo quando a NVRAM for apagada.
+
 4. Gerar arquivo final do GRUB
 ```
 grub-mkconfig -o /boot/grub/grub.cfg
