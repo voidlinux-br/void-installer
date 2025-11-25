@@ -99,9 +99,9 @@ A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 
 - 1️⃣ BIOS Boot (EF02)
 - 2️⃣ ESP (EFI System, FAT32)
-- 3️⃣ Btrfs (raiz)
+- 3️⃣ Btrfs/Ext4/Xfs/Jfs (raiz)
 
-### Usando o parted (automatico)
+### Particione usando o parted (automatico)
 
 ```
 parted --script ${DEVICE} -- \
