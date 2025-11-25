@@ -428,12 +428,12 @@ grub-install --target=i386-pc ${DEVICE}
 ```
 2. Instalar GRUB para UEFI
 ```
-grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=void --recheck
 ```
 3. Criar fallback UEFI (boot universal). Esse arquivo garante boot mesmo quando a NVRAM for apagada.
 ```
 mkdir -p /boot/efi/EFI/BOOT
-cp -vf /boot/efi/EFI/Void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
+cp -vf /boot/efi/EFI/void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
 ```
 4. Gerar arquivo final do GRUB
 ```
@@ -442,21 +442,13 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 ---
 
-# ▶️    17. Configuração customizadas para os usuários:
+# ▶️    17. Configurações customizadas dos usuários:
 
-## Alterar o shell padrão do usuário root para Bash
-Por padrão, o Void Linux usa `/bin/sh` (dash) como shell mínimo.  
-- Para que o usuário **root** utilize o Bash ao fazer login (TTY/SSH), execute:
+1. Alterar o shell padrão do usuário root para Bash
 ```
-@ para que o usuário root utilize o Bash ao fazer login (TTY/SSH), execute:
 chsh -s /bin/bash root
 ```
-> Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
-
-
-## Personalizar o /etc/xbps.d/00-repository-main.conf
-- Cria o diretório de configurações do XBPS (se ainda não existir) e adiciona uma lista de repositórios oficiais e alternativos.
-Os repositórios repo-fastly costumam ter melhor latência.
+2. Personalizar o /etc/xbps.d/00-repository-main.conf
 ```
 mkdir -pv /etc/xbps.d
 cat << 'EOF' >> /etc/xbps.d/00-repository-main.conf
@@ -473,8 +465,7 @@ repository=https://void.chililinux.com/voidlinux/current
 EOF
 ```
 
-## Personalizar o /etc/rc.conf
-- Define o fuso horário, layout do teclado e fonte padrão do console. Altere conforme necessidade.
+3. Personalizar o /etc/rc.conf. Define o fuso horário, layout do teclado e fonte padrão do console. Altere conforme necessidade.
 ```
 cat << 'EOF' >> /etc/rc.conf
 TIMEZONE=America/Sao_Paulo
@@ -483,8 +474,7 @@ FONT=Lat2-Terminus16
 EOF
 ```
 
-## Personalizar o .bashrc do root
-Cria um .bash_profile para o usuário e garante que o .bashrc seja carregado automaticamente no login.
+4. Personalizar o .bashrc do root
 > confira se criou o usuário no passo anterior
 ```
 wget --quiet --no-check-certificate \
@@ -516,7 +506,7 @@ chown "${NEWUSER}:${NEWUSER}" "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}
 chmod 644 "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}/.bashrc"
 ```
 
-## baixar svlogtail customizado
+5. baixar svlogtail customizado
 ```
 wget --quiet --no-check-certificate \
   -O /usr/bin/svlogtail \
