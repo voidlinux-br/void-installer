@@ -139,7 +139,7 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current \
    base-system btrfs-progs cryptsetup grub-x86_64-efi dracut linux \
    linux-headers linux-firmware linux-firmware-network glibc-locales \
    xtools dhcpcd openssh vim nano grc zstd xz bash-completion vpm vsv \
-   socklog-void wget
+   socklog-void wget net-tools
 ```
 
 ## Isso garante:
