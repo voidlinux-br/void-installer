@@ -138,7 +138,8 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current \
    -r /mnt \
    base-system btrfs-progs cryptsetup grub-x86_64-efi dracut linux \
    linux-headers linux-firmware linux-firmware-network glibc-locales \
-   xtools dhcpcd openssh vim nano grc zstd xz bash-completion vpm vsv
+   xtools dhcpcd openssh vim nano grc zstd xz bash-completion vpm vsv \
+   socklog-void wget
 ```
 
 ## Isso garante:
@@ -260,6 +261,14 @@ ln -sf /etc/runit/runsvdir/default /var/service
 # Ativar alguns serviços:
 ln -sf /etc/sv/dhcpcd /var/service/
 ln -sf /etc/sv/sshd /var/service/
+ln -sf /etc/sv/nanoklogd /var/service/
+ln -sf /etc/sv/socklog-unix /var/service/
+
+# baixar svlogtail customizado
+wget --quiet --no-check-certificate \
+  -O /usr/bin/svlogtail \
+  "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/svlogtail" \
+  && chmod +x /usr/bin/svlogtail
 
 # Criar um resolv.conf
 printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf
@@ -371,24 +380,26 @@ alias ed='nano'
 alias xcopy='cp -Rpva'
 alias ddel='find -name | xargs sudo rm -fvR'
 
-# grc aliases
-alias ping='grc ping'
-alias ping6='grc ping6'
-alias traceroute='grc traceroute'
-alias traceroute6='grc traceroute6'
-alias netstat='grc netstat'
-alias ifconfig='grc ifconfig'
-alias ip='grc ip'
-alias mount='grc mount'
-alias ps='grc ps'
-alias diff='grc diff'
-alias gcc='grc gcc'
-alias make='grc make'
-alias df='grc df'
-alias du='grc du'
-alias duf='grc duf'
-alias dig='grc dig'
-alias dmesg='grc dmesg'
+# ----- GRC-RS Configuration -----
+GRC="/usr/bin/grc"
+if tty -s && [ -n "$TERM" ] && [ "$TERM" != "dumb" ] && command -v "$GRC" >/dev/null 2>&1; then
+  alias colourify="$GRC"
+  commands=(
+    ant blkid configure df diff dig dnf docker-machine ls docker images
+    docker info docker network docker ps docker pull docker search docker version
+    du fdisk findmnt go-test ifconfig ip ipaddr ipneighbor iproute iptables
+    irclog iwconfig kubectl last ldap lolcat lsattr lsblk lsmod lsof lspci
+    lsusb mount mtr mvn netstat nmap ntpdate ping proftpd pv
+    semanage boolean semanage fcontext semanage user sensors showmount sockstat
+    ss stat sysctl tcpdump traceroute tune2fs ulimit uptime vmstat wdiff yaml efibootmgr duf
+  )
+  for cmd in "${commands[@]}"; do
+    if command -v "$cmd" >/dev/null 2>&1; then
+      alias "$cmd"="colourify $cmd"
+    fi
+  done
+  unset commands cmd
+fi
 
 # Autocompletar (se existir)
 if [ -f /etc/bash/bashrc.d/complete.bash ]; then
