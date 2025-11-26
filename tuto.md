@@ -126,7 +126,7 @@ Usei mkpart primary 514MiB 100% sem especificar FS justamente pra não amarrar o
 > Escolha APENAS UM dos dois blocos abaixo.  
 **NÃO** é pra rodar os dois.
 
-1. INSTALAÇÃO NORMAL (sem LUKS)
+1. INSTALAÇÃO NORMAL **(sem LUKS)**
 ```
 # Remove qualquer assinatura antiga da partição raiz (FS/LUKS/etc)
 wipefs -a "${DEV_RAIZ}"
@@ -136,7 +136,7 @@ DISK="${DEV_RAIZ}"
 - Apaga assinaturas antigas da partição raiz  
 - Define DISK como o dispositivo real /dev/sda3
 
-2. INSTALAÇÃO COM LUKS (root criptografado)
+2. INSTALAÇÃO **COM LUKS** (root criptografado)
 ```
 # Remove qualquer assinatura antiga da partição raiz (FS/LUKS/etc)
 wipefs -a "${DEV_RAIZ}"
