@@ -105,6 +105,17 @@ Em outras palavras:
 
 # ▶️    4. Particionar usando o parted (automático)
 > Aqui o DEVICE já está definido lá em cima, então não tem variável “mágica”.
+- A partição BIOS **DEVE** ser a primeira.  
+Isso aumenta compatibilidade com placas-mãe antigas, bootloaders problemáticos e BIOS que esperam o código de boot nas primeiras áreas do disco.  
+A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
+
+### Ordem ideal e correta:
+
+- 1️⃣ BIOS Boot (EF02)
+- 2️⃣ ESP (EFI System, FAT32)
+- 3️⃣ Btrfs/Ext4/Xfs/Jfs (raiz)
+
+### Particione usando o parted (automatico)
 ```
 parted --script "${DEVICE}" -- \
   mklabel gpt \
@@ -158,30 +169,6 @@ DISK="${DEV_LUKS}"
 
 ---
 
-# ▶️    4. Criar tabela GPT + Partições
-- A partição BIOS **DEVE** ser a primeira.  
-Isso aumenta compatibilidade com placas-mãe antigas, bootloaders problemáticos e BIOS que esperam o código de boot nas primeiras áreas do disco.  
-A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
-
-### Ordem ideal e correta:
-
-- 1️⃣ BIOS Boot (EF02)
-- 2️⃣ ESP (EFI System, FAT32)
-- 3️⃣ Btrfs/Ext4/Xfs/Jfs (raiz)
-
-### Particione usando o parted (automatico)
-
-```
-parted --script ${DEVICE} -- \
-    mklabel gpt \
-    mkpart primary fat32 1MiB 2MiB set 1 bios on name 1 BIOS \
-    mkpart primary fat32 2MiB 512MiB set 2 esp on name 2 EFI \
-    mkpart primary btrfs 512MiB 100% name 3 ROOT \
-    align-check optimal 1
-parted --script ${DEVICE} -- print
-```
-
----
 
 
 
