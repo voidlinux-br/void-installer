@@ -124,7 +124,7 @@ Usei mkpart primary 514MiB 100% sem especificar FS justamente pra não amarrar o
 # ▶️    5. Escolher o modo de instalação (NORMAL ou LUKS)
 ⚠️    **IMPORTANTE:**
 > Escolha APENAS UM dos dois blocos abaixo.  
-**Não** é pra rodar os dois.
+**NÃO** é pra rodar os dois.
 
 1. INSTALAÇÃO NORMAL (sem LUKS)
 ```
@@ -139,7 +139,10 @@ DISK="${DEV_RAIZ}"
 ```
 # Criptografa SOMENTE a partição raiz — nunca o disco inteiro
 wipefs -a "${DEV_RAIZ}"
+# Criptografar a partição raiz em LUKS1 (compatível com GRUB)
+# Criptografar a partição confirmando com YES:  
 cryptsetup luksFormat --type luks1 "${DEV_RAIZ}"
+# Abra a partição com sua passphrase.
 cryptsetup open "${DEV_RAIZ}" cryptroot
 
 # A partir de agora, o root real é o dispositivo mapeado
