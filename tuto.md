@@ -89,10 +89,10 @@ DEV_EFI=/dev/sda2
 DEV_RAIZ=/dev/sda3
 DEV_LUKS=/dev/mapper/cryptroot
 ```
-- 🔎 Por que isso é necessário?
+> Assumiremos para o tutorial `/dev/sda`
 
-> Assumiremos para o tutorial `/dev/sda`  
-Porque declarar tudo no início deixa o processo à prova de erro.
+- 🔎 Por que isso é necessário?  
+Porque declarar tudo no início deixa o processo à prova de erro.   
 Assim você:
 - 📌 Troca o disco inteiro (sda → sdb → nvme0n1) mudando UMA única linha.  
 - 📌 Mantém todo o restante do tutorial funcionando sem reescrever comandos.  
