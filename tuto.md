@@ -374,8 +374,16 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
 ---
 
-# ▶️    13. Configurar o GRUB
+# ▶️    13. Configurar o GRUB (automático: LUKS e/ou Hibernação)
 ⚠️    **IMPORTANTE:**
+>Este bloco é inteligente:  
+- Detecta automaticamente se você está usando LUKS  
+- Detecta se você criou swapfile com hibernação  
+- Ajusta o /etc/default/grub sem duplicar nada  
+- Cria as linhas necessárias somente se faltarem  
+- Não altera nada se não for preciso  
+
+Use exatamente o bloco abaixo:
 ```
 # ===========================
 # Ajustes automáticos do GRUB
