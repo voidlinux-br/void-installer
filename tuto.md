@@ -170,35 +170,46 @@ DISK="${DEV_LUKS}"
 ---
 
 # ▶️    6. Criar o sistema de arquivos (FS) e montar root
-```
-# a ESP deve ser formatada sempre
-mkfs.fat -F32 ${DEV_EFI} -n EFI
-```
 ⚠️    **IMPORTANTE:**
 > Escolha APENAS UM dos dois blocos abaixo.  
 
-2. Formatar partição normal (sem LUKS) - Escolha **APENAS UM** dos formatos abaixo para o sistema de arquivos raiz:
-- **BTRFS simples**
+1. **EXT4**
 ```
-mkfs.btrfs -f ${DEV_RAIZ} -L ROOT       # - BTRFS (recomendado — subvolumes, snapshots, compressão)
+mkfs.ext4 -F "${DISK}" -L ROOT
+mount "${DISK}" /mnt
 ```
-- **BTRFS com subvolumes**
+2. **XFS**
 ```
-mkfs.btrfs -f ${DEV_RAIZ} -L ROOT       # - BTRFS (recomendado — subvolumes, snapshots, compressão)
+mkfs.xfs -f "${DISK}"
+mount "${DISK}" /mnt
+```
+3. **JFS**
+```
+mkfs.jfs -f "${DISK}"
+mount "${DISK}" /mnt
+```
+4. **BTRFS simples**
+```
+mkfs.btrfs -f "${DISK}" -L ROOT
+mount "${DISK}" /mnt
+```
+5. **BTRFS com subvolumes**
+```
+mkfs.btrfs -f "${DISK}" -L ROOT
+
 mount ${DEV_RAIZ} /mnt
 btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@log
 btrfs subvolume create /mnt/@cache
-
 umount /mnt
 
-mount -o subvol=@,compress=zstd:3 /dev/sda3 /mnt
+mount -o subvol=@,compress=zstd:3,noatime "${DISK}" /mnt
 mkdir -p /mnt/{home,var/log,var/cache}
 
-mount -o subvol=@home,compress=zstd:3  /dev/sda3 /mnt/home
-mount -o subvol=@log,compress=zstd:3   /dev/sda3 /mnt/var/log
-mount -o subvol=@cache,compress=zstd:3 /dev/sda3 /mnt/var/cache
+mount -o subvol=@home,compress=zstd:3,noatime  "${DISK}" /mnt/home
+mount -o subvol=@log,compress=zstd:3,noatime   "${DISK}" /mnt/var/log
+mount -o subvol=@cache,compress=zstd:3,noatime "${DISK}" /mnt/var/cache
 ```
 
 ```
