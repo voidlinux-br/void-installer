@@ -202,93 +202,34 @@ btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@log
 btrfs subvolume create /mnt/@cache
-umount /mnt
-
-mount -o subvol=@,compress=zstd:3,noatime "${DISK}" /mnt
-mkdir -p /mnt/{home,var/log,var/cache}
-
-mount -o subvol=@home,compress=zstd:3,noatime  "${DISK}" /mnt/home
-mount -o subvol=@log,compress=zstd:3,noatime   "${DISK}" /mnt/var/log
-mount -o subvol=@cache,compress=zstd:3,noatime "${DISK}" /mnt/var/cache
-```
-
-```
-mkfs.ext4 -F  ${DEV_RAIZ} -L ROOT       # - EXT4 (clássico, estável, simples)
-mkfs.xfs -f   ${DEV_RAIZ} -L ROOT       # - XFS (alto desempenho, ótimo para SSD)
-mkfs.jfs -q   ${DEV_RAIZ} -L ROOT       # - JFS (leve, baixo consumo de CPU)
-```
-2. Formatar usando criptografia (LUKS)
-```bash
-# Criptografar a partição raiz em LUKS1 (compatível com GRUB)
-# Criptografar partição Btrfs Confirmando com YES:  
-cryptsetup luksFormat --type luks1 ${DEV_RAIZ}
-
-# Abra a partição com sua passphrase. Será montada e mapeada, escolha um nome qualquer, aqui escolheremos cryptroot:
-cryptsetup open ${DEV_RAIZ} cryptroot
-
-# Formatar como Btrfs o dispositivo montado pelo cryptsetup no /dev/mapper, com o nome que setamos cryptroot:
-mkfs.btrfs /dev/mapper/cryptroot
-```
-
-3. Confirmar se tudo foi criado corretamente:
-```
-lsblk -f ${DEVICE}
-```
----
-
-# ▶️    6. Criar subvolumes Btrfs e montar - (Somente se a raiz for btrfs)
-
-1. A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
-```
-# Monta o subvolume padrão (ID 5) para criar os outros
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvolid=5 ${DEV_RAIZ} /mnt
-
-# Cria subvolumes essenciais
-btrfs subvolume create /mnt/@
-btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@snapshots
-btrfs subvolume create /mnt/@log
-btrfs subvolume create /mnt/@cache
-
-# Desmonte
 umount /mnt
-```
-2. Montar subvolumes - (Somente se a raiz for btrfs)
-```
-# Monta o subvolume principal (@)
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@ ${DEV_RAIZ} /mnt
 
-# Cria os pontos de montagem
-mkdir -pv /mnt/{boot/efi,home,var/log,var/cache,.snapshots,swap}
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@ ${DISK} /mnt
+mkdir -p /mnt/{boot/efi,home,var/log,var/cache,.snapshots,swap}
 
-# Monta os subvolumes restantes
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@home      ${DEV_RAIZ} /mnt/home
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@cache     ${DEV_RAIZ} /mnt/var/cache
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@log       ${DEV_RAIZ} /mnt/var/log
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@snapshots ${DEV_RAIZ} /mnt/.snapshots
-
-# Monta a ESP/UEFI corretamente em /boot/efi
-mount -v ${DEV_EFI} /mnt/boot/efi
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@home      ${DISK} /mnt/home
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@cache     ${DISK} /mnt/var/cache
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@log       ${DISK} /mnt/var/log
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@snapshots ${DISK} /mnt/.snapshots
 ```
 
-# ▶️    7. Montar partições EXT4/XFS/JFS  (se a raiz NÃO for BTRFS)
-1. Montar diretamente a partição raiz:
-```
-mount -v ${DEV_RAIZ} /mnt
-```
-2. Cria os pontos de montagem
-```
-mkdir -pv /mnt/{boot/efi,swap}
-```
-4. Monta a ESP/UEFI corretamente em /boot/efi do chroot
-```
-mount -v ${DEV_EFI} /mnt/boot/efi
-```
-5. verifique a montagem:
+6. Confirmar se tudo foi criado corretamente:
 ```
 lsblk -f ${DEVICE}
 ```
 ---
+
+# ▶️    7. Preparar e montar a ESP (EFI)
+```
+mkfs.fat -F32 "${DEV_EFI}"
+mkdir -p /mnt/boot
+mount "${DEV_EFI}" /mnt/boot
+```
+>A partição BIOS (${DEV_BIOS}) continua intocada:  
+não formata, não monta, não mexe. Ela só serve pro GRUB em modo BIOS.
+
+
 
 # ▶️    8. Instalar o Void Linux no chroot
 
