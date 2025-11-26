@@ -128,9 +128,9 @@ Usei mkpart primary 514MiB 100% sem especificar FS justamente pra não amarrar o
 
 1. INSTALAÇÃO NORMAL (sem LUKS)
 ```
-# Instalação NORMAL (sem LUKS)
 # Remove qualquer assinatura antiga da partição raiz (FS/LUKS/etc)
 wipefs -a "${DEV_RAIZ}"
+
 DISK="${DEV_RAIZ}"
 ```
 - Apaga assinaturas antigas da partição raiz  
@@ -140,9 +140,11 @@ DISK="${DEV_RAIZ}"
 ```
 # Remove qualquer assinatura antiga da partição raiz (FS/LUKS/etc)
 wipefs -a "${DEV_RAIZ}"
+
 # Criptografar SOMENTE a partição raiz em LUKS1 (compatível com GRUB) - nunca o disco inteiro
 # Criptografar a partição confirmando com YES:  
 cryptsetup luksFormat --type luks1 "${DEV_RAIZ}"
+
 # Abra a partição com sua passphrase.
 cryptsetup open "${DEV_RAIZ}" cryptroot
 
