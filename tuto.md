@@ -385,7 +385,7 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 > Escolha APENAS UM dos blocos abaixo.  
 1. SEM LUKS (sem criptografia)
 ```
-echo "GRUB_CMDLINE_LINUX=\"resume=UUID=${UUID_ROOT} resume_offset=${offset}\"" >> /etc/default/grub
+echo ""
 ```
 2. COM LUKS (criptografado)
 ```
