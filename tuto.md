@@ -80,7 +80,8 @@ xbps-install -Sy xbps parted jfsutils xfsprogs nano zstd xz bash-completion
 fdisk -l
 ```
 2. Declarar devices.
-- Altere abaixo, conforme o disco que será usado (IMPORTANTE):
+- Antes de começar a formatar qualquer coisa, defina aqui quais partições serão usadas no seu disco.
+Ajuste conforme seu hardware (IMPORTANTE):
 ```
 DEVICE=/dev/sda
 DEV_BIOS=/dev/sda1
@@ -88,16 +89,19 @@ DEV_EFI=/dev/sda2
 DEV_RAIZ=/dev/sda3
 DEV_LUKS=/dev/mapper/cryptroot
 ```
-> Assumiremos para o tutorial `/dev/sda`
-> Por que declarar esses devices logo no início?  
-Porque isso evita erro humano e padroniza o tutorial.  
-Com as variáveis definidas aqui:  
-- você pode trocar TODO o disco da instalação mudando apenas 1 linha;  
-- todo o restante do tutorial usa apenas $DEVICE, $DEV_RAIZ, $DEV_EFI etc.;  
-- evita confundir partição, digitar /dev/sdb quando era /dev/sda, e destruir o disco errado;  
-- permite escolher facilmente se vai instalar com LUKS ou sem LUKS, mudando apenas qual variável será usada ($DEV_RAIZ ou $DEV_LUKS);  
-- deixa o guia compatível com qualquer cenário: SSD, NVMe, pendrive, disco externo, VM, QEMU, etc.  
-Em resumo: aqui você define a anatomia do disco. O resto da instalação segue automaticamente essas variáveis, sem precisar reescrever comandos.
+- 🔎 Por que isso é necessário?
+
+> Assumiremos para o tutorial `/dev/sda`  
+Porque declarar tudo no início deixa o processo à prova de erro.
+Assim você:
+- 📌 Troca o disco inteiro (sda → sdb → nvme0n1) mudando UMA única linha.  
+- 📌 Mantém todo o restante do tutorial funcionando sem reescrever comandos.  
+- 📌 Evita digitar a partição errada e acabar apagando o disco errado.  
+- 📌 Pode alternar entre instalação normal e instalação com LUKS apenas trocando qual variável usa ($DEV_RAIZ ou $DEV_LUKS).  
+- 📌 Garante compatibilidade com SSD, HD, NVMe, QEMU, pendrive, servidor… qualquer ambiente.  
+- 📌 Deixa o tutorial limpo, organizado e tradicional, seguindo o padrão: define no topo, usa embaixo.  
+Em outras palavras:
+👉 Aqui você define a anatomia do disco. Todo o resto do guia apenas segue essas variáveis.
 ---
 
 # ▶️    4. Criar tabela GPT + Partições
