@@ -169,17 +169,11 @@ DISK="${DEV_LUKS}"
 
 ---
 
-
-
-
-
-
-
-# ▶️    5. Formatar as partições
+# ▶️    6. Criar o sistema de arquivos (FS) e montar root
 
 1. Formate cada partição com o sistema de arquivos correto:
 ```
-@ a ESP deve ser formatada sempre
+# a ESP deve ser formatada sempre
 mkfs.fat -F32 ${DEV_EFI} -n EFI
 ```
 2. Formatar partição normal (sem LUKS) - Escolha **APENAS UM** dos formatos abaixo para o sistema de arquivos raiz:
