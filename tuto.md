@@ -98,7 +98,7 @@ Em outras palavras:
 
 3. Para INSTALAÇÃO NORMAL (sem LUKS)
 ```
-Para INSTALAÇÃO NORMAL (sem LUKS)
+DISK=$DEVICE
 ```
 4. Para INSTALAÇÃO COM LUKS
 ```
