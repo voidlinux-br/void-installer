@@ -122,9 +122,9 @@ Usei mkpart primary 514MiB 100% sem especificar FS justamente pra não amarrar o
 ---
 
 # ▶️    5. Escolher o modo de instalação (NORMAL ou LUKS)
--⚠️    **IMPORTANTE:**
-> Escolhe APENAS UM dos dois blocos abaixo.  
-Não é pra rodar os dois.
+⚠️    **IMPORTANTE:**
+> Escolha APENAS UM dos dois blocos abaixo.  
+**Não** é pra rodar os dois.
 
 1. INSTALAÇÃO NORMAL (sem LUKS)
 ```
