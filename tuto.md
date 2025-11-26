@@ -1,17 +1,20 @@
-# 🧩   TUTORIAL VOID LINUX — INSTALAÇÃO HÍBRIDA (UEFI + BIOS) COM EXT4, XFS, JFS OU BTRFS (SUBVOLUMES), LUKS, HIBERNAÇÃO E ZRAM
-### VERSÃO REVISADA E VALIDADA — SISTEMA HÍBRIDO (UEFI + BIOS) — COM ORDEM CORRETA DAS PARTIÇÕES
+# 🧩 TUTORIAL VOID LINUX — INSTALAÇÃO HÍBRIDA (UEFI + BIOS) COM EXT4, XFS, JFS OU BTRFS (SUBVOLUMES), LUKS, HIBERNAÇÃO E ZRAM
+### VERSÃO REVISADA E VALIDADA — PARTICIONAMENTO CORRETO + BOOT UNIVERSAL
 
-Este guia instala um Void Linux totalmente **híbrido**, capaz de dar boot em:
+Este guia instala um Void Linux totalmente **híbrido**, capaz de dar boot em qualquer tipo de máquina — antiga, nova ou problemática:
 
-- Máquinas UEFI novas 
-- Máquinas BIOS/Legacy antigas 
-- PCs com NVRAM apagada 
-- Sistemas OEM problemáticos 
-- Qualquer máquina onde você espetar o SSD 
+- 💾 **UEFI moderno** (com entrada normal e fallback)
+- 🧮 **BIOS/Legacy** (compatibilidade total)
+- 🧰 **GPT com BIOS Boot (EF02)** — máximo suporte a hardware antigo
+- 🚀 **Btrfs com subvolumes** (opcional), snapshots prontos
+- 🔐 **LUKS1 totalmente compatível com GRUB**
+- 🌙 **Hibernação real via swapfile**
+- 🧊 **ZRAM configurado para desempenho**
+- 🧱 **Suporte completo a EXT4, XFS, JFS e BTRFS**
+- 💡 **Initramfs/GRUB configurados automaticamente (LUKS + resume)**
 
-📌 **Sem reinstalar GRUB, sem mudar partições, sem frescura.** 
-
-📌 **Tudo graças ao uso conjunto de ESP + BIOS Boot + fallback UEFI.**
+📌 **Sem gambiarra, sem reinstalar GRUB, sem perder tempo.**  
+📌 **Boot garantido até em máquina com NVRAM apagada (fallback BOOTX64.EFI).**
 
 ---
 
