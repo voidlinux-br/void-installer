@@ -375,7 +375,19 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 8. Adicionar suporte à Hibernação/Resume no GRUB
 ```
 # injeção automática dos parâmetros no início da linha
-sed -i "s/^GRUB_CMDLINE_LINUX=\"/&resume=UUID=${UUID_ROOT} resume_offset=${offset} /" /etc/default/grub
+sed -i '
+/^GRUB_CMDLINE_LINUX="/{
+  /resume=/b       # se já tem resume, pula tudo
+  s/^GRUB_CMDLINE_LINUX="/&resume=UUID='"${UUID_ROOT}"' resume_offset='"${offset}"' /
+  h                # marca que a substituição foi feita
+  b
+}
+${
+  x                # troca com hold space
+  /./b             # se hold NÃO estiver vazio → já foi alterado → não adiciona
+  a GRUB_CMDLINE_LINUX="resume=UUID='"${UUID_ROOT}"' resume_offset='"${offset}"'"
+}
+' /etc/default/grub
 ```
 ---
 
