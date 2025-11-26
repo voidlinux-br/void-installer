@@ -118,11 +118,25 @@ parted --script ${DEVICE} -- print
 
 # ▶️    5. Formatar as partições
 
-Formate cada partição com o sistema de arquivos correto:
+## Formate cada partição com o sistema de arquivos correto:
 ```
 @ a ESP deve ser formatada sempre
 mkfs.fat -F32 ${DEV_EFI} -n EFI
 ```
+## Formatar partições usando criptografia (LUKS)
+
+```bash
+# Criptografar a partição raiz em LUKS1 (compatível com GRUB)
+# Criptografar partição Btrfs Confirmando com YES:  
+cryptsetup luksFormat --type luks1 ${DEV_RAIZ}
+
+# Abra a partição com sua passphrase. Será montada e mapeada, escolha um nome qualquer, aqui escolheremos cryptroot:
+cryptsetup open ${DEV_RAIZ} cryptroot
+
+# Formatar como Btrfs o dispositivo montado pelo cryptsetup no /dev/mapper, com o nome que setamos cryptroot:
+mkfs.btrfs /dev/mapper/cryptroot
+```
+
 2. Escolha **APENAS UM** dos formatos abaixo para o sistema de arquivos raiz:
 ```
 mkfs.btrfs -f ${DEV_RAIZ} -L ROOT       # - BTRFS (recomendado — subvolumes, snapshots, compressão)
