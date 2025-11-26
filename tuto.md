@@ -198,21 +198,14 @@ mkdir -p /mnt/{home,var/log,var/cache}
 mount -o subvol=@home,compress=zstd:3  /dev/sda3 /mnt/home
 mount -o subvol=@log,compress=zstd:3   /dev/sda3 /mnt/var/log
 mount -o subvol=@cache,compress=zstd:3 /dev/sda3 /mnt/var/cache
-
-
-
-
-
-
+```
 
 ```
 mkfs.ext4 -F  ${DEV_RAIZ} -L ROOT       # - EXT4 (clássico, estável, simples)
 mkfs.xfs -f   ${DEV_RAIZ} -L ROOT       # - XFS (alto desempenho, ótimo para SSD)
 mkfs.jfs -q   ${DEV_RAIZ} -L ROOT       # - JFS (leve, baixo consumo de CPU)
 ```
-
-
-2. A) Formatar usando criptografia (LUKS)
+2. Formatar usando criptografia (LUKS)
 ```bash
 # Criptografar a partição raiz em LUKS1 (compatível com GRUB)
 # Criptografar partição Btrfs Confirmando com YES:  
