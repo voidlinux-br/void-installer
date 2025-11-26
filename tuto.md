@@ -340,36 +340,30 @@ echo "Swapfile recomendado: ${SWAP_GB}G"
 SWAP_GB=4
 echo "Swapfile definido pelo usuario: ${SWAP_GB}G"
 ```
-
 2. Criar diretório para o swapfile
 ```
 mkdir -p /swap
 swapoff -a 2>/dev/null
 rm -f /swap/swapfile
 ```
-
 3. Desabilitar COW (obrigatório no Btrfs)
 ```
 chattr +C /swap
 ```
-
 4. Criar o swapfile com o tamanho definido anteriormente
 ```
 fallocate -l ${SWAP_GB}G /swap/swapfile
 chmod 600 /swap/swapfile
 ```
-
 5. Formatar o swapfile e ativar o swap
 ```
 mkswap /swap/swapfile
 swapon /swap/swapfile
 ```
-
 6. Verificar:
 ```
 swapon --show
 ```
-
 7. Obter offset:
 ```
 # Instala o pacote para o filefrag
@@ -378,9 +372,13 @@ xbps-install -Sy e2fsprogs
 # Obtém o offset
 offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
+8. Adicionar suporte à Hibernação/Resume no GRUB
+# injeção automática dos parâmetros no início da linha
+sed -i "s/^GRUB_CMDLINE_LINUX=\"/&resume=UUID=${UUID_ROOT} resume_offset=${offset} /" /etc/default/grub
+```
 ---
 
-# ▶️    13a. Configurar o GRUB
+# ▶️    13. Configurar o GRUB
 ⚠️    **IMPORTANTE:**
 > Escolha APENAS COM LUKS (criptografado)
 1. COM LUKS (criptografado)
@@ -388,15 +386,6 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 # Obrigatório para sistemas com LUKS. Sem isso, o GRUB NÃO abre o LUKS no boot.
 echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
 echo "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=${UUID_LUKS}:cryptroot root=UUID=${UUID_ROOT}\"" >> /etc/default/grub
-```
----
-# ▶️    13b. Configurar o GRUB - Adicionar suporte à Hibernação/Resume) (opcional)
-> Este passo é opcional. Execute SOMENTE se você criou swapfile no passo 12.  
-Ele adiciona resume= e resume_offset= sem sobrescrever a linha existente.
-
-```
-# Caso padrão (injeção automática dos parâmetros no início da linha)
-sed -i "s/^GRUB_CMDLINE_LINUX=\"/&resume=UUID=${UUID_ROOT} resume_offset=${offset} /" /etc/default/grub
 ```
 ---
 
