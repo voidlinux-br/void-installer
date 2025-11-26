@@ -382,19 +382,12 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 
 # ▶️    13a. Configurar o GRUB
 ⚠️    **IMPORTANTE:**
-> Escolha APENAS UM dos blocos abaixo.  
-1. SEM LUKS (sem criptografia)
-```
-echo ""
-```
-2. COM LUKS (criptografado)
+> Escolha APENAS COM LUKS (criptografado)
+1. COM LUKS (criptografado)
 ```
 # Obrigatório para sistemas com LUKS. Sem isso, o GRUB NÃO abre o LUKS no boot.
 echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
 echo "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=${UUID_LUKS}:cryptroot root=UUID=${UUID_ROOT}\"" >> /etc/default/grub
-
-echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
-echo "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=${UUID_LUKS}:cryptroot root=UUID=${UUID_ROOT} resume=UUID=${UUID_ROOT} resume_offset=${offset}\"" >> /etc/default/grub
 ```
 ---
 # ▶️    13b. Configurar o GRUB - Adicionar suporte à Hibernação/Resume) (opcional)
