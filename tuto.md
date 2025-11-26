@@ -93,13 +93,6 @@ DEV_LUKS=/dev/mapper/cryptroot
 
 - 🔎 Por que isso é necessário?  
 Porque declarar tudo no início deixa o processo à prova de erro.   
-Assim você:
-- 📌 Troca o disco inteiro (sda → sdb → nvme0n1) mudando UMA única linha.  
-- 📌 Mantém todo o restante do tutorial funcionando sem reescrever comandos.  
-- 📌 Evita digitar a partição errada e acabar apagando o disco errado.  
-- 📌 Pode alternar entre instalação normal e instalação com LUKS apenas trocando qual variável usa ($DEV_RAIZ ou $DEV_LUKS).  
-- 📌 Garante compatibilidade com SSD, HD, NVMe, QEMU, pendrive, servidor… qualquer ambiente.  
-- 📌 Deixa o tutorial limpo, organizado e tradicional, seguindo o padrão: define no topo, usa embaixo.  
 Em outras palavras:  
 👉 Aqui você define a anatomia do disco. Todo o resto do guia apenas segue essas variáveis.
 
