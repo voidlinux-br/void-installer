@@ -79,8 +79,6 @@ xbps-install -Sy xbps parted jfsutils xfsprogs nano zstd xz bash-completion
 ```
 fdisk -l
 ```
-> Assumiremos para o tutorial `/dev/sda`
-
 2. Declarar devices.
 - Altere abaixo, conforme o disco que será usado (IMPORTANTE):
 ```
@@ -90,6 +88,7 @@ DEV_EFI=/dev/sda2
 DEV_RAIZ=/dev/sda3
 DEV_LUKS=/dev/mapper/cryptroot
 ```
+> Assumiremos para o tutorial `/dev/sda`
 > Por que declarar esses devices logo no início?  
 Porque isso evita erro humano e padroniza o tutorial.  
 Com as variáveis definidas aqui:  
