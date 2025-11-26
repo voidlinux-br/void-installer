@@ -244,6 +244,11 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current \
 ```
 ---
 
+# ▶️    9. Criar fstab
+```
+xgenfstab -U /mnt > /mnt/etc/fstab
+```
+
 # ▶️    9. Acessar o sistema instalado usando chroot
 
 1. Entrar no chroot:
@@ -310,7 +315,7 @@ passwd root
 ```
 ---
 
-# ▶️    12. Configurar UUIDs
+# ▶️    11. Configurar UUIDs
 
 - Obter o UUIDs das partições (importante):
 ```
@@ -319,7 +324,7 @@ UUID_EFI=$(blkid -s UUID -o value ${DEV_EFI})
 ```
 ---
 
-# ▶️    11. Criar swapfile com suporte a hibernação (opcional)
+# ▶️    12. Criar swapfile com suporte a hibernação (opcional)
 
 ### Observações importantes
 ```
