@@ -255,12 +255,6 @@ xgenfstab -U /mnt > /mnt/etc/fstab
 ```
 xchroot /mnt /bin/bash
 ```
-2. Definir um prompt visível dentro do chroot (opcional):
-```
-export PS1='(chroot)\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
-$( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
-\[\033[0m\]\$ '
-```
 ---
 
 # ▶️    10. Configurações iniciais (no chroot)
