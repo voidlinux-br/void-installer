@@ -373,6 +373,7 @@ xbps-install -Sy e2fsprogs
 offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
 8. Adicionar suporte à Hibernação/Resume no GRUB
+```
 # injeção automática dos parâmetros no início da linha
 sed -i "s/^GRUB_CMDLINE_LINUX=\"/&resume=UUID=${UUID_ROOT} resume_offset=${offset} /" /etc/default/grub
 ```
