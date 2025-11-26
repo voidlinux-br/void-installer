@@ -84,8 +84,9 @@ fdisk -l
 2. Altere abaixo, conforme o disco que será usado (IMPORTANTE):
 ```
 DEVICE=/dev/sda
-DEV_EFI=/dev/sda1
-DEV_RAIZ=/dev/sda2
+DEV_BIOS=/dev/sda1
+DEV_EFI=/dev/sda2
+DEV_RAIZ=/dev/sda3
 ```
 
 ---
