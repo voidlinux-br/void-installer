@@ -435,6 +435,37 @@ dracut --force --kver ${KVER}
 ```
 ---
 
+# ▶️    15. Criar Keyfile para evitar pedir senha duas vezes (somente LUKS)
+> Se o sistema NÃO usa LUKS, pule este passo.
+```
+if [ "${DISK}" = "${DEV_LUKS}" ]; then
+  echo "LUKS detectado: criando keyfile para desbloqueio automático..."
+
+  # Criar keyfile seguro
+  dd if=/dev/urandom of=/boot/volume.key bs=64 count=1
+  chmod 000 /boot/volume.key
+
+  # Adicionar keyfile ao LUKS (pedirá sua senha atual)
+  cryptsetup luksAddKey "${DEV_RAIZ}" /boot/volume.key
+
+  # Configurar /etc/crypttab
+  cat << EOF >> /etc/crypttab
+cryptroot ${DEV_RAIZ} /boot/volume.key  luks
+EOF
+
+   # Incluir keyfile e crypttab no initramfs
+   mkdir -p /etc/dracut.conf.d
+   cat << EOF >> /etc/dracut.conf.d/10-crypt.conf
+install_items+=" /boot/volume.key /etc/crypttab "
+EOF
+
+   # Regenerar initramfs com suporte ao keyfile
+   xbps-reconfigure -fa
+else
+   echo "Sistema sem LUKS: pulando criação de keyfile."
+fi
+```
+
 # ▶️    15. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
 1. Instalar GRUB para BIOS (Legacy)
 ```
