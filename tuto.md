@@ -101,6 +101,31 @@ DEV_LUKS=/dev/mapper/cryptroot
 Porque declarar tudo no início deixa o processo à prova de erro.   
 Em outras palavras:  
 - 👉   Aqui você define a anatomia do disco. Todo o resto do guia apenas segue essas variáveis.
+---
+
+▶️    4. Particionar usando o parted (automático)
+> Aqui o DEVICE já está definido lá em cima, então não tem variável “mágica”.
+```
+parted --script "${DEVICE}" -- \
+  mklabel gpt \
+  mkpart primary 1MiB 2MiB \
+  name 1 BIOS \
+  set 1 bios_grub on \
+  mkpart primary fat32 2MiB 514MiB \
+  name 2 EFI \
+  set 2 esp on \
+  mkpart primary 514MiB 100% \
+  name 3 ROOT \
+  align-check optimal 1
+
+parted --script "${DEVICE}" -- print
+```
+- Partição 1 → BIOS boot (bios_grub, sem FS, não monta)  
+- Partição 2 → EFI (FAT32)  
+- Partição 3 → ROOT (vamos formatar depois com EXT4/XFS/JFS/BTRFS, com ou sem LUKS)  
+Usei mkpart primary 514MiB 100% sem especificar FS justamente pra não amarrar o FS. Tu escolhe o FS depois.
+---
+
 
 3. Para INSTALAÇÃO NORMAL (sem LUKS)
 ```
