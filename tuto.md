@@ -435,7 +435,7 @@ dracut --force --kver ${KVER}
 ```
 ---
 
-# ▶️    16. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
+# ▶️    15. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
 1. Instalar GRUB para BIOS (Legacy)
 ```
 grub-install --target=i386-pc ${DEVICE}
@@ -456,7 +456,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 ---
 
-# ▶️    17. Configurações customizadas dos usuários:
+# ▶️    16. Configurações customizadas dos usuários:
 
 1. Alterar o shell padrão do usuário root para Bash
 ```
@@ -530,7 +530,7 @@ chmod +x /usr/bin/svlogtail
 
 ---
 
-# ▶️    21. Ativar ZRAM (opcional)
+# ▶️    17. Ativar ZRAM (opcional)
 O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
 1. Instalar o zramen
 ```
@@ -556,7 +556,7 @@ sv status zramen
 
 ---
 
-# ▶️    22. Finalizar instalação
+# ▶️    18. Finalizar instalação
 1. Sair do chroot:
 ```
 exit
