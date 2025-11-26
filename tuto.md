@@ -81,14 +81,24 @@ fdisk -l
 ```
 > Assumiremos para o tutorial `/dev/sda`
 
-2. Altere abaixo, conforme o disco que será usado (IMPORTANTE):
+2. Declarar devices.
+- Altere abaixo, conforme o disco que será usado (IMPORTANTE):
 ```
 DEVICE=/dev/sda
 DEV_BIOS=/dev/sda1
 DEV_EFI=/dev/sda2
 DEV_RAIZ=/dev/sda3
+DEV_LUKS=/dev/mapper/cryptroot
 ```
-
+> Por que declarar esses devices logo no início?  
+Porque isso evita erro humano e padroniza o tutorial.  
+Com as variáveis definidas aqui:  
+- você pode trocar TODO o disco da instalação mudando apenas 1 linha;  
+- todo o restante do tutorial usa apenas $DEVICE, $DEV_RAIZ, $DEV_EFI etc.;  
+- evita confundir partição, digitar /dev/sdb quando era /dev/sda, e destruir o disco errado;  
+- permite escolher facilmente se vai instalar com LUKS ou sem LUKS, mudando apenas qual variável será usada ($DEV_RAIZ ou $DEV_LUKS);  
+- deixa o guia compatível com qualquer cenário: SSD, NVMe, pendrive, disco externo, VM, QEMU, etc.  
+Em resumo: aqui você define a anatomia do disco. O resto da instalação segue automaticamente essas variáveis, sem precisar reescrever comandos.
 ---
 
 # ▶️    4. Criar tabela GPT + Partições
@@ -118,13 +128,48 @@ parted --script ${DEVICE} -- print
 
 # ▶️    5. Formatar as partições
 
-## Formate cada partição com o sistema de arquivos correto:
+1. Formate cada partição com o sistema de arquivos correto:
 ```
 @ a ESP deve ser formatada sempre
 mkfs.fat -F32 ${DEV_EFI} -n EFI
 ```
-## Formatar partições usando criptografia (LUKS)
+2. Formatar partição normal (sem LUKS) - Escolha **APENAS UM** dos formatos abaixo para o sistema de arquivos raiz:
+- **BTRFS simples**
+```
+mkfs.btrfs -f ${DEV_RAIZ} -L ROOT       # - BTRFS (recomendado — subvolumes, snapshots, compressão)
+```
+- **BTRFS com subvolumes**
+```
+mkfs.btrfs -f ${DEV_RAIZ} -L ROOT       # - BTRFS (recomendado — subvolumes, snapshots, compressão)
+mount ${DEV_RAIZ} /mnt
+btrfs subvolume create /mnt/@
+btrfs subvolume create /mnt/@home
+btrfs subvolume create /mnt/@log
+btrfs subvolume create /mnt/@cache
 
+umount /mnt
+
+mount -o subvol=@,compress=zstd:3 /dev/sda3 /mnt
+mkdir -p /mnt/{home,var/log,var/cache}
+
+mount -o subvol=@home,compress=zstd:3  /dev/sda3 /mnt/home
+mount -o subvol=@log,compress=zstd:3   /dev/sda3 /mnt/var/log
+mount -o subvol=@cache,compress=zstd:3 /dev/sda3 /mnt/var/cache
+
+
+
+
+
+
+
+```
+mkfs.ext4 -F  ${DEV_RAIZ} -L ROOT       # - EXT4 (clássico, estável, simples)
+mkfs.xfs -f   ${DEV_RAIZ} -L ROOT       # - XFS (alto desempenho, ótimo para SSD)
+mkfs.jfs -q   ${DEV_RAIZ} -L ROOT       # - JFS (leve, baixo consumo de CPU)
+```
+
+
+2. A) Formatar usando criptografia (LUKS)
 ```bash
 # Criptografar a partição raiz em LUKS1 (compatível com GRUB)
 # Criptografar partição Btrfs Confirmando com YES:  
@@ -137,13 +182,6 @@ cryptsetup open ${DEV_RAIZ} cryptroot
 mkfs.btrfs /dev/mapper/cryptroot
 ```
 
-2. Escolha **APENAS UM** dos formatos abaixo para o sistema de arquivos raiz:
-```
-mkfs.btrfs -f ${DEV_RAIZ} -L ROOT       # - BTRFS (recomendado — subvolumes, snapshots, compressão)
-mkfs.ext4 -F  ${DEV_RAIZ} -L ROOT       # - EXT4 (clássico, estável, simples)
-mkfs.xfs -f   ${DEV_RAIZ} -L ROOT       # - XFS (alto desempenho, ótimo para SSD)
-mkfs.jfs -q   ${DEV_RAIZ} -L ROOT       # - JFS (leve, baixo consumo de CPU)
-```
 3. Confirmar se tudo foi criado corretamente:
 ```
 lsblk -f ${DEVICE}
