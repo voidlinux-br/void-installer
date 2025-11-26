@@ -102,6 +102,20 @@ Assim você:
 - 📌 Deixa o tutorial limpo, organizado e tradicional, seguindo o padrão: define no topo, usa embaixo.  
 Em outras palavras:  
 👉 Aqui você define a anatomia do disco. Todo o resto do guia apenas segue essas variáveis.
+
+- Para INSTALAÇÃO NORMAL (sem LUKS)
+```
+Para INSTALAÇÃO NORMAL (sem LUKS)
+```
+- Para INSTALAÇÃO COM LUKS
+```
+wipefs -a $DEVICE
+cryptsetup luksFormat $DEVICE
+cryptsetup open $DEVICE cryptroot
+DISK=$DEV_LUKS
+```
+👉 A partir daqui, TUDO usa $DISK.
+
 ---
 
 # ▶️    4. Criar tabela GPT + Partições
