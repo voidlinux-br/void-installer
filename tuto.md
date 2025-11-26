@@ -380,7 +380,7 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
 ---
 
-# ▶️    13. A) Configurar o GRUB
+# ▶️    13a. Configurar o GRUB
 ⚠️    **IMPORTANTE:**
 > Escolha APENAS UM dos blocos abaixo.  
 1. SEM LUKS (sem criptografia)
@@ -397,7 +397,7 @@ echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
 echo "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=${UUID_LUKS}:cryptroot root=UUID=${UUID_ROOT} resume=UUID=${UUID_ROOT} resume_offset=${offset}\"" >> /etc/default/grub
 ```
 ---
-# ▶️    13. B) Configurar o GRUB - Adicionar suporte à Hibernação/Resume) (opcional)
+# ▶️    13b. Configurar o GRUB - Adicionar suporte à Hibernação/Resume) (opcional)
 > Este passo é opcional. Execute SOMENTE se você criou swapfile no passo 12.  
 Ele adiciona resume= e resume_offset= sem sobrescrever a linha existente.
 
