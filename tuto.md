@@ -374,31 +374,48 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
 8. Adicionar suporte à Hibernação/Resume no GRUB
 ```
-# injeção automática dos parâmetros no início da linha
-sed -i '
-/^GRUB_CMDLINE_LINUX="/{
-  /resume=/b       # se já tem resume, pula tudo
-  s/^GRUB_CMDLINE_LINUX="/&resume=UUID='"${UUID_ROOT}"' resume_offset='"${offset}"' /
-  h                # marca que a substituição foi feita
-  b
-}
-${
-  x                # troca com hold space
-  /./b             # se hold NÃO estiver vazio → já foi alterado → não adiciona
-  a GRUB_CMDLINE_LINUX="resume=UUID='"${UUID_ROOT}"' resume_offset='"${offset}"'"
-}
-' /etc/default/grub
-```
 ---
 
 # ▶️    13. Configurar o GRUB
 ⚠️    **IMPORTANTE:**
-> Escolha APENAS COM LUKS (criptografado)
-1. COM LUKS (criptografado)
 ```
-# Obrigatório para sistemas com LUKS. Sem isso, o GRUB NÃO abre o LUKS no boot.
-echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
-echo "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=${UUID_LUKS}:cryptroot root=UUID=${UUID_ROOT}\"" >> /etc/default/grub
+# ===========================
+# Ajustes automáticos do GRUB
+# ===========================
+HAS_LUKS=0
+HAS_RESUME=0
+
+# Detecta LUKS
+if [ "${DISK}" = "${DEV_LUKS}" ]; then
+   HAS_LUKS=1
+   grep -q '^GRUB_ENABLE_CRYPTODISK=y' /etc/default/grub || \
+      echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
+fi
+
+# Detecta hibernação
+[ -n "${offset}" ] && HAS_RESUME=1
+
+# Se não precisa de nada, sai
+if [ $HAS_LUKS -eq 0 ] && [ $HAS_RESUME -eq 0 ]; then
+   echo "GRUB: nenhuma modificação necessária."
+   return
+fi
+
+# Constroi a linha que PRECISA existir
+NEEDED=""
+[ $HAS_LUKS -eq 1 ] && NEEDED="${NEEDED} cryptdevice=UUID=${UUID_LUKS}:cryptroot"
+[ $HAS_RESUME -eq 1 ] && NEEDED="${NEEDED} resume=UUID=${UUID_ROOT} resume_offset=${offset}"
+NEEDED="${NEEDED# }"   # remove espaços iniciais
+
+# --- SED INTELIGENTE ---
+sed -i '
+/^GRUB_CMDLINE_LINUX=/ {
+  /cryptdevice=/! s/"$/ cryptdevice=UUID='"${UUID_LUKS}"':cryptroot"/
+  /resume=/! s/"$/ resume=UUID='"${UUID_ROOT}"' resume_offset='"${offset}"'"/
+  b
+}
+$ a GRUB_CMDLINE_LINUX="'"${NEEDED}"'"
+' /etc/default/grub
 ```
 ---
 
