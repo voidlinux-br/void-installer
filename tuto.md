@@ -378,20 +378,32 @@ xbps-install -Sy e2fsprogs
 # Obtém o offset
 offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
-
 ---
 
-# ▶️    13. Configurar o Kernel (GRUB) para hibernação
+# ▶️    13. A) Configurar o GRUB
 ⚠️    **IMPORTANTE:**
 > Escolha APENAS UM dos blocos abaixo.  
-1. SEM LUKS
+1. SEM LUKS (sem criptografia)
 ```
 echo "GRUB_CMDLINE_LINUX=\"resume=UUID=${UUID_ROOT} resume_offset=${offset}\"" >> /etc/default/grub
 ```
-2. COM LUKS
+2. COM LUKS (criptografado)
 ```
+# Obrigatório para sistemas com LUKS. Sem isso, o GRUB NÃO abre o LUKS no boot.
+echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
+echo "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=${UUID_LUKS}:cryptroot root=UUID=${UUID_ROOT}\"" >> /etc/default/grub
+
 echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
 echo "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=${UUID_LUKS}:cryptroot root=UUID=${UUID_ROOT} resume=UUID=${UUID_ROOT} resume_offset=${offset}\"" >> /etc/default/grub
+```
+---
+# ▶️    13. B) Configurar o GRUB - Adicionar suporte à Hibernação/Resume) (opcional)
+> Este passo é opcional. Execute SOMENTE se você criou swapfile no passo 12.  
+Ele adiciona resume= e resume_offset= sem sobrescrever a linha existente.
+
+```
+# Caso padrão (injeção automática dos parâmetros no início da linha)
+sed -i "s/^GRUB_CMDLINE_LINUX=\"/&resume=UUID=${UUID_ROOT} resume_offset=${offset} /" /etc/default/grub
 ```
 ---
 
