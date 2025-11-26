@@ -108,14 +108,9 @@ Em outras palavras:
 ```
 parted --script "${DEVICE}" -- \
   mklabel gpt \
-  mkpart primary 1MiB 2MiB \
-  name 1 BIOS \
-  set 1 bios_grub on \
-  mkpart primary fat32 2MiB 514MiB \
-  name 2 EFI \
-  set 2 esp on \
-  mkpart primary 514MiB 100% \
-  name 3 ROOT \
+  mkpart primary 1MiB 2MiB name 1 BIOS set 1 bios_grub on \
+  mkpart primary fat32 2MiB 514MiB name 2 EFI set 2 esp on \
+  mkpart primary 514MiB 100% name 3 ROOT \
   align-check optimal 1
 
 parted --script "${DEVICE}" -- print
@@ -126,7 +121,7 @@ parted --script "${DEVICE}" -- print
 Usei mkpart primary 514MiB 100% sem especificar FS justamente pra não amarrar o FS. Tu escolhe o FS depois.
 ---
 
-#▶️    5. Escolher o modo de instalação (NORMAL ou LUKS)
+# ▶️    5. Escolher o modo de instalação (NORMAL ou LUKS)
 -⚠️    **IMPORTANTE:**
 > Escolhe APENAS UM dos dois blocos abaixo.  
 Não é pra rodar os dois.
