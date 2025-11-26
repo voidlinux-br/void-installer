@@ -126,23 +126,33 @@ parted --script "${DEVICE}" -- print
 Usei mkpart primary 514MiB 100% sem especificar FS justamente pra não amarrar o FS. Tu escolhe o FS depois.
 ---
 
+#▶️    5. Escolher o modo de instalação (NORMAL ou LUKS)
+-⚠️    **IMPORTANTE:**
+> Escolhe APENAS UM dos dois blocos abaixo.  
+Não é pra rodar os dois.
 
-3. Para INSTALAÇÃO NORMAL (sem LUKS)
+1. INSTALAÇÃO NORMAL (sem LUKS)
 ```
 # Instalação NORMAL (sem LUKS)
 wipefs -a "${DEV_RAIZ}"
 DISK="${DEV_RAIZ}"
 ```
-4. Para INSTALAÇÃO COM LUKS
+- Apaga assinaturas antigas da partição raiz  
+- Define DISK como o dispositivo real /dev/sda3
+
+2. INSTALAÇÃO COM LUKS (root criptografado)
 ```
-# LUKS em cima da partição raiz — NUNCA no disco inteiro
+# Criptografa SOMENTE a partição raiz — nunca o disco inteiro
 wipefs -a "${DEV_RAIZ}"
 cryptsetup luksFormat --type luks1 "${DEV_RAIZ}"
 cryptsetup open "${DEV_RAIZ}" cryptroot
 
-# agora o root passa a ser o dispositivo mapeado
+# A partir de agora, o root real é o dispositivo mapeado
 DISK="${DEV_LUKS}"
 ```
+- O LUKS fica em cima de /dev/sda3, não do disco inteiro  
+- O sistema vai ser instalado em /dev/mapper/cryptroot
+
 👉 A partir daqui, TUDO usa $DISK.
 
 ---
