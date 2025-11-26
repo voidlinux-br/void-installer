@@ -38,7 +38,12 @@ password : voidlinux
 bash
 ```
 
-3. Cole no terminal (opcional) — Prompt com cores, usuário@host:caminho e status do último comando (✔/✘). Útil e bonito.
+3. Troque o layout de teclado para ABNT2
+```bash
+loadkeys br-abnt2
+```
+
+4. Cole no terminal (opcional) — Prompt com cores, usuário@host:caminho e status do último comando (✔/✘). Útil e bonito.
 ```
 get_exit_status() {
   local status="$?"
@@ -70,11 +75,18 @@ xbps-install -Sy xbps parted jfsutils xfsprogs nano zstd xz bash-completion
 ---
 
 # ▶️    3. Identificar o disco
-- Listar os discos disponíveis e anotar o nome do dispositivo (ex: `/dev/sda`, `/dev/vda`, `/dev/nvme0n1`):
+1. Listar os discos disponíveis e anotar o nome do dispositivo (ex: `/dev/sda`, `/dev/vda`, `/dev/nvme0n1`):
 ```
 fdisk -l
 ```
-- Assumiremos para o tutorial `/dev/sda`
+> Assumiremos para o tutorial `/dev/sda`
+
+2. Altere abaixo, conforme o disco que será usado (IMPORTANTE):
+```
+DEVICE=/dev/sda
+DEV_EFI=/dev/sda1
+DEV_RAIZ=/dev/sda2
+```
 
 ---
 
@@ -87,95 +99,48 @@ A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 
 - 1️⃣ BIOS Boot (EF02)
 - 2️⃣ ESP (EFI System, FAT32)
-- 3️⃣ Btrfs (raiz)
+- 3️⃣ Btrfs/Ext4/Xfs/Jfs (raiz)
 
-## 1. Usando o parted (automatico)
+### Particione usando o parted (automatico)
 
 ```
-parted --script /dev/sda -- \
+parted --script ${DEVICE} -- \
     mklabel gpt \
     mkpart primary fat32 1MiB 2MiB set 1 bios on name 1 BIOS \
     mkpart primary fat32 2MiB 512MiB set 2 esp on name 2 EFI \
     mkpart primary btrfs 512MiB 100% name 3 ROOT \
     align-check optimal 1
-parted --script /dev/sda -- print
+parted --script ${DEVICE} -- print
 ```
 
----
-
-## 2. Usando fdisk (manualmente)
-
-  1. Abrir o fdisk  
-     ```
-     fdisk /dev/sda
-     ```
-
-  2. Criar a partição BIOS Boot (1 MiB)  
-     - Essa partição é essencial para compatibilidade com BIOS antigas e para o GRUB em modo BIOS/Legacy.
-     ```
-     g           # cria tabela GPT
-     n           # nova partição
-     <ENTER>     # número 1
-     <ENTER>     # início automático (setor 2048)
-     +1M         # tamanho 1 MiB
-     t           # mudar tipo
-     4           # código = BIOS Boot (ef02)
-     ```
-
-  3. Criar a partição ESP (EFI System Partition – 512 MiB)  
-     ```
-     n           # nova partição
-     <ENTER>     # número 2
-     <ENTER>     # início automático
-     +512M       # tamanho 512 MiB
-     t           # mudar tipo
-     2           # seleciona partição 2
-     1           # tipo EFI System (ef00)
-     ```
-
-  4. Criar a partição Btrfs (resto do disco)  
-     ```
-     n           # nova partição
-     <ENTER>     # número 3
-     <ENTER>     # início automático
-     <ENTER>     # usa todo o restante do disco
-     t           # mudar tipo
-     3           # seleciona partição 3
-     30          # tipo Linux filesystem (8300)
-     ```
-
-  5. Gravar e sair  
-     ```
-     w
-     ```
 ---
 
 # ▶️    5. Formatar as partições
 
 Formate cada partição com o sistema de arquivos correto:
-1. A ESP deve ser formatada sempre:
 ```
-mkfs.fat -F32 /dev/sda2 -n EFI
+@ a ESP deve ser formatada sempre
+mkfs.fat -F32 ${DEV_EFI} -n EFI
 ```
-2. Escolha APENAS UM dos formatos abaixo para o sistema de arquivos raiz (/dev/sda3):
+2. Escolha **APENAS UM** dos formatos abaixo para o sistema de arquivos raiz:
 ```
-mkfs.btrfs -f /dev/sda3 -L ROOT       # - BTRFS (recomendado — subvolumes, snapshots, compressão)
-mkfs.ext4 -F  /dev/sda3 -L ROOT       # - EXT4 (clássico, estável, simples)
-mkfs.xfs -f  /dev/sda3  -L ROOT       # - XFS (alto desempenho, ótimo para SSD)
-mkfs.jfs -q  /dev/sda3  -L ROOT       # - JFS (leve, baixo consumo de CPU)
+mkfs.btrfs -f ${DEV_RAIZ} -L ROOT       # - BTRFS (recomendado — subvolumes, snapshots, compressão)
+mkfs.ext4 -F  ${DEV_RAIZ} -L ROOT       # - EXT4 (clássico, estável, simples)
+mkfs.xfs -f   ${DEV_RAIZ} -L ROOT       # - XFS (alto desempenho, ótimo para SSD)
+mkfs.jfs -q   ${DEV_RAIZ} -L ROOT       # - JFS (leve, baixo consumo de CPU)
 ```
 3. Confirmar se tudo foi criado corretamente:
 ```
-lsblk -f /dev/sda
+lsblk -f ${DEVICE}
 ```
 ---
 
-# ▶️    6. Criar subvolumes Btrfs - (Somente se a raiz /dev/sda3 for btrfs)
+# ▶️    6. Criar subvolumes Btrfs e montar - (Somente se a raiz for btrfs)
 
-- A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
+1. A criação de subvolumes separados para `/var/log` e `/var/cache` é uma **boa prática** para excluir dados voláteis dos snapshots, facilitando rollbacks.
 ```
 # Monta o subvolume padrão (ID 5) para criar os outros
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvolid=5 /dev/sda3 /mnt
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvolid=5 ${DEV_RAIZ} /mnt
 
 # Cria subvolumes essenciais
 btrfs subvolume create /mnt/@
@@ -187,77 +152,71 @@ btrfs subvolume create /mnt/@cache
 # Desmonte
 umount /mnt
 ```
----
-
-# ▶️    7. Montar partições
-1. Montar subvolumes - (Somente se a raiz /dev/sda3 for btrfs)
+2. Montar subvolumes - (Somente se a raiz for btrfs)
 ```
 # Monta o subvolume principal (@)
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@ /dev/sda3 /mnt
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@ ${DEV_RAIZ} /mnt
 
 # Cria os pontos de montagem
 mkdir -pv /mnt/{boot/efi,home,var/log,var/cache,.snapshots,swap}
 
 # Monta os subvolumes restantes
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@home      /dev/sda3 /mnt/home
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@snapshots /dev/sda3 /mnt/.snapshots
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@log       /dev/sda3 /mnt/var/log
-mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@cache     /dev/sda3 /mnt/var/cache
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@home      ${DEV_RAIZ} /mnt/home
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@cache     ${DEV_RAIZ} /mnt/var/cache
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@log       ${DEV_RAIZ} /mnt/var/log
+mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@snapshots ${DEV_RAIZ} /mnt/.snapshots
 
 # Monta a ESP/UEFI corretamente em /boot/efi
-mount /dev/sda2 /mnt/boot/efi
+mount -v ${DEV_EFI} /mnt/boot/efi
 ```
 
-2. Montar outras partições - SE A RAIZ FOR EXT4 / XFS / JFS (/dev/sda3)
+# ▶️    7. Montar partições EXT4/XFS/JFS  (se a raiz NÃO for BTRFS)
+1. Montar diretamente a partição raiz:
 ```
-# Montar diretamente a partição raiz:
-mount -v /dev/sda3 /mnt
-
-# Cria os pontos de montagem
+mount -v ${DEV_RAIZ} /mnt
+```
+2. Cria os pontos de montagem
+```
 mkdir -pv /mnt/{boot/efi,swap}
-
-# Monta a ESP/UEFI corretamente em /boot/efi
-mount -v /dev/sda2 /mnt/boot/efi
 ```
-
-3. verifique a montagem:
+4. Monta a ESP/UEFI corretamente em /boot/efi do chroot
 ```
-lsblk -f /dev/sda
+mount -v ${DEV_EFI} /mnt/boot/efi
 ```
+5. verifique a montagem:
+```
+lsblk -f ${DEVICE}
+```
+---
 
-4. Copie as chaves do repositório (XBPS keys) para ser usada no chroot depois (/mnt)
+# ▶️    8. Instalar o Void Linux no chroot
+
+1. Copie as chaves do repositório (XBPS keys) para ser usada no chroot (/mnt)
 ```
 mkdir -pv /mnt/{etc,var/db/xbps/keys}
 cp -rpafv /var/db/xbps/keys/*.plist /mnt/var/db/xbps/keys/
 cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
 ```
----
 
-# ▶️    8. Instalar o Void Linux
-
-- Instale o sistema base no disco recém-montado:
+2. Instale o sistema base no disco recém-montado:
 ```
-XBPS_ARCH=x86_64 \
-   xbps-install -Sy \
-      -R https://repo-default.voidlinux.org/current \
-      -r /mnt \
-      base-system btrfs-progs grub grub-x86_64-efi \
-      linux-headers linux-firmware-network dhcpcd \
-      nano grc zstd xz bash-completion jfsutils xfsprogs
+xbps-install -Sy \
+   -R https://repo-default.voidlinux.org/current \
+   -r /mnt \
+   base-system btrfs-progs grub grub-x86_64-efi \
+   linux-headers linux-firmware-network dhcpcd \
+   nano grc zstd xz bash-completion jfsutils xfsprogs \
+   socklog-void wget net-tools tmate ncurses
 ```
 ---
 
-# ▶️    9. Entrar no sistema (chroot)
+# ▶️    9. Acessar o sistema instalado usando chroot
 
-1. Montar os diretórios essenciais dentro do ambiente chroot:
+1. Entrar no chroot:
 ```
-for i in proc sys dev run; do mount --rbind /$i /mnt/$i; done
+xchroot /mnt /bin/bash
 ```
-2. Entrar no chroot:
-```
-chroot /mnt /bin/bash
-```
-3. Definir um prompt visível dentro do chroot (opcional):
+2. Definir um prompt visível dentro do chroot (opcional):
 ```
 export PS1='(chroot)\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
 $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
@@ -267,28 +226,18 @@ $( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d
 
 # ▶️    10. Configurações iniciais (no chroot)
 1. Configurar hostname
-- Define o nome da máquina:
 ```
+# define o nome da máquina:
 echo void > /etc/hostname
 ```
 
 2. Configurar timezone
-- Define o fuso horário para America/Sao_Paulo, altere se necessário:
 ```
+# define o fuso horário para America/Sao_Paulo, altere se necessário:
 ln -sfv /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 ```
 
 3. configure locales
-- Edite o arquivo de locales:
-```
-nano /etc/default/libc-locales
-```
-- Descomente as seguintes linhas:
-```
-en_US.UTF-8 UTF-8
-pt_BR.UTF-8 UTF-8
-```
-- Ou use o comando abaixo para habilitar automaticamente os locales necessários (ele apenas descomenta `en_US.UTF-8` e `pt_BR.UTF-8` no arquivo):
 ```
 sed -i -e 's/^#\(en_US.UTF-8 UTF-8\)/\1/' \
        -e 's/^#\(pt_BR.UTF-8 UTF-8\)/\1/' \
@@ -300,13 +249,28 @@ sed -i -e 's/^#\(en_US.UTF-8 UTF-8\)/\1/' \
 xbps-reconfigure -f glibc-locales
 ```
 
-5. Ativar alguns serviços:
+5. Corrigir possível erro no symlink do /var/service (importante):
 ```
-ln -sfv /etc/sv/dhcpcd /var/service/
-ln -sfv /etc/sv/sshd /var/service/
+rm -f /var/service
+ln -sf /etc/runit/runsvdir/default /var/service
 ```
 
-6. reconfigurar senha root (importante):
+6. Ativar alguns serviços:
+```
+ln -sf /etc/sv/dhcpcd /var/service/
+ln -sf /etc/sv/sshd /var/service/
+ln -sf /etc/sv/nanoklogd /var/service/
+ln -sf /etc/sv/socklog-unix /var/service/
+```
+
+7. Criar usuário
+```
+NEWUSER=seunomeaqui
+useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
+passwd ${NEWUSER}
+```
+
+8. reconfigurar senha root (importante):
 ```
 passwd root
 ```
@@ -323,8 +287,8 @@ passwd root
 ```
 
 1. Calcular automaticamente o tamanho ideal do swapfile
-- Recomendação moderna para hibernação: 60% da RAM total
 ```
+# recomendação moderna para hibernação: 60% da RAM total
 SWAP_GB=$(LC_ALL=C awk '/MemTotal/ {print int($2 * 0.60 / 1024 / 1024)}' /proc/meminfo)
 echo "Swapfile recomendado: ${SWAP_GB}G"
 ```
@@ -376,27 +340,28 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 
 # ▶️    12. Configurar UUIDs
 
-- Obter o UUIDs das partições:
+- Obter o UUIDs das partições (importante):
 ```
-UUID=$(blkid -s UUID -o value /dev/sda3)
-UUID_EFI=$(blkid -s UUID -o value /dev/sda2)
+UUID=$(blkid -s UUID -o value ${DEV_RAIZ})
+UUID_EFI=$(blkid -s UUID -o value ${DEV_EFI})
 ```
 ---
 
 # ▶️    13. Configurar o Kernel para hibernação (opcional)
 Configurar o GRUB com o UUID da partição e o offset do `swapfile`
-- Adcione a linha abaixo no arquivo /etc/default/grub
 ```
+#adicione a linha abaixo no arquivo /etc/default/grub
 echo "GRUB_CMDLINE_LINUX=\"resume=UUID=$UUID resume_offset=$offset\"" >> /etc/default/grub
 ```
 ---
 
 # ▶️    14. Recriar o initrd
 
-- Refazer o `initrd`
 ```
-KVER=$(ls /usr/lib/modules); echo $KVER
-dracut --force /boot/initramfs-${KVER}.img ${KVER}
+mods=(/usr/lib/modules/*)
+KVER=$(basename "${mods[0]}")
+echo ${KVER}
+dracut --force --kver ${KVER}
 ```
 ---
 
@@ -404,7 +369,7 @@ dracut --force /boot/initramfs-${KVER}.img ${KVER}
 
 > Não esquecer de configurar passo 12
 
-1. Se a raiz /dev/sda3 for **BTRFS**
+1. Se a raiz for **BTRFS**
 ```
 cat <<EOF >> /etc/fstab
 # ======== BTRFS – Subvolumes ========
@@ -419,7 +384,7 @@ UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noa
 /swap/swapfile                                    none        swap  sw,nofail                                                        0 0
 EOF
 ```
-2. Se a raiz /dev/sda3 for **EXT4**
+2. Se a raiz for **EXT4**
 ```
 cat <<EOF >> /etc/fstab
 # ======== EXT4 ========
@@ -431,7 +396,7 @@ UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noa
 EOF
 ```
 
-3. Se a raiz /dev/sda3 for **XFS**
+3. Se a raiz for **XFS**
 ```
 cat <<EOF >> /etc/fstab
 # ======== XFS ========
@@ -442,7 +407,7 @@ UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noa
 /swap/swapfile                                    none        swap  sw,nofail                    0 0
 EOF
 ```
-4. Se a raiz /dev/sda3 for **JFS**
+4. Se a raiz for **JFS**
 ```
 cat <<EOF >> /etc/fstab
 # ======== JFS ========
@@ -457,19 +422,17 @@ EOF
 
 # ▶️    16. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
 1. Instalar GRUB para BIOS (Legacy)
-- Usa a partição BIOS criada como primeira.
 ```
-grub-install --target=i386-pc /dev/sda
+grub-install --target=i386-pc ${DEVICE}
 ```
 2. Instalar GRUB para UEFI
 ```
-grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=void --recheck
 ```
-3. Criar fallback UEFI (boot universal)
-> Esse arquivo garante boot mesmo quando a NVRAM for apagada.
+3. Criar fallback UEFI (boot universal). Esse arquivo garante boot mesmo quando a NVRAM for apagada.
 ```
 mkdir -p /boot/efi/EFI/BOOT
-cp -vf /boot/efi/EFI/Void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
+cp -vf /boot/efi/EFI/void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
 ```
 4. Gerar arquivo final do GRUB
 ```
@@ -478,24 +441,13 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 ---
 
-# ▶️    17. Alterar o shell padrão do usuário root para Bash
-Por padrão, o Void Linux usa `/bin/sh` (dash) como shell mínimo.  
-- Para que o usuário **root** utilize o Bash ao fazer login (TTY/SSH), execute:
+# ▶️    17. Configurações customizadas dos usuários:
+
+1. Alterar o shell padrão do usuário root para Bash
 ```
 chsh -s /bin/bash root
 ```
-
-- Verifique se a alteração foi aplicada:
-```
-getent passwd root         # A última coluna deve mostrar: /bin/bash
-```
-> Isso altera apenas o shell de login do root — o `/bin/sh` do sistema continua sendo gerenciado pelo Void.
-
----
-
-# ▶️    18. Personalizar o /etc/xbps.d/00-repository-main.conf (opcional)
-- Cria o diretório de configurações do XBPS (se ainda não existir) e adiciona uma lista de repositórios oficiais e alternativos.
-Os repositórios repo-fastly costumam ter melhor latência.
+2. Personalizar o /etc/xbps.d/00-repository-main.conf
 ```
 mkdir -pv /etc/xbps.d
 cat << 'EOF' >> /etc/xbps.d/00-repository-main.conf
@@ -511,10 +463,8 @@ repository=https://void.chililinux.com/voidlinux/current
 #repository=https://void.chililinux.com/voidlinux/current/multilib/nonfree
 EOF
 ```
----
 
-# ▶️    19. Personalizar o /etc/rc.conf (opcional)
-- Define o fuso horário, layout do teclado e fonte padrão do console. Altere conforme necessidade.
+3. Personalizar o /etc/rc.conf. Define o fuso horário, layout do teclado e fonte padrão do console. Altere conforme necessidade.
 ```
 cat << 'EOF' >> /etc/rc.conf
 TIMEZONE=America/Sao_Paulo
@@ -523,13 +473,18 @@ FONT=Lat2-Terminus16
 EOF
 ```
 
----
-
-# ▶️    20. Personalizar o .bashrc do root (opcional)
-- Cria um .bash_profile para o usuário root e garante que o .bashrc seja carregado automaticamente no login.
-O Void não carrega .bashrc para o root por padrão, então essa inclusão deixa o shell do root consistente com usuários comuns.
+4. Personalizar o .bashrc do root
+> confira se criou o usuário no passo anterior
 ```
-cat << 'EOF' > /root/.bash_profile
+wget --quiet --no-check-certificate \
+   -O /etc//skel/.bashrc \
+   "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/.bashrc"
+chown root:root /etc/skel/.bashrc
+chmod 644 /etc/skel/.bashrc
+```
+
+```
+cat << 'EOF' > /etc/skel/.bash_profile
 # ~/.bash_profile — carrega o .bashrc no Void
 
 # Se o .bashrc existir, carregue
@@ -537,77 +492,25 @@ if [ -f ~/.bashrc ]; then
   source ~/.bashrc
 fi
 EOF
+```
 
-cat << 'EOF' > /root/.bashrc
-# ============================
-#   .bashrc ROOT — Void Linux
-# ============================
-# Só continua se for shell interativo
-[[ $- != *i* ]] && return
+```
+# copia para o root e usuario
+for d in /root "/home/${NEWUSER}"; do
+   cp -f /etc/skel/.bash_profile "$d/"
+   cp -f /etc/skel/.bashrc "$d/"
+done
 
-# Histórico decente
-HISTSIZE=5000
-HISTFILESIZE=5000
-HISTCONTROL=ignoredups:erasedups
+chown "${NEWUSER}:${NEWUSER}" "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}/.bashrc"
+chmod 644 "/home/${NEWUSER}/.bash_profile" "/home/${NEWUSER}/.bashrc"
+```
 
-# Editor padrão
-export EDITOR=vim
-export VISUAL=vim
-
-# Função de status (SEM COR – PS1 colore)
-get_exit_status() {
-  local status="$?"
-  [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
-}
-
-# Prompt ROOT — vermelho, com status ✔/✘ colorido
-export PS1='\[\033[1;31m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
-$( if [[ $? -eq 0 ]]; then printf "\033[1;32m✔"; else printf "\033[1;31m✘\033[1;35m%d" $?; fi ) \
-\[\033[0m\]# '
-
-# Alias úteis
-alias ll='ls -lh --color=auto'
-alias la='ls -A --color=auto'
-alias l='ls --color=auto'
-alias dir='ls -la --color=auto'
-alias grep='grep --color=auto'
-alias df='df -h'
-alias du='du -h'
-alias free='free -ht'
-alias ed='nano'
-
-# Segurança raiz (evita rm catastrófico)
-alias rm='rm -i'
-alias cp='cp -i'
-alias mv='mv -i'
-alias ping='grc ping'
-
-# grc aliases
-alias ping='grc ping'
-alias ping6='grc ping6'
-alias traceroute='grc traceroute'
-alias traceroute6='grc traceroute6'
-alias netstat='grc netstat'
-alias ifconfig='grc ifconfig'
-alias ip='grc ip'
-alias mount='grc mount'
-alias ps='grc ps'
-alias diff='grc diff'
-alias gcc='grc gcc'
-alias make='grc make'
-alias df='grc df'
-alias du='grc du'
-alias duf='grc duf'
-alias dig='grc dig'
-alias dmesg='grc dmesg'
-
-# Autocompletar (se existir)
-if [ -f /etc/bash/bashrc.d/complete.bash ]; then
-  . /etc/bash/bashrc.d/complete.bash
-fi
-# PATH extra
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
-EOF
+5. baixar svlogtail customizado
+```
+wget --quiet --no-check-certificate \
+  -O /usr/bin/svlogtail \
+  "https://raw.githubusercontent.com/voidlinux-br/void-installer/refs/heads/main/svlogtail"
+chmod +x /usr/bin/svlogtail
 ```
 
 ---
@@ -628,7 +531,7 @@ EOF
 ```
 3. Ativar o serviço no runit
 ```
-ln -s /etc/sv/zramen /var/service
+ln -s /etc/sv/zramen /var/service/
 ```
 4. Verificar status:
 ```
@@ -643,17 +546,19 @@ sv status zramen
 ```
 exit
 ```
-2. Desmontar os bind mounts:
+2. Desmonta todas as partições montadas em /mnt (subvolumes e /boot/efi):
 ```
-for i in run dev sys proc; do umount -R /mnt/$i; done
 umount -R /mnt
 ```
-3. Reiniciar o sistema host (iso):
+3. Desativa qualquer swapfile ou swap partition que tenha sido ativada dentro do chroot:
+```
+swapoff -a
+```
+4. Reinicia a máquina física ou a VM para testar o boot real:
 ```
 reboot
 ```
-
-> Não esqueça de remover a mídia de instalação e dar boot pelo disco recém-instalado.
+> Não esqueça de remover a mídia de instalação e dar boot pelo disco recém-instalado.  
 Enjoy!
 
 ---
