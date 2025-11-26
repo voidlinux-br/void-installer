@@ -104,7 +104,6 @@ Em outras palavras:
 ---
 
 # ▶️    4. Particionar usando o parted (automático)
-> Aqui o DEVICE já está definido lá em cima, então não tem variável “mágica”.
 - A partição BIOS **DEVE** ser a primeira.  
 Isso aumenta compatibilidade com placas-mãe antigas, bootloaders problemáticos e BIOS que esperam o código de boot nas primeiras áreas do disco.  
 A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
@@ -116,6 +115,7 @@ A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
 - 3️⃣ Btrfs/Ext4/Xfs/Jfs (raiz)
 
 ### Particione usando o parted (automatico)
+> Aqui o DEVICE já está definido lá em cima, então não tem variável “mágica”.
 ```
 parted --script "${DEVICE}" -- \
   mklabel gpt \
