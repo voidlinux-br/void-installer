@@ -213,11 +213,6 @@ mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commi
 mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@log       ${DISK} /mnt/var/log
 mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=/@snapshots ${DISK} /mnt/.snapshots
 ```
-
-6. Confirmar se tudo foi criado corretamente:
-```
-lsblk -f ${DEVICE}
-```
 ---
 
 # ▶️    7. Preparar e montar a ESP (EFI)
@@ -226,10 +221,8 @@ mkfs.fat -F32 "${DEV_EFI}"
 mkdir -p /mnt/boot
 mount "${DEV_EFI}" /mnt/boot
 ```
->A partição BIOS (${DEV_BIOS}) continua intocada:  
-não formata, não monta, não mexe. Ela só serve pro GRUB em modo BIOS.
-
-
+>💡   A partição BIOS (${DEV_BIOS}) não tem sistema de arquivos, não formata, não monta.
+---
 
 # ▶️    8. Instalar o Void Linux no chroot
 
