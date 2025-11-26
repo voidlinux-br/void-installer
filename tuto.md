@@ -83,11 +83,11 @@ fdisk -l
 > Ajusta aqui conforme o teu disco.  
 Exemplo abaixo: /dev/sda com 3 partições (BIOS, EFI, ROOT):
 ```
-DEVICE=/dev/sda
-DEV_BIOS=/dev/sda1
-DEV_EFI=/dev/sda2
-DEV_RAIZ=/dev/sda3
-DEV_LUKS=/dev/mapper/cryptroot
+export DEVICE=/dev/sda
+export DEV_BIOS=/dev/sda1
+export DEV_EFI=/dev/sda2
+export DEV_RAIZ=/dev/sda3
+export DEV_LUKS=/dev/mapper/cryptroot
 ```
 - DEVICE → disco inteiro  
 - DEV_BIOS → partição BIOS boot (1–2 MiB, sem FS, não monta)  
@@ -197,7 +197,7 @@ mount "${DISK}" /mnt
 ```
 mkfs.btrfs -f "${DISK}" -L ROOT
 
-mount ${DEV_RAIZ} /mnt
+mount ${DISK} /mnt
 btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@log
@@ -313,8 +313,9 @@ passwd root
 
 - Obter o UUIDs das partições (importante):
 ```
-UUID=$(blkid -s UUID -o value ${DEV_RAIZ})
-UUID_EFI=$(blkid -s UUID -o value ${DEV_EFI})
+UUID_LUKS=$(blkid -s UUID -o value "${DEV_RAIZ}")
+UUID_ROOT=$(blkid -s UUID -o value "${DISK}")
+UUID_EFI=$(blkid -s UUID -o value "${DEV_EFI}")
 ```
 ---
 
@@ -380,11 +381,19 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 
 ---
 
-# ▶️    13. Configurar o Kernel para hibernação (opcional)
-Configurar o GRUB com o UUID da partição e o offset do `swapfile`
+# ▶️    13. Configurar o Kernel (GRUB) para hibernação
+
+# Escolha APENAS UM dos blocos abaixo:
+
+# --- SEM LUKS ---
 ```
-#adicione a linha abaixo no arquivo /etc/default/grub
-echo "GRUB_CMDLINE_LINUX=\"resume=UUID=$UUID resume_offset=$offset\"" >> /etc/default/grub
+echo "GRUB_CMDLINE_LINUX=\"resume=UUID=${UUID_ROOT} resume_offset=${offset}\"" >> /etc/default/grub
+```
+
+# --- COM LUKS ---
+```
+echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
+echo "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=${UUID_LUKS}:cryptroot root=UUID=${UUID_ROOT} resume=UUID=${UUID_ROOT} resume_offset=${offset}\"" >> /etc/default/grub
 ```
 ---
 
@@ -395,61 +404,6 @@ mods=(/usr/lib/modules/*)
 KVER=$(basename "${mods[0]}")
 echo ${KVER}
 dracut --force --kver ${KVER}
-```
----
-
-# ▶️    15. Configurar montagem das partições no /etc/fstab
-
-> Não esquecer de configurar passo 12
-
-1. Se a raiz for **BTRFS**
-```
-cat <<EOF >> /etc/fstab
-# ======== BTRFS – Subvolumes ========
-UUID=$UUID         /           btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@           0 0
-UUID=$UUID         /home       btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@home       0 0
-UUID=$UUID         /var/log    btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@log        0 0
-UUID=$UUID         /var/cache  btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@cache      0 0
-UUID=$UUID         /.snapshots btrfs defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commit=300,subvol=@snapshots  0 0
-# ======== EFI System Partition ========
-UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077                                      0 2
-# ======== Swapfile ========
-/swap/swapfile                                    none        swap  sw,nofail                                                        0 0
-EOF
-```
-2. Se a raiz for **EXT4**
-```
-cat <<EOF >> /etc/fstab
-# ======== EXT4 ========
-UUID=$UUID         /           ext4  defaults,noatime,discard=async  0 1
-# ======== EFI System Partition ========
-UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077     0 2
-# ======== Swapfile ========
-/swap/swapfile                                    none        swap  sw,nofail                       0 0
-EOF
-```
-
-3. Se a raiz for **XFS**
-```
-cat <<EOF >> /etc/fstab
-# ======== XFS ========
-UUID=$UUID         /           xfs   rw,noatime,attr2,logbufs=8   0 1
-# ======== EFI System Partition ========
-UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077  0 2
-# ======== Swapfile ========
-/swap/swapfile                                    none        swap  sw,nofail                    0 0
-EOF
-```
-4. Se a raiz for **JFS**
-```
-cat <<EOF >> /etc/fstab
-# ======== JFS ========
-UUID=$UUID         /           jfs   defaults,noatime             0 1
-# ======== EFI System Partition ========
-UUID=$UUID_EFI                                    /boot/efi   vfat  defaults,noatime,umask=0077  0 2
-# ======== Swapfile ========
-/swap/swapfile                                    none        swap  sw,nofail                    0 0
-EOF
 ```
 ---
 
