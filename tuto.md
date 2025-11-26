@@ -218,8 +218,8 @@ mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commi
 # ▶️    7. Preparar e montar a ESP (EFI)
 ```
 mkfs.fat -F32 "${DEV_EFI}"
-mkdir -p /mnt/boot
-mount "${DEV_EFI}" /mnt/boot
+mkdir -p /mnt/boot/efi
+mount "${DEV_EFI}" /mnt/boot/efi
 ```
 >💡   A partição BIOS (${DEV_BIOS}) não tem sistema de arquivos, não formata, não monta.
 ---
@@ -235,13 +235,12 @@ cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
 
 2. Instale o sistema base no disco recém-montado:
 ```
-xbps-install -Sy \
-   -R https://repo-default.voidlinux.org/current \
+xbps-install -Sy -R https://repo-default.voidlinux.org/current \
    -r /mnt \
-   base-system btrfs-progs grub grub-x86_64-efi \
-   linux-headers linux-firmware-network dhcpcd \
-   nano grc zstd xz bash-completion jfsutils xfsprogs \
-   socklog-void wget net-tools tmate ncurses
+   base-system btrfs-progs cryptsetup grub grub-x86_64-efi dracut linux \
+   linux-headers linux-firmware linux-firmware-network glibc-locales \
+   xtools dhcpcd openssh vim nano grc zstd xz bash-completion vpm vsv \
+   socklog-void wget net-tools tmate ncurses jfsutils xfsprogs
 ```
 ---
 
