@@ -310,6 +310,15 @@ passwd root
 ```
 ---
 
+# ▶️    12. Configurar UUIDs
+
+- Obter o UUIDs das partições (importante):
+```
+UUID=$(blkid -s UUID -o value ${DEV_RAIZ})
+UUID_EFI=$(blkid -s UUID -o value ${DEV_EFI})
+```
+---
+
 # ▶️    11. Criar swapfile com suporte a hibernação (opcional)
 
 ### Observações importantes
@@ -370,15 +379,6 @@ xbps-install -Sy e2fsprogs
 offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
 
----
-
-# ▶️    12. Configurar UUIDs
-
-- Obter o UUIDs das partições (importante):
-```
-UUID=$(blkid -s UUID -o value ${DEV_RAIZ})
-UUID_EFI=$(blkid -s UUID -o value ${DEV_EFI})
-```
 ---
 
 # ▶️    13. Configurar o Kernel para hibernação (opcional)
