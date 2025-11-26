@@ -103,7 +103,7 @@ Em outras palavras:
 - 👉   Aqui você define a anatomia do disco. Todo o resto do guia apenas segue essas variáveis.
 ---
 
-▶️    4. Particionar usando o parted (automático)
+# ▶️    4. Particionar usando o parted (automático)
 > Aqui o DEVICE já está definido lá em cima, então não tem variável “mágica”.
 ```
 parted --script "${DEVICE}" -- \
