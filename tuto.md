@@ -103,11 +103,11 @@ Assim você:
 Em outras palavras:  
 👉 Aqui você define a anatomia do disco. Todo o resto do guia apenas segue essas variáveis.
 
-- Para INSTALAÇÃO NORMAL (sem LUKS)
+3. Para INSTALAÇÃO NORMAL (sem LUKS)
 ```
 Para INSTALAÇÃO NORMAL (sem LUKS)
 ```
-- Para INSTALAÇÃO COM LUKS
+4. Para INSTALAÇÃO COM LUKS
 ```
 wipefs -a $DEVICE
 cryptsetup luksFormat $DEVICE
