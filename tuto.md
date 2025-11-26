@@ -79,9 +79,9 @@ xbps-install -Sy xbps parted jfsutils xfsprogs nano zstd xz bash-completion
 ```
 fdisk -l
 ```
-2. Declarar devices.
-- Antes de começar a formatar qualquer coisa, defina aqui quais partições serão usadas no seu disco.
-Ajuste conforme seu hardware (IMPORTANTE):
+2. Definir os devices (ANTES de usar qualquer um)
+> Ajusta aqui conforme o teu disco.  
+Exemplo abaixo: /dev/sda com 3 partições (BIOS, EFI, ROOT):
 ```
 DEVICE=/dev/sda
 DEV_BIOS=/dev/sda1
@@ -89,6 +89,12 @@ DEV_EFI=/dev/sda2
 DEV_RAIZ=/dev/sda3
 DEV_LUKS=/dev/mapper/cryptroot
 ```
+- DEVICE → disco inteiro  
+- DEV_BIOS → partição BIOS boot (1–2 MiB, sem FS, não monta)  
+- DEV_EFI → partição EFI (FAT32)  
+- DEV_RAIZ → partição raiz (normal ou LUKS)  
+- DEV_LUKS → mapeamento do LUKS (/dev/mapper/cryptroot)  
+
 > Assumiremos para o tutorial `/dev/sda`
 
 - 🔎 Por que isso é necessário?  
@@ -98,14 +104,19 @@ Em outras palavras:
 
 3. Para INSTALAÇÃO NORMAL (sem LUKS)
 ```
-DISK=$DEVICE
+# Instalação NORMAL (sem LUKS)
+wipefs -a "${DEV_RAIZ}"
+DISK="${DEV_RAIZ}"
 ```
 4. Para INSTALAÇÃO COM LUKS
 ```
-wipefs -a $DEVICE
-cryptsetup luksFormat $DEVICE
-cryptsetup open $DEVICE cryptroot
-DISK=$DEV_LUKS
+# LUKS em cima da partição raiz — NUNCA no disco inteiro
+wipefs -a "${DEV_RAIZ}"
+cryptsetup luksFormat --type luks1 "${DEV_RAIZ}"
+cryptsetup open "${DEV_RAIZ}" cryptroot
+
+# agora o root passa a ser o dispositivo mapeado
+DISK="${DEV_LUKS}"
 ```
 👉 A partir daqui, TUDO usa $DISK.
 
@@ -135,6 +146,11 @@ parted --script ${DEVICE} -- print
 ```
 
 ---
+
+
+
+
+
 
 # ▶️    5. Formatar as partições
 
