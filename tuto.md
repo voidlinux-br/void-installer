@@ -372,8 +372,6 @@ xbps-install -Sy e2fsprogs
 # Obtém o offset
 offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
-8. Adicionar suporte à Hibernação/Resume no GRUB
-```
 ---
 
 # ▶️    13. Configurar o GRUB
