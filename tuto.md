@@ -382,15 +382,12 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ---
 
 # ▶️    13. Configurar o Kernel (GRUB) para hibernação
-
 # Escolha APENAS UM dos blocos abaixo:
-
-# --- SEM LUKS ---
+1. SEM LUKS
 ```
 echo "GRUB_CMDLINE_LINUX=\"resume=UUID=${UUID_ROOT} resume_offset=${offset}\"" >> /etc/default/grub
 ```
-
-# --- COM LUKS ---
+2. COM LUKS
 ```
 echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
 echo "GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=${UUID_LUKS}:cryptroot root=UUID=${UUID_ROOT} resume=UUID=${UUID_ROOT} resume_offset=${offset}\"" >> /etc/default/grub
