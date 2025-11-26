@@ -1,4 +1,4 @@
-# 🧩   TUTORIAL VOID LINUX + BTRFS + SUBVOLUMES + HIBERNAÇÃO + ZRAM  
+# 🧩   TUTORIAL VOID LINUX — INSTALAÇÃO HÍBRIDA (UEFI + BIOS) COM EXT4, XFS, JFS OU BTRFS (SUBVOLUMES), LUKS, HIBERNAÇÃO E ZRAM
 ### VERSÃO REVISADA E VALIDADA — SISTEMA HÍBRIDO (UEFI + BIOS) — COM ORDEM CORRETA DAS PARTIÇÕES
 
 Este guia instala um Void Linux totalmente **híbrido**, capaz de dar boot em:
