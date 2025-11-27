@@ -262,45 +262,32 @@ xchroot /mnt /bin/bash
 ---
 
 # ▶️    12. Configurações iniciais (no chroot)
-1. Configurar hostname
 ```
-# define o nome da máquina:
+# configurar hostname - define o nome da máquina
 echo void > /etc/hostname
-```
 
-2. Configurar timezone
-```
-# define o fuso horário:
+# configurar timezone - define o fuso horário
 ln -sfv /usr/share/zoneinfo/"${TIMEZONE}" /etc/localtime
-```
 
-3. configure locales
-```
+# configure locales
 sed -i -e 's/^#\(en_US.UTF-8 UTF-8\)/\1/' \
        -e 's/^#\(pt_BR.UTF-8 UTF-8\)/\1/' \
        /etc/default/libc-locales
-```
 
-4. Gere o locales:
-```
+# gere o locales
 xbps-reconfigure -f glibc-locales
-```
 
-5. Corrigir possível erro no symlink do /var/service (importante):
-```
+# Corrigir possível erro no symlink do /var/service (importante):
 rm -f /var/service
 ln -sf /etc/runit/runsvdir/default /var/service
-```
 
-6. Ativar alguns serviços:
-```
+# Ativar alguns serviços
 ln -sf /etc/sv/dhcpcd /var/service/
 ln -sf /etc/sv/sshd /var/service/
 ln -sf /etc/sv/nanoklogd /var/service/
 ln -sf /etc/sv/socklog-unix /var/service/
-```
-6. Configurar sudo - grupo wheel (opcional, mas recomendável)
-```
+
+# Configurar sudo - grupo wheel (opcional, mas recomendável)
 cat << 'EOF' > /etc/sudoers.d/g_wheel
 %wheel ALL=(ALL:ALL) NOPASSWD: ALL
 EOF
@@ -308,14 +295,13 @@ EOF
 chmod 440 /etc/sudoers.d/g_wheel
 ```
 
-8. Criar usuário
-```
+#Criar usuário
 NEWUSER=seunomeaqui
 useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
 passwd ${NEWUSER}
 ```
 
-8. Reconfigurar senha root:  
+## Reconfigurar senha root  
 ⚠️    **IMPORTANTE:**
 ```
 passwd root
