@@ -78,7 +78,7 @@ xbps-install -Sy xbps parted jfsutils xfsprogs nano zstd xz bash-completion
 # ▶️    3. Identificar o disco
 1. Listar os discos disponíveis e anotar o nome do dispositivo (ex: `/dev/sda`, `/dev/vda`, `/dev/nvme0n1`):
 ```
-fdisk -l
+fdisk -l | grep -E '^(Disk|Disco) '
 ```
 > Assumiremos para o tutorial `/dev/sda`
 

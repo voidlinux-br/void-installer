@@ -49,7 +49,7 @@ xbps-install -Sy xbps parted nano zstd xz bash-completion
 ## Particionar o disco
 1. Identificar o disco
 ```bash
-fdisk -l
+fdisk -l | grep -E '^(Disk|Disco) '
 ```
 > Assumiremos para o tutorial `/dev/sda`
 
