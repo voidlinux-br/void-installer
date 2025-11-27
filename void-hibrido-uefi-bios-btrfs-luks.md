@@ -105,7 +105,7 @@ loadkeys "${KEYMAP"
 
 ---
 
-# ▶️    4. Particionar usando o parted (automático)
+# ▶️    5. Particionar usando o parted (automático)
 - A partição BIOS **DEVE** ser a primeira.  
 Isso aumenta compatibilidade com placas-mãe antigas, bootloaders problemáticos e BIOS que esperam o código de boot nas primeiras áreas do disco.  
 A ESP pode vir depois sem problema algum — UEFI não liga para a posição.
@@ -134,7 +134,7 @@ parted --script "${DEVICE}" -- print
 Usei mkpart primary 514MiB 100% sem especificar FS justamente pra não amarrar o FS. Tu escolhe o FS depois.
 ---
 
-# ▶️    5. Escolher o modo de instalação (NORMAL ou LUKS)
+# ▶️    6. Escolher o modo de instalação (NORMAL ou LUKS)
 ⚠️    **IMPORTANTE:**
 > Escolha APENAS UM dos dois blocos abaixo.  
 **NÃO** é pra rodar os dois.
@@ -171,7 +171,7 @@ DISK="${DEV_LUKS}"
 
 ---
 
-# ▶️    6. Criar o sistema de arquivos (FS) e montar root
+# ▶️    7. Criar o sistema de arquivos (FS) e montar root
 ⚠️    **IMPORTANTE:**
 > Escolha APENAS UM dos dois blocos abaixo.  
 
@@ -217,7 +217,7 @@ mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commi
 ```
 ---
 
-# ▶️    7. Preparar e montar a ESP (EFI)
+# ▶️    8. Preparar e montar a ESP (EFI)
 ```
 mkfs.fat -F32 "${DEV_EFI}"
 mkdir -p /mnt/boot/efi
@@ -226,7 +226,7 @@ mount "${DEV_EFI}" /mnt/boot/efi
 >💡   A partição BIOS (${DEV_BIOS}) não tem sistema de arquivos, não formata, não monta.
 ---
 
-# ▶️    8. Instalar o Void Linux no chroot
+# ▶️    9. Instalar o Void Linux no chroot
 
 1. Copie as chaves do repositório (XBPS keys) para ser usada no chroot (/mnt)
 ```
@@ -246,12 +246,12 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current \
 ```
 ---
 
-# ▶️    9. Gerar fstab no /mnt (chroot)
+# ▶️    10. Gerar fstab no /mnt (chroot)
 ```
 xgenfstab -U /mnt > /mnt/etc/fstab
 ```
 
-# ▶️    9. Acessar o sistema instalado usando chroot
+# ▶️    11. Acessar o sistema instalado usando chroot
 
 1. Entrar no chroot:
 ```
@@ -259,7 +259,7 @@ xchroot /mnt /bin/bash
 ```
 ---
 
-# ▶️    10. Configurações iniciais (no chroot)
+# ▶️    12. Configurações iniciais (no chroot)
 1. Configurar hostname
 ```
 # define o nome da máquina:
@@ -268,8 +268,8 @@ echo void > /etc/hostname
 
 2. Configurar timezone
 ```
-# define o fuso horário para America/Sao_Paulo, altere se necessário:
-ln -sfv /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
+# define o fuso horário:
+ln -sfv /usr/share/zoneinfo/"${TIMEZONE" /etc/localtime
 ```
 
 3. configure locales
@@ -312,7 +312,7 @@ passwd root
 ```
 ---
 
-# ▶️    11. Configurar UUIDs  
+# ▶️    13. Configurar UUIDs  
 ⚠️    **IMPORTANTE:**
 - Obter o UUIDs das partições:
 ```
@@ -322,7 +322,7 @@ UUID_EFI=$(blkid -s UUID -o value "${DEV_EFI}")
 ```
 ---
 
-# ▶️    12. Criar swapfile com suporte a hibernação (opcional)
+# ▶️    14. Criar swapfile com suporte a hibernação (opcional)
 
 ### Observações importantes
 ```
@@ -373,7 +373,7 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
 ---
 
-# ▶️    13. Configurar o GRUB
+# ▶️    15. Configurar o GRUB
 ⚠️    **IMPORTANTE:**
 > Este bloco é inteligente:  
 - Detecta automaticamente se você está usando LUKS  
@@ -424,7 +424,7 @@ $ a GRUB_CMDLINE_LINUX="'"${NEEDED}"'"
 ```
 ---
 
-# ▶️    14. Recriar o initrd
+# ▶️    16. Recriar o initrd
 ⚠️    **IMPORTANTE:**
 ```
 mods=(/usr/lib/modules/*)
@@ -434,7 +434,7 @@ dracut --force --kver ${KVER}
 ```
 ---
 
-# ▶️    15. Criar Keyfile para evitar pedir senha 2x no boot (somente LUKS)
+# ▶️    17. Criar Keyfile para evitar pedir senha 2x no boot (somente LUKS)
 > Se o sistema NÃO usa LUKS, pule este passo.
 ```
 if [ "${DISK}" = "${DEV_LUKS}" ]; then
@@ -465,7 +465,7 @@ else
 fi
 ```
 
-# ▶️    16. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
+# ▶️    18. Instalar GRUB em **BIOS** e **UEFI** (híbrido real)
 1. Instalar GRUB para BIOS (Legacy)
 ```
 grub-install --target=i386-pc ${DEVICE}
@@ -486,7 +486,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 ---
 
-# ▶️    17. Configurações customizadas dos usuários:
+# ▶️    19. Configurações customizadas dos usuários:
 
 1. Alterar o shell padrão do usuário root para Bash
 ```
@@ -511,9 +511,9 @@ EOF
 
 3. Personalizar o /etc/rc.conf. Define o fuso horário, layout do teclado e fonte padrão do console. Altere conforme necessidade.
 ```
-cat << 'EOF' >> /etc/rc.conf
-TIMEZONE=America/Sao_Paulo
-KEYMAP=br-abnt2
+cat << EOF >> /etc/rc.conf
+TIMEZONE="${TIMEZONE}"
+KEYMAP="${KEYMAP}"
 FONT=Lat2-Terminus16
 EOF
 ```
@@ -560,7 +560,7 @@ chmod +x /usr/bin/svlogtail
 
 ---
 
-# ▶️    18. Ativar ZRAM (opcional)
+# ▶️    20. Ativar ZRAM (opcional)
 O Void Linux utiliza o serviço zramen para habilitar ZRAM, criando um bloco de memória comprimida que reduz o uso de swap no SSD e melhora o desempenho sob carga.
 1. Instalar o zramen
 ```
@@ -586,7 +586,7 @@ sv status zramen
 
 ---
 
-# ▶️    19. Finalizar instalação
+# ▶️    21. Finalizar instalação
 1. Sair do chroot:
 ```
 exit
