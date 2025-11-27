@@ -315,7 +315,7 @@ passwd root
 
 # ▶️    11. Configurar UUIDs  
 ⚠️    **IMPORTANTE:**
-- Obter o UUIDs das partições (importante):
+- Obter o UUIDs das partições:
 ```
 UUID_LUKS=$(blkid -s UUID -o value "${DEV_RAIZ}")
 UUID_ROOT=$(blkid -s UUID -o value "${DISK}")
@@ -364,11 +364,7 @@ chmod 600 /swap/swapfile
 mkswap /swap/swapfile
 swapon /swap/swapfile
 ```
-6. Verificar:
-```
-swapon --show
-```
-7. Obter offset:
+6. Obter offset:
 ```
 # Instala o pacote para o filefrag
 xbps-install -Sy e2fsprogs
@@ -378,7 +374,7 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 ```
 ---
 
-# ▶️    13. Configurar o GRUB (automático: LUKS e/ou Hibernação)
+# ▶️    13. Configurar o GRUB
 ⚠️    **IMPORTANTE:**
 > Este bloco é inteligente:  
 - Detecta automaticamente se você está usando LUKS  
@@ -430,7 +426,7 @@ $ a GRUB_CMDLINE_LINUX="'"${NEEDED}"'"
 ---
 
 # ▶️    14. Recriar o initrd
-
+⚠️    **IMPORTANTE:**
 ```
 mods=(/usr/lib/modules/*)
 KVER=$(basename "${mods[0]}")
