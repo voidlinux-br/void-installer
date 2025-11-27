@@ -557,6 +557,28 @@ wget --quiet --no-check-certificate \
 chmod +x /usr/bin/svlogtail
 ```
 
+6. Configurar ssh (opcional, mas recomendável):
+```
+mkdir -pv /etc/ssh/sshd_config.d/
+cat << 'EOF' > /etc/ssh/sshd_config.d/10-custom.conf
+PermitTTY yes
+PrintMotd yes
+PrintLastLog yes
+Banner /etc/issue.net
+
+PermitRootLogin yes
+KbdInteractiveAuthentication yes
+X11Forwarding yes
+PubkeyAuthentication yes
+PubkeyAcceptedKeyTypes=+ssh-rsa
+AuthorizedKeysFile .ssh/authorized_keys
+PasswordAuthentication yes
+ChallengeResponseAuthentication yes
+UsePAM yes
+
+Subsystem sftp internal-sftp
+EOF
+```
 ---
 
 # ▶️    20. Ativar ZRAM (opcional)
