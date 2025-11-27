@@ -23,9 +23,9 @@ get_exit_status() {
   local status="$?"
   [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
 }
-export PS1='\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
-$( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
-\[\033[0m\]\$ '
+export PS1='\[\e[1;32m\]\u\[\e[1;33m\]@\[\e[1;36m\]\h\[\e[1;31m\]:\w \
+\[$(get_exit_status | sed "s/.*/&/")\] \
+\[\e[0m\]\$ '
 ```
 # Conectar à Internet
 - Para Wi-Fi *(se estiver no cabo, pule esta etapa)*:
