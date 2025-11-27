@@ -302,9 +302,8 @@ useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
 passwd ${NEWUSER}
 ```
 
-## Reconfigurar senha root  
-⚠️    **IMPORTANTE:**
 ```
+# Reconfigurar senha root - ⚠️    **IMPORTANTE:**
 passwd root
 ```
 ---
