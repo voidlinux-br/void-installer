@@ -83,8 +83,7 @@ fdisk -l
 1. Definir os devices (ANTES de usar qualquer um):  
    > Assumiremos para o tutorial `/dev/sda`
 - Ajuste aqui conforme o teu disco. 
-
-   Exemplo abaixo: /dev/sda com 3 partições (BIOS, EFI, ROOT):
+- Exemplo abaixo: /dev/sda com 3 partições (BIOS, EFI, ROOT):
 ```
 export DEVICE=/dev/sda                    # DEVICE → disco inteiro
 export DEV_BIOS=/dev/sda1                 # DEV_BIOS → partição BIOS boot (1–2 MiB, sem FS, não monta)
