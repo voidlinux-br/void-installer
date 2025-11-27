@@ -295,7 +295,8 @@ EOF
 chmod 440 /etc/sudoers.d/g_wheel
 ```
 
-#Criar usuário
+```
+# Criar usuário
 NEWUSER=seunomeaqui
 useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
 passwd ${NEWUSER}
