@@ -384,43 +384,32 @@ offset=$(filefrag -v /swap/swapfile | awk '/^ *0:/{print $4}')
 
 Use exatamente o bloco abaixo:
 ```
-# ===========================
-# Ajustes automáticos do GRUB
-# ===========================
-HAS_LUKS=0
-HAS_RESUME=0
+HAS_RESUME=false
+HAS_LUKS=false
 
-# Detecta LUKS
-if [ "${DISK}" = "${DEV_LUKS}" ]; then
-   HAS_LUKS=1
-   grep -q '^GRUB_ENABLE_CRYPTODISK=y' /etc/default/grub || \
-      echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
+[[ -n "${offset}" ]] && HAS_RESUME=true
+[[ "${DISK}" = "${DEV_LUKS}" ]] && HAS_LUKS=true
+
+# Remove linha antiga por segurança
+sed -i '/^[[:space:]]*GRUB_CMDLINE_LINUX_DEFAULT=/d' /etc/default/grub
+
+# Valor base
+BASE="loglevel=4"
+
+# Adiciona resume
+if $HAS_RESUME; then
+   BASE="$BASE resume=UUID=${UUID_ROOT} resume_offset=${offset}"
 fi
 
-# Detecta hibernação
-[ -n "${offset}" ] && HAS_RESUME=1
-
-# Se não precisa de nada, sai
-if [ $HAS_LUKS -eq 0 ] && [ $HAS_RESUME -eq 0 ]; then
-   echo "GRUB: nenhuma modificação necessária."
-   return
+# Adiciona LUKS
+if $HAS_LUKS; then
+   grep -q '^GRUB_ENABLE_CRYPTODISK=y' /etc/default/grub || echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
+   grep -q '^GRUB_PRELOAD_MODULES=' /etc/default/grub    || echo 'GRUB_PRELOAD_MODULES="luks cryptodisk gcry_rijndael"' >> /etc/default/grub
+   BASE="$BASE rd.luks.uuid=${UUID_LUKS} rd.luks.name=${UUID_LUKS}=cryptroot root=/dev/mapper/cryptroot"
 fi
 
-# Constroi a linha que PRECISA existir
-NEEDED=""
-[ $HAS_LUKS -eq 1 ] && NEEDED="${NEEDED} cryptdevice=UUID=${UUID_LUKS}:cryptroot"
-[ $HAS_RESUME -eq 1 ] && NEEDED="${NEEDED} resume=UUID=${UUID_ROOT} resume_offset=${offset}"
-NEEDED="${NEEDED# }"   # remove espaços iniciais
-
-# --- SED INTELIGENTE ---
-sed -i '
-/^GRUB_CMDLINE_LINUX=/ {
-  /cryptdevice=/! s/"$/ cryptdevice=UUID='"${UUID_LUKS}"':cryptroot"/
-  /resume=/! s/"$/ resume=UUID='"${UUID_ROOT}"' resume_offset='"${offset}"'"/
-  b
-}
-$ a GRUB_CMDLINE_LINUX="'"${NEEDED}"'"
-' /etc/default/grub
+# Recria a linha final corretamente
+echo "GRUB_CMDLINE_LINUX_DEFAULT=\"${BASE}\"" >> /etc/default/grub
 ```
 ---
 
