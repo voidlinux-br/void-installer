@@ -144,7 +144,7 @@ Usei mkpart primary 514MiB 100% sem especificar FS justamente pra não amarrar o
 # Remove qualquer assinatura antiga da partição raiz (FS/LUKS/etc)
 wipefs -a "${DEV_RAIZ}"
 
-DISK="${DEV_RAIZ}"
+export DISK="${DEV_RAIZ}"
 ```
 - Apaga assinaturas antigas da partição raiz  
 - Define DISK como o dispositivo real /dev/sda3
@@ -162,7 +162,7 @@ cryptsetup luksFormat --type luks1 "${DEV_RAIZ}"
 cryptsetup open "${DEV_RAIZ}" cryptroot
 
 # A partir de agora, o root real é o dispositivo mapeado
-DISK="${DEV_LUKS}"
+export DISK="${DEV_LUKS}"
 ```
 - O LUKS fica em cima de /dev/sda3, não do disco inteiro  
 - O sistema vai ser instalado em /dev/mapper/cryptroot
@@ -178,22 +178,22 @@ DISK="${DEV_LUKS}"
 1. **EXT4**
 ```
 mkfs.ext4 -F "${DISK}" -L ROOT
-mount "${DISK}" /mnt
+mount -v "${DISK}" /mnt
 ```
 2. **XFS**
 ```
 mkfs.xfs -f "${DISK}"
-mount "${DISK}" /mnt
+mount -v "${DISK}" /mnt
 ```
 3. **JFS**
 ```
 mkfs.jfs -f "${DISK}"
-mount "${DISK}" /mnt
+mount -v "${DISK}" /mnt
 ```
 4. **BTRFS simples**
 ```
 mkfs.btrfs -f "${DISK}" -L ROOT
-mount "${DISK}" /mnt
+mount -v "${DISK}" /mnt
 ```
 5. **BTRFS com subvolumes**
 ```
@@ -221,7 +221,7 @@ mount -o defaults,noatime,ssd,compress=zstd:3,discard=async,space_cache=v2,commi
 ```
 mkfs.fat -F32 "${DEV_EFI}"
 mkdir -p /mnt/boot/efi
-mount "${DEV_EFI}" /mnt/boot/efi
+mount -v "${DEV_EFI}" /mnt/boot/efi
 ```
 >💡   A partição BIOS (${DEV_BIOS}) não tem sistema de arquivos, não formata, não monta.
 ---
@@ -269,7 +269,7 @@ echo void > /etc/hostname
 2. Configurar timezone
 ```
 # define o fuso horário:
-ln -sfv /usr/share/zoneinfo/"${TIMEZONE" /etc/localtime
+ln -sfv /usr/share/zoneinfo/"${TIMEZONE}" /etc/localtime
 ```
 
 3. configure locales
