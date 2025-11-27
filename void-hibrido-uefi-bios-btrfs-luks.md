@@ -82,7 +82,10 @@ xbps-install -Sy xbps parted jfsutils xfsprogs nano zstd xz bash-completion
 ```
 fdisk -l
 ```
-2. Definir os devices (ANTES de usar qualquer um)
+
+# ▶️    4. Definir variáveis usadas no tutorial:
+
+1. Definir os devices (ANTES de usar qualquer um)
 > Ajusta aqui conforme o teu disco.  
 Exemplo abaixo: /dev/sda com 3 partições (BIOS, EFI, ROOT):
 ```
@@ -91,6 +94,8 @@ export DEV_BIOS=/dev/sda1
 export DEV_EFI=/dev/sda2
 export DEV_RAIZ=/dev/sda3
 export DEV_LUKS=/dev/mapper/cryptroot
+KEYMAP=br-abnt2
+TIMEZONE=America/Sao_Paulo
 ```
 - DEVICE → disco inteiro  
 - DEV_BIOS → partição BIOS boot (1–2 MiB, sem FS, não monta)  
@@ -435,7 +440,7 @@ dracut --force --kver ${KVER}
 ```
 ---
 
-# ▶️    15. Criar Keyfile para evitar pedir senha duas vezes (somente LUKS)
+# ▶️    15. Criar Keyfile para evitar pedir senha 2x no boot (somente LUKS)
 > Se o sistema NÃO usa LUKS, pule este passo.
 ```
 if [ "${DISK}" = "${DEV_LUKS}" ]; then
