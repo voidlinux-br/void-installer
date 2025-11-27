@@ -236,9 +236,9 @@ mount -v "${DEV_EFI}" /mnt/boot/efi
 
 1. Copie as chaves do repositório (XBPS keys) para ser usada no chroot (/mnt)
 ```
-mkdir -pv /mnt/{etc,var/db/xbps/keys}
-cp -rpafv /var/db/xbps/keys/*.plist /mnt/var/db/xbps/keys/
-cp -fpav /etc/resolv.conf /mnt/etc/resolv.conf
+mkdir -p /mnt/{etc,var/db/xbps/keys}
+cp -rpaf /var/db/xbps/keys/*.plist /mnt/var/db/xbps/keys/
+cp -fpa /etc/resolv.conf /mnt/etc/resolv.conf
 ```
 
 2. Instale o sistema base no disco recém-montado:
