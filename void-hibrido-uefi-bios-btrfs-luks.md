@@ -297,8 +297,16 @@ ln -sf /etc/sv/sshd /var/service/
 ln -sf /etc/sv/nanoklogd /var/service/
 ln -sf /etc/sv/socklog-unix /var/service/
 ```
+6. Configurar sudo - grupo wheel (opcional, mas recomendável)
+```
+cat << 'EOF' > /etc/sudoers.d/g_wheel
+%wheel ALL=(ALL:ALL) NOPASSWD: ALL
+EOF
+#Permissões obrigatórias
+chmod 440 /etc/sudoers.d/g_wheel
+```
 
-7. Criar usuário
+8. Criar usuário
 ```
 NEWUSER=seunomeaqui
 useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
@@ -392,6 +400,8 @@ HAS_LUKS=false
 
 # Remove linha antiga por segurança
 sed -i '/^[[:space:]]*GRUB_CMDLINE_LINUX_DEFAULT=/d' /etc/default/grub
+
+# GRUB_CMDLINE_LINUX
 
 # Valor base
 BASE="loglevel=4"
