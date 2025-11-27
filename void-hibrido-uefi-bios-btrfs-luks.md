@@ -85,11 +85,11 @@ fdisk -l | grep -E '^(Disk|Disco) '
 - Ajuste aqui conforme o teu disco. 
 - Exemplo abaixo: /dev/sda com 3 partições (BIOS, EFI, ROOT):
 ```
-export DEVICE=/dev/sda                    # DEVICE → disco inteiro
-export DEV_BIOS=/dev/sda1                 # DEV_BIOS → partição BIOS boot (1–2 MiB, sem FS, não monta)
-export DEV_EFI=/dev/sda2                  # DEV_EFI → partição EFI (FAT32)
-export DEV_RAIZ=/dev/sda3                 # DEV_RAIZ → partição raiz (normal ou LUKS)
-export DEV_LUKS=/dev/mapper/cryptroot     # DEV_LUKS → mapeamento do LUKS (/dev/mapper/cryptroot)
+export DEVICE=/dev/sda
+export DEV_BIOS=/dev/sda1
+export DEV_EFI=/dev/sda2
+export DEV_RAIZ=/dev/sda3
+export DEV_LUKS=/dev/mapper/cryptroot
 export KEYMAP=br-abnt2
 export TIMEZONE=America/Sao_Paulo
 ```
