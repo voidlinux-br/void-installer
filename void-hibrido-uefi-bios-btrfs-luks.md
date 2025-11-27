@@ -93,7 +93,7 @@ export DEV_LUKS=/dev/mapper/cryptroot
 export KEYMAP=br-abnt2
 export TIMEZONE=America/Sao_Paulo
 ```
-> DEVICE → disco inteiro 
+> DEVICE → disco inteiro  
 DEV_BIOS → partição BIOS boot (1–2 MiB, sem FS, não monta)  
 DEV_EFI → partição EFI (FAT32)  
 DEV_RAIZ → partição raiz (normal ou LUKS)  
