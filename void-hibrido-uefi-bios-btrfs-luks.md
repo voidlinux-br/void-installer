@@ -313,8 +313,8 @@ passwd root
 ```
 ---
 
-# ▶️    11. Configurar UUIDs
-
+# ▶️    11. Configurar UUIDs  
+⚠️    **IMPORTANTE:**
 - Obter o UUIDs das partições (importante):
 ```
 UUID_LUKS=$(blkid -s UUID -o value "${DEV_RAIZ}")
