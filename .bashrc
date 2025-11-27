@@ -14,12 +14,8 @@ export EDITOR=vim
 export VISUAL=vim
 
 # Função de status (SEM COR – PS1 colore)
-get_exit_status() {
-  local status="$?"
-  [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
-}
 export PS1='\[\e[1;32m\]\u\[\e[1;33m\]@\[\e[1;36m\]\h\[\e[1;31m\]:\w \
-\[$(get_exit_status | sed "s/.*/&/")\] \
+$([[ $? -eq 0 ]] && echo -e "\e[1;32m✔" || echo -e "\e[1;31m✘$?") \
 \[\e[0m\]\$ '
 
 # Alias úteis

@@ -459,12 +459,12 @@ grub-install --target=i386-pc ${DEVICE}
 ```
 2. Instalar GRUB para UEFI
 ```
-grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=void --recheck
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=void
 ```
 3. Criar fallback UEFI (boot universal). Esse arquivo garante boot mesmo quando a NVRAM for apagada.
 ```
 mkdir -p /boot/efi/EFI/BOOT
-cp -vf /boot/efi/EFI/void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
+cp -f /boot/efi/EFI/void/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.EFI
 ```
 4. Gerar arquivo final do GRUB
 ```

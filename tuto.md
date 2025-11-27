@@ -48,13 +48,9 @@ loadkeys br-abnt2
 
 4. Cole no terminal (opcional) — Prompt com cores, usuário@host:caminho e status do último comando (✔/✘). Útil e bonito.
 ```
-get_exit_status() {
-  local status="$?"
-  [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
-}
-export PS1='\[\033[1;32m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
-$( [[ $? -eq 0 ]] && printf "\033[1;32m✔" || printf "\033[1;31m✘\033[1;35m%d" $? ) \
-\[\033[0m\]\$ '
+export PS1='\[\e[1;32m\]\u\[\e[1;33m\]@\[\e[1;36m\]\h\[\e[1;31m\]:\w \
+$([[ $? -eq 0 ]] && echo -e "\e[1;32m✔" || echo -e "\e[1;31m✘$?") \
+\[\e[0m\]\$ '
 ```
 
 # ▶️    2. Conectar à Internet
