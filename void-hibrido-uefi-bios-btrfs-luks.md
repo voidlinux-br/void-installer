@@ -80,32 +80,26 @@ fdisk -l
 
 # ▶️    4. Definir variáveis usadas no tutorial:
 
-1. Definir os devices (ANTES de usar qualquer um)
-> Ajusta aqui conforme o teu disco.  
+1. Definir os devices (ANTES de usar qualquer um):
+> Ajuste aqui conforme o teu disco.  
+Assumiremos para o tutorial `/dev/sda`  
+
 Exemplo abaixo: /dev/sda com 3 partições (BIOS, EFI, ROOT):
 ```
-export DEVICE=/dev/sda
-export DEV_BIOS=/dev/sda1
-export DEV_EFI=/dev/sda2
-export DEV_RAIZ=/dev/sda3
-export DEV_LUKS=/dev/mapper/cryptroot
+export DEVICE=/dev/sda                    # DEVICE → disco inteiro
+export DEV_BIOS=/dev/sda1                 # DEV_BIOS → partição BIOS boot (1–2 MiB, sem FS, não monta)
+export DEV_EFI=/dev/sda2                  # DEV_EFI → partição EFI (FAT32)
+export DEV_RAIZ=/dev/sda3                 # DEV_RAIZ → partição raiz (normal ou LUKS)
+export DEV_LUKS=/dev/mapper/cryptroot     # DEV_LUKS → mapeamento do LUKS (/dev/mapper/cryptroot)
 export KEYMAP=br-abnt2
 export TIMEZONE=America/Sao_Paulo
 ```
-- DEVICE → disco inteiro  
-- DEV_BIOS → partição BIOS boot (1–2 MiB, sem FS, não monta)  
-- DEV_EFI → partição EFI (FAT32)  
-- DEV_RAIZ → partição raiz (normal ou LUKS)  
-- DEV_LUKS → mapeamento do LUKS (/dev/mapper/cryptroot)  
-
-> Assumiremos para o tutorial `/dev/sda`
-
 - 🔎   Por que isso é necessário?  
 Porque declarar tudo no início deixa o processo à prova de erro.   
 Em outras palavras:  
 - 👉   Aqui você define a anatomia do disco. Todo o resto do guia apenas segue essas variáveis.
 
-2. Troque o layout de teclado para ABNT2
+2. Troque o layout de teclado para o KEYMAP escolhido acima:
 ```bash
 loadkeys "${KEYMAP"
 ```
