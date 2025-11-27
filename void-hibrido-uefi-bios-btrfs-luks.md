@@ -100,7 +100,7 @@ Em outras palavras:
 
 2. Troque o layout de teclado para o KEYMAP escolhido acima:
 ```bash
-loadkeys "${KEYMAP"
+loadkeys "${KEYMAP}"
 ```
 
 ---
