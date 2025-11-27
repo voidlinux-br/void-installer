@@ -303,7 +303,7 @@ passwd ${NEWUSER}
 ```
 
 ```
-# Reconfigurar senha root - ⚠️    **IMPORTANTE:**
+# Reconfigurar senha root - ⚠️    IMPORTANTE:
 passwd root
 ```
 ---
