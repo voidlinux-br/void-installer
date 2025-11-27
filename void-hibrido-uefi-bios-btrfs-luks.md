@@ -599,10 +599,6 @@ EOF
 ```
 ln -s /etc/sv/zramen /var/service/
 ```
-4. Verificar status:
-```
-sv status zramen
-```
 > O ZRAM será ativado automaticamente em todos os boots
 
 ---
