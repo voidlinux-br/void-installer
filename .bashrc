@@ -15,14 +15,12 @@ export VISUAL=vim
 
 # Função de status (SEM COR – PS1 colore)
 get_exit_status() {
-	local status="$?"
-	[[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
+  local status="$?"
+  [[ $status -eq 0 ]] && printf "✔" || printf "✘%d" "$status"
 }
-
-# Prompt ROOT — vermelho, com status ✔/✘ colorido
-export PS1='\[\033[1;31m\]\u\[\033[1;33m\]@\[\033[1;36m\]\h\[\033[1;31m\]:\w \
-$( if [[ $? -eq 0 ]]; then printf "\033[1;32m✔"; else printf "\033[1;31m✘\033[1;35m%d" $?; fi ) \
-\[\033[0m\]# '
+export PS1='\[\e[1;32m\]\u\[\e[1;33m\]@\[\e[1;36m\]\h\[\e[1;31m\]:\w \
+\[$(get_exit_status | sed "s/.*/&/")\] \
+\[\e[0m\]\$ '
 
 # Alias úteis
 alias ll='ls -lh --color=auto'
@@ -65,8 +63,6 @@ fi
 
 # PATH extra
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
-
-#!/usr/bin/env bash
 
 # ========== CHROOT USADO NO PROMPT ==========
 if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
