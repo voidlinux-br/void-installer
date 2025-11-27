@@ -41,12 +41,7 @@ password : voidlinux
 bash
 ```
 
-3. Troque o layout de teclado para ABNT2
-```bash
-loadkeys br-abnt2
-```
-
-4. Cole no terminal (opcional) — Prompt com cores, usuário@host:caminho e status do último comando (✔/✘). Útil e bonito.
+3. Cole no terminal (opcional) — Prompt com cores, usuário@host:caminho e status do último comando (✔/✘). Útil e bonito.
 ```
 get_exit_status() {
   local status="$?"
@@ -94,8 +89,8 @@ export DEV_BIOS=/dev/sda1
 export DEV_EFI=/dev/sda2
 export DEV_RAIZ=/dev/sda3
 export DEV_LUKS=/dev/mapper/cryptroot
-KEYMAP=br-abnt2
-TIMEZONE=America/Sao_Paulo
+export KEYMAP=br-abnt2
+export TIMEZONE=America/Sao_Paulo
 ```
 - DEVICE → disco inteiro  
 - DEV_BIOS → partição BIOS boot (1–2 MiB, sem FS, não monta)  
@@ -109,6 +104,12 @@ TIMEZONE=America/Sao_Paulo
 Porque declarar tudo no início deixa o processo à prova de erro.   
 Em outras palavras:  
 - 👉   Aqui você define a anatomia do disco. Todo o resto do guia apenas segue essas variáveis.
+
+2. Troque o layout de teclado para ABNT2
+```bash
+loadkeys "${KEYMAP"
+```
+
 ---
 
 # ▶️    4. Particionar usando o parted (automático)
