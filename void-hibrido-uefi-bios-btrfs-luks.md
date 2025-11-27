@@ -80,9 +80,9 @@ fdisk -l
 
 # ▶️    4. Definir variáveis usadas no tutorial:
 
-1. Definir os devices (ANTES de usar qualquer um):
-- Ajuste aqui conforme o teu disco. 
+1. Definir os devices (ANTES de usar qualquer um):  
 > Assumiremos para o tutorial `/dev/sda`
+- Ajuste aqui conforme o teu disco. 
 
 Exemplo abaixo: /dev/sda com 3 partições (BIOS, EFI, ROOT):
 ```
