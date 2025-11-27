@@ -247,7 +247,7 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current \
 ```
 ---
 
-# ▶️    9. Criar fstab
+# ▶️    9. Gerar fstab no /mnt (chroot)
 ```
 xgenfstab -U /mnt > /mnt/etc/fstab
 ```
@@ -306,7 +306,8 @@ useradd -m -G audio,video,wheel,tty -s /bin/bash ${NEWUSER}
 passwd ${NEWUSER}
 ```
 
-8. reconfigurar senha root (importante):
+8. Reconfigurar senha root:
+⚠️    **IMPORTANTE:**
 ```
 passwd root
 ```
