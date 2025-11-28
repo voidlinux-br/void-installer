@@ -41,7 +41,7 @@ GRC="/usr/bin/grc"
 if tty -s && [ -n "$TERM" ] && [ "$TERM" != "dumb" ] && command -v "$GRC" >/dev/null 2>&1; then
 	alias colourify="$GRC"
 	commands=(
-		ant blkid configure df diff dig dnf docker-machine ls docker images
+		ant blkid configure df diff dig dnf docker-machine docker images
 		docker info docker network docker ps docker pull docker search docker version
 		du fdisk findmnt go-test ifconfig ip ipaddr ipneighbor iproute iptables
 		irclog iwconfig kubectl last ldap lolcat lsattr lsblk lsmod lsof lspci
