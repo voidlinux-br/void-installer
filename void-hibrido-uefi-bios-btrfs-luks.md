@@ -244,7 +244,7 @@ xbps-install -Sy -R https://repo-default.voidlinux.org/current \
    base-system btrfs-progs cryptsetup grub grub-x86_64-efi dracut linux \
    linux-headers linux-firmware linux-firmware-network glibc-locales \
    xtools dhcpcd openssh vim nano grc zstd xz bash-completion vpm vsv \
-   socklog-void wget net-tools tmate ncurses jfsutils xfsprogs duf tree
+   socklog-void wget net-tools tmate ncurses jfsutils xfsprogs duf tree eza
 ```
 ---
 

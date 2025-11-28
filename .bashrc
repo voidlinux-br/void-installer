@@ -27,7 +27,12 @@ $( if [[ $? -eq 0 ]]; then printf "\033[1;32m✔"; else printf "\033[1;31m✘\03
 alias ll='ls -lh --color=auto'
 alias la='ls -A --color=auto'
 alias l='ls --color=auto'
-alias dir='ls -la --color=auto'
+if command -v "eza" >/dev/null 2>&1; then
+   alias dir='eza -la --color=auto --icons'
+   alias ls='eza'
+else
+   alias dir='ls -la --color=auto'
+fi
 alias grep='grep --color=auto'
 alias df='df -h'
 alias du='du -h'
