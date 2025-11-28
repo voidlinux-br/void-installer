@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Caminho do xbps-install REAL
+REAL="/usr/bin/xbps-install"
+
+# Antes de tudo, garantir que é root
+if [[ "$EUID" -ne 0 ]]; then
+  echo "erro: precisa ser root para executar 'xbps-install -Scc'" >&2
+  exit 1
+fi
+
+# Se foi chamado como "xbps-install -Scc"
+if [[ "$*" == "-Scc" ]]; then
+  echo "[*] Interceptado: xbps-install -Scc → limpando cache"
+  rm -fv /var/cache/xbps/*.xbps
+  rm -fv /var/cache/xbps/*.sig*
+  exit 0
+fi
+
+# Caso contrário, repassa tudo para o comando real
+exec "$REAL" "$@"
+
