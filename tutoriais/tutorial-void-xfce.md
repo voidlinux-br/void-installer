@@ -20,7 +20,22 @@ sudo xbps-install -y xfce4
 sudo xbps-install -y lxdm
 ```
 
-## 5. Drivers de vídeo (escolher apenas um)
+## 5. Instalar áudio com PipeWire (som completo)
+
+### PipeWire + WirePlumber + ALSA + Pulse compat
+```
+sudo xbps-install -y \
+  pipewire \
+  wireplumber \
+  pipewire-alsa \
+  pipewire-pulse \
+  pipewire-jack \
+  alsa-utils \
+  pavucontrol
+```
+
+
+## 6. Drivers de vídeo (escolher apenas um)
 
 ### Intel
 ```
@@ -42,14 +57,14 @@ sudo xbps-install -y mesa-dri xf86-video-ati
 sudo xbps-install -y mesa-nouveau-dri
 ```
 
-## 6. Desativar o XFCE-Polkit (bugado — não usar)
+## 7. Desativar o XFCE-Polkit (bugado — não usar)
 ```
 mkdir -p ~/.config/autostart
 cp /etc/xdg/autostart/xfce-polkit.desktop ~/.config/autostart/
 sed -i 's/^Hidden=.*/Hidden=true/' ~/.config/autostart/xfce-polkit.desktop || echo 'Hidden=true' >> ~/.config/autostart/xfce-polkit.desktop
 ```
 
-## 7. Criar .xinitrc (opcional para startx)
+## 8. Criar .xinitrc (opcional para startx)
 ```
 cat <<EOF > ~/.xinitrc
 #!/bin/sh
@@ -59,7 +74,7 @@ exec startxfce4
 EOF
 ```
 
-## 8. Ativar serviços obrigatórios (runit)
+## 9. Ativar serviços obrigatórios (runit)
 ```
 sudo ln -s /etc/sv/dbus /var/service/
 sudo ln -s /etc/sv/elogind /var/service/

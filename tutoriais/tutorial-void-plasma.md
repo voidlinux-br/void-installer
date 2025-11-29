@@ -1,4 +1,4 @@
-# 🐧 Void Linux + KDE Plasma — Tutorial Definitivo
+# 🐧 Void Linux + KDE Plasma + PipeWire — Tutorial Definitivo
 
 ## 1. Atualizar o sistema
 ```
@@ -15,7 +15,21 @@ sudo xbps-install -y plasma
 sudo xbps-install -y sddm
 ```
 
-## 4. Drivers de vídeo (escolher apenas um)
+## 4. Instalar áudio com PipeWire (som completo)
+
+### PipeWire + WirePlumber + ALSA + Pulse compat
+```
+sudo xbps-install -y \
+  pipewire \
+  wireplumber \
+  pipewire-alsa \
+  pipewire-pulse \
+  pipewire-jack \
+  alsa-utils \
+  pavucontrol
+```
+
+## 5. Drivers de vídeo (escolher apenas um)
 
 ### Intel
 ```
@@ -43,7 +57,7 @@ sudo xbps-install -y void-repo-nonfree
 sudo xbps-install -y nvidia
 ```
 
-## 5. Ativar serviços obrigatórios (runit)
+## 6. Ativar serviços obrigatórios (runit)
 ```
 sudo ln -s /etc/sv/dbus /var/service/
 sudo ln -s /etc/sv/elogind /var/service/
@@ -52,7 +66,7 @@ sudo ln -s /etc/sv/NetworkManager /var/service/
 sudo ln -s /etc/sv/sddm /var/service/
 ```
 
-## 6. (Opcional) Criar .xinitrc para startx
+## 7. (Opcional) Criar .xinitrc para startx
 ```
 cat <<EOF > ~/.xinitrc
 #!/bin/sh
@@ -64,3 +78,4 @@ EOF
 ## Finalização
 - Usando SDDM → o sistema inicia direto no KDE Plasma.
 - Sem SDDM → usar `startx` (se `.xinitrc` existir).
+

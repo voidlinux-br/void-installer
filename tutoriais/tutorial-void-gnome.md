@@ -15,7 +15,21 @@ sudo xbps-install -y gnome
 sudo xbps-install -y gdm
 ```
 
-## 4. Drivers de vídeo (escolher apenas um)
+## 4. Instalar áudio com PipeWire (som completo)
+
+### PipeWire + WirePlumber + ALSA + Pulse compat
+```
+sudo xbps-install -y \
+  pipewire \
+  wireplumber \
+  pipewire-alsa \
+  pipewire-pulse \
+  pipewire-jack \
+  alsa-utils \
+  pavucontrol
+```
+
+## 5. Drivers de vídeo (escolher apenas um)
 
 ### Intel
 ```
@@ -37,7 +51,7 @@ sudo xbps-install -y mesa-dri xf86-video-ati
 sudo xbps-install -y mesa-nouveau-dri
 ```
 
-## 5. Ativar serviços obrigatórios (runit)
+## 6. Ativar serviços obrigatórios (runit)
 ```
 sudo ln -s /etc/sv/dbus /var/service/
 sudo ln -s /etc/sv/elogind /var/service/
@@ -46,7 +60,7 @@ sudo ln -s /etc/sv/NetworkManager /var/service/
 sudo ln -s /etc/sv/gdm /var/service/
 ```
 
-## 6. (Opcional) Criar .xinitrc para startx
+## 7. (Opcional) Criar .xinitrc para startx
 ```
 cat <<EOF > ~/.xinitrc
 #!/bin/sh
