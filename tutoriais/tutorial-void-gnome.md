@@ -37,12 +37,6 @@ sudo xbps-install -y mesa-dri xf86-video-ati
 sudo xbps-install -y mesa-nouveau-dri
 ```
 
-### Nvidia (proprietário)
-```
-sudo xbps-install -y void-repo-nonfree
-sudo xbps-install -y nvidia
-```
-
 ## 5. Ativar serviços obrigatórios (runit)
 ```
 sudo ln -s /etc/sv/dbus /var/service/
