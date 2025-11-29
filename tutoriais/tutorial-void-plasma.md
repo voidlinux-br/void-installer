@@ -22,9 +22,8 @@ sudo xbps-install -y sddm
 sudo xbps-install -y \
   pipewire \
   wireplumber \
-  pipewire-alsa \
-  pipewire-pulse \
-  pipewire-jack \
+  alsa-pipewire \
+  libjack-pipewire \
   alsa-utils \
   pavucontrol
 ```
