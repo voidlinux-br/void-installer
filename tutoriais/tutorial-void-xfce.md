@@ -15,16 +15,6 @@ sudo xbps-install -y xorg xinit xterm
 sudo xbps-install -y xfce4
 ```
 
-## 4. Instalar Polkit (daemon)
-```
-sudo xbps-install -y polkit
-```
-
-## 5. Instalar NetworkManager + nm-applet
-```
-sudo xbps-install -y NetworkManager network-manager-applet
-```
-
 ## 6. Instalar LXDM (display manager leve)
 ```
 sudo xbps-install -y lxdm
