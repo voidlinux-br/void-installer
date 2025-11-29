@@ -1,24 +1,24 @@
 # 🐧 Void Linux + XFCE4 — Tutorial Definitivo
 
-## 1) Atualizar o sistema
+## 1. Atualizar o sistema
 sudo xbps-install -Syu
 
-## 2) Instalar Xorg + Xinit + Xterm
+## 2. Instalar Xorg + Xinit + Xterm
 sudo xbps-install -y xorg xinit xterm
 
-## 3) Instalar XFCE4 completo
+## 3. Instalar XFCE4 completo
 sudo xbps-install -y xfce4
 
-## 4) Instalar Polkit (daemon)
+## 4. Instalar Polkit (daemon)
 sudo xbps-install -y polkit
 
-## 5) Instalar NetworkManager + nm-applet
+## 5. Instalar NetworkManager + nm-applet
 sudo xbps-install -y NetworkManager network-manager-applet
 
-## 6) Instalar LXDM (display manager leve)
+## 6. Instalar LXDM (display manager leve)
 sudo xbps-install -y lxdm
 
-## 7) Drivers de vídeo (escolher apenas um)
+## 7. Drivers de vídeo (escolher apenas um)
 
 ### Intel
 sudo xbps-install -y mesa-dri linux-firmware-intel
@@ -33,19 +33,19 @@ sudo xbps-install -y mesa-dri xf86-video-ati
 sudo xbps-install -y void-repo-nonfree
 sudo xbps-install -y nvidia
 
-## 8) Ativar serviços obrigatórios (runit)
+## 8. Ativar serviços obrigatórios (runit)
 sudo ln -s /etc/sv/dbus /var/service/
 sudo ln -s /etc/sv/elogind /var/service/
 sudo ln -s /etc/sv/polkitd /var/service/
 sudo ln -s /etc/sv/NetworkManager /var/service/
 sudo ln -s /etc/sv/lxdm /var/service/
 
-## 9) Desativar o XFCE-Polkit (bugado — não usar)
+## 9. Desativar o XFCE-Polkit (bugado — não usar)
 mkdir -p ~/.config/autostart
 cp /etc/xdg/autostart/xfce-polkit.desktop ~/.config/autostart/
 sed -i 's/^Hidden=.*/Hidden=true/' ~/.config/autostart/xfce-polkit.desktop || echo 'Hidden=true' >> ~/.config/autostart/xfce-polkit.desktop
 
-## 10) Criar .xinitrc (opcional para startx)
+## 10. Criar .xinitrc (opcional para startx)
 cat <<EOF > ~/.xinitrc
 #!/bin/sh
 setxkbmap -layout br -variant abnt2 &
