@@ -15,12 +15,12 @@ sudo xbps-install -y xorg xinit xterm
 sudo xbps-install -y xfce4
 ```
 
-## 6. Instalar LXDM (display manager leve)
+## 4. Instalar LXDM (display manager leve)
 ```
 sudo xbps-install -y lxdm
 ```
 
-## 7. Drivers de vídeo (escolher apenas um)
+## 5. Drivers de vídeo (escolher apenas um)
 
 ### Intel
 ```
@@ -42,23 +42,14 @@ sudo xbps-install -y mesa-dri xf86-video-ati
 sudo xbps-install -y mesa-nouveau-dri
 ```
 
-## 8. Ativar serviços obrigatórios (runit)
-```
-sudo ln -s /etc/sv/dbus /var/service/
-sudo ln -s /etc/sv/elogind /var/service/
-sudo ln -s /etc/sv/polkitd /var/service/
-sudo ln -s /etc/sv/NetworkManager /var/service/
-sudo ln -s /etc/sv/lxdm /var/service/
-```
-
-## 9. Desativar o XFCE-Polkit (bugado — não usar)
+## 6. Desativar o XFCE-Polkit (bugado — não usar)
 ```
 mkdir -p ~/.config/autostart
 cp /etc/xdg/autostart/xfce-polkit.desktop ~/.config/autostart/
 sed -i 's/^Hidden=.*/Hidden=true/' ~/.config/autostart/xfce-polkit.desktop || echo 'Hidden=true' >> ~/.config/autostart/xfce-polkit.desktop
 ```
 
-## 10. Criar .xinitrc (opcional para startx)
+## 7. Criar .xinitrc (opcional para startx)
 ```
 cat <<EOF > ~/.xinitrc
 #!/bin/sh
@@ -66,6 +57,15 @@ setxkbmap -layout br -variant abnt2 &
 xsetroot -cursor_name left_ptr &
 exec startxfce4
 EOF
+```
+
+## 8. Ativar serviços obrigatórios (runit)
+```
+sudo ln -s /etc/sv/dbus /var/service/
+sudo ln -s /etc/sv/elogind /var/service/
+sudo ln -s /etc/sv/polkitd /var/service/
+sudo ln -s /etc/sv/NetworkManager /var/service/
+sudo ln -s /etc/sv/lxdm /var/service/
 ```
 
 ## Finalização
