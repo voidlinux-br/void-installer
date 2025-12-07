@@ -655,7 +655,7 @@ sh_chooseservices() {
 			--ok-label "${cmsg_Ativar[$LC_DEFAULT]}" \
 			--extra-button --extra-label "${cmsg_Desativar[$LC_DEFAULT]}" \
 			--checklist "${cmsg_MENU[$LC_DEFAULT]}" \
-			0 0 30 "${array[@]}" 2>&1 >/dev/tty)
+			24 0 30 "${array[@]}" 2>&1 >/dev/tty)
 
 		exit_status=$?
 		_SERVICES=($(strtoarray "$service"))
