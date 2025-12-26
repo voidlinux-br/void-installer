@@ -61,7 +61,7 @@ install:
 	@mkdir -p ${INFODIR}
 	@cp Makefile LICENSE README.md ${DOCDIR}/
 	@cp Makefile LICENSE README.md ${INFODIR}/
-    $cp -rf usr/share/locale/* /usr/share/locale/
+	@cp -rf usr/share/locale/* /usr/share/locale/
 	@echo ":: Feito! ${APP} software instalado em: ${BINDIR}"
 	@echo
 	@echo -e "uso:"
