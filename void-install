@@ -5,7 +5,7 @@
 #  void-install
 #  Created: 2022/12/24
 #  Altered: 2024/03/11
-#  Updated: qua 12 fev 2025 10:58:23 -04
+#  Updated: dom 28 dez 2025 11:55:45 -04
 #
 #  Copyright (c) 2022-2025, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -38,6 +38,8 @@ export TEXTDOMAIN=void-install
 #usermod -a -G bluetooth $USER
 
 #debug
+red=$(tput bold)$(tput setaf 196)
+green=$(tput bold)$(tput setaf 2)
 export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
 #set -e
@@ -45,7 +47,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='2.25.02.03-20250203'
+readonly _VERSION_='2.25.12.28-20251228'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk sfdisk efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
@@ -73,14 +75,98 @@ declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
 declare dialogRcFile="$HOME/.dialogrc"
 
+readconf() {
+	if [[ $LC_DEFAULT -eq 0 ]]; then
+		read -r -p "$@ [S/n]"
+	else
+		read -r -p "$@ [Y/n]"
+	fi
+	[[ ${REPLY^} == "" ]] && return 0
+	[[ ${REPLY^} == N ]] && return 1 || return 0
+}
+
+check_gettext() {
+   if ! command -v gettext >/dev/null; then
+      if readconf "${red}ERRO: Comando 'gettext' nao encontrado. Instalar pacote ?"; then
+         :
+         xbps-install -Sf gettext
+      else
+         exit 1
+      fi
+   fi
+}
+
+###########################################################################################################
+# Corte para teste do gettext
+check_gettext
+###########################################################################################################
+
+sh_enablePrintk() {
+	if [[ -w /proc/sys/kernel/printk ]]; then
+		echo 4 >/proc/sys/kernel/printk
+	fi
+}
+
+die() {
+	if test $# -ge 2; then
+		evaluate_retval 1
+	fi
+	local msg=$1
+	shift
+	printf "%-75s\n" "$(DOT)${bold}${red}$msg${reset}" >&2
+	sh_enablePrintk
+	exit 1
+}
+
+DOT() {
+	printf "%s" "${blue}:: ${reset}"
+}
+
+sh_checkDependencies() {
+	local d
+	local errorFound=false
+	declare -a missing
+
+	for d in "${DEPENDENCIES[@]}"; do
+		if [[ -z $(command -v "$d") ]]; then
+		  pkg="$d"
+		  [[ "$pkg" == 'lvm' ]] && pkg='lvm2'
+		  missing+=("$pkg")
+		  errorFound=true
+		  printf '%s\n' "${red}${cmsg_ERRO[$LC_DEFAULT]}${reset}: ${cmsg_CommandNotFound[$LC_DEFAULT]} ${cyan}'$d'${reset}"
+    fi
+	done
+
+	if $errorFound; then
+		echo "${yellow}--------------${cmsg_ImpossivelContinuar[$LC_DEFAULT]}-------------${reset}"
+		echo "${cmsg_ImpossivelContinuar1[$LC_DEFAULT]}" >&2
+		echo "${cmsg_ImpossivelContinuar2[$LC_DEFAULT]} \$PATH" >&2
+		echo "${yellow}-----------------------------------------------${reset}"
+
+		if [[ "$distro" = @(void|void-live|voidlinux) ]]; then
+			echo
+			if readconf "${yellow}${cmsg_InstCommand[$LC_DEFAULT]} '${cyan}${missing[*]}${reset}' ?"; then
+				if LC_ALL=C xbps-install -Sy "${missing[@]}"; then
+					errorFound=0
+					sh_checkDependencies
+				else
+					die "${cmsg_RunNewErro[$LC_DEFAULT]}"
+				fi
+			fi
+		else
+			die "${cmsg_ERRO[$LC_DEFAULT]}: ${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..."
+		fi
+	fi
+}
+
 cleanup() {
   rm -f "$dialogRcFile"
 }
 #trap cleanup EXIT
 
 sh_create_dialogrc() {
-  cat > "$dialogRcFile" <<-EOF
-creen_color = (white,black,off)
+  cat > "$dialogRcFile" <<-'EOF'
+screen_color = (white,black,off)
 dialog_color = (white,black,off)
 title_color = (cyan,black,on)
 border_color = dialog_color
@@ -252,6 +338,7 @@ declare _SOURCE="network"
 declare _ONLY_TTY=1
 #source /usr/bin/gettext.sh
 #declare Interrupted="$(gettext "Interrompido!") $(pgettext "context" "Saindo...")"
+
 declare Interrupted="$(gettext "Interrompido! Saindo...")"
 trap 'printf "\n${red}$Interrupted\n"; cleanup; exit 0' INT TERM HUP
 
@@ -511,12 +598,6 @@ sh_disablePrintk() {
 	fi
 }
 
-sh_enablePrintk() {
-	if [[ -w /proc/sys/kernel/printk ]]; then
-		echo 4 >/proc/sys/kernel/printk
-	fi
-}
-
 sh_loadSavedConfig() {
 	[[ -s "$app_conf" ]] || sh_touchConf
 	# shellcheck source=/dev/null
@@ -639,36 +720,6 @@ sh_checkcommand() {
 	return $?
 }
 
-sh_checkDependencies() {
-	local d
-	local errorFound=0
-	declare -a missing
-
-	for d in "${DEPENDENCIES[@]}"; do
-		[[ -z $(command -v "$d") ]] && missing+=("$d") && errorFound=1 && printf '%s\n' "${red}${cmsg_ERRO[$LC_DEFAULT]}${reset}: ${cmsg_CommandNotFound[$LC_DEFAULT]} ${cyan}'$d'${reset}"
-	done
-	if ((errorFound)); then
-		echo "${yellow}--------------${cmsg_ImpossivelContinuar[$LC_DEFAULT]}-------------${reset}"
-		echo "${cmsg_ImpossivelContinuar1[$LC_DEFAULT]}" >&2
-		echo "${cmsg_ImpossivelContinuar2[$LC_DEFAULT]} \$PATH" >&2
-		echo "${yellow}-----------------------------------------------${reset}"
-
-		if [[ "$distro" = @(void|void-live|voidlinux) ]]; then
-			echo
-			if readconf "${yellow}${cmsg_InstCommand[$LC_DEFAULT]} '${cyan}${missing[*]}${reset}' ?"; then
-				if LC_ALL=C xbps-install -Sy "${missing[@]}"; then
-					errorFound=0
-					sh_checkDependencies
-				else
-					die "${cmsg_RunNewErro[$LC_DEFAULT]}"
-				fi
-			fi
-		else
-			die "${cmsg_ERRO[$LC_DEFAULT]}: ${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..."
-		fi
-	fi
-}
-
 sh_setVarColors() {
 	# does the terminal support true-color?
 	if [[ -n "$(command -v "tput")" ]]; then
@@ -761,10 +812,6 @@ padr() {
 		char='='
 	fi
 	printf "%*s\n" "$COLS" "$text" | sed "s/ /$char/g"
-}
-
-DOT() {
-	printf "%s" "${blue}:: ${reset}"
 }
 
 msg() {
@@ -944,17 +991,6 @@ timespec() {
 	return 0
 }
 
-die() {
-	if test $# -ge 2; then
-		evaluate_retval 1
-	fi
-	local msg=$1
-	shift
-	printf "%-75s\n" "$(DOT)${bold}${red}$msg${reset}" >&2
-	sh_enablePrintk
-	exit 1
-}
-
 function debug() {
 	whiptail \
 		--fb \
@@ -997,16 +1033,6 @@ alerta() {
 		--ok-label "${cmsg_ok[$LC_DEFAULT]}" \
 		--msgbox "\n$2\n$3\n$4\n$5\n$6" \
 		10 81
-}
-
-readconf() {
-	if [[ $LC_DEFAULT -eq 0 ]]; then
-		read -r -p "$@ [S/n]"
-	else
-		read -r -p "$@ [Y/n]"
-	fi
-	[[ ${REPLY^} == "" ]] && return $false
-	[[ ${REPLY^} == N ]] && return $true || return $false
 }
 
 conf() {
