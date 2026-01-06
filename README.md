@@ -3,19 +3,19 @@
 ## Download:
 
 - 1 - using git
-	- git clone --depth=1 https://github.com/voidlinux-br/void-installer
+	- git clone --depth=1 https://github.com/voidlinuxbr/void-installer
 
 - 2 - using curl/wget stdin
-	- bash <(curl -s -L https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
-	- bash <(wget -q -O - https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
-	- curl -s -O https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh | bash
-	- wget -q -O - https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh | bash
+	- bash <(curl -s -L https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh)
+	- bash <(wget -q -O - https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh)
+	- curl -s -O https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh | bash
+	- wget -q -O - https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh | bash
 
 - 3 - using curl/wget
-	- curl -O https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh
-	- wget https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh
+	- curl -O https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh
+	- wget https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh
 	- chmod +x install.sh
-	- ./install.sh
+	- bash ./install.sh
 
 ## Installation (after download):
 - 1 - using make
