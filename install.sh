@@ -1,4 +1,6 @@
 #!/bin/sh
+# POSIX sh compatible installer
+#
 #  install.sh
 #  Created: 2023/01/10
 #  Altered: 2024/09/23
@@ -33,81 +35,147 @@
 #source <(curl -s -L https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh)
 #source <(wget -q -O - https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh)
 
-{
-	oops() {
-		echo "$0:" "$@" >&2
-		exit 1
-	}
+#!/bin/sh
+# install.sh — POSIX sh, colorido, compatível com ISO (sh)
 
-	umask 0022
-	url="https://raw.githubusercontent.com/voidlinuxbr/void-installer/master"
-	url_blob="https://github.com/voidlinuxbr/void-installer/blob/master"
-	declare -a files_bin=('void-install' 'void-maketar' 'void-mirror' 'void-services' 'void-testmirror' 'void-wifi' 'void-remove-vg' 'void-clonedisk' 'void-xrandr' 'void-runimage' 'void-gitclone' 'void-parted' 'void-chroot' 'void-efivar' 'void-setfont')
-	declare -a files_home=('LICENSE' 'Makefile' 'README.md' 'bashrc.sh' '.dircolors' 'install.sh')
-	declare -a files_lang=('void-clonedisk' 'void-gitclone' 'void-install' 'void-maketar' 'void-mirror' 'void-remove-vg' 'void-services' 'void-testmirror' 'void-wifi' 'void-xrandr' 'void-runimage')
-	declare -a files_blob=('void-x86_64-base-custom-current.tar.xz')
-	declare -a idioma=(bg cs da de el en es et fi fr he hr hu is it ja ko nl no pl pt-PT pt-BR ro ru sk sv tr uk zh fa hi ar)
-	tmpDir=~/void-installer
-	dir_locale="usr/share/locale"
+###############################################################################
+# CORES ANSI (POSIX)
+###############################################################################
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[1;34m'
+CYAN='\033[1;36m'
+RESET='\033[0m'
+BOLD='\033[1m'
 
-	[[ ! -d "$tmpDir" ]] && { mkdir -p "$tmpDir" || oops "Unable to create temporary directory to download files"; }
-
-	require_util() {
-		command -v "$1" >/dev/null 2>&1 || oops "you do not have '$1' installed, which is needed to $2"
-	}
-
-	#require_util tar "descompatar o tarball"
-
-	if command -v curl >/dev/null 2>&1; then
-		cmdfetch() { curl --silent --continue-at - --insecure -L "$1" -o "$2"; }
-	elif command -v wget >/dev/null 2>&1; then
-		cmdfetch() { wget --quiet -c "$1" -O "$2"; }
-	else
-		require_util curl "downloader"
-		require_util wget "downloader"
-	fi
-
-	for f in "${files_bin[@]}"; do
-		echo "Downloading $f to '$tmpDir'..."
-		cmdfetch "$url/$f" "$tmpDir/$f" || oops "download failure '$url/$f'"
-	done
-
-	for f in "${files_home[@]}"; do
-		echo "Downloading $f to '$tmpDir'..."
-		cmdfetch "$url/$f" "$tmpDir/$f" || oops "download failure '$url/$f'"
-	done
-
-	for f in "${files_blob[@]}"; do
-		if cmdfetch "$url_blob/$f" "$tmpDir/$f" || oops "download failure '$url/$f'"; then
-			echo "Downloading $f to '$tmpDir'..."
-		fi
-	done
-
-	for lang in "${idioma[@]}"; do
-		for f in "${files_lang[@]}"; do
-			[[ ! -d "$tmpDir/$dir_locale/$lang/LC_MESSAGES/" ]] && {
-				mkdir -p "$tmpDir/$dir_locale/$lang/LC_MESSAGES/" ||
-					oops "Unable to create temporary directory to download files"
-			}
-			if cmdfetch "$url/$dir_locale/$lang/LC_MESSAGES/$f.mo" "$tmpDir/$dir_locale/$lang/LC_MESSAGES/$f.mo"; then
-				echo "Downloading $f.mo to '$tmpDir/$dir_locale/$lang/LC_MESSAGES/'"
-			fi
-		done
-	done
-
-	sudo cp -rfv $tmpDir/usr/share/locale/* /usr/share/locale/
-
-	for file in "${files_bin[@]}"; do
-		sudo chmod +x $tmpDir/$file
-		sudo cp -rfv $tmpDir/$file /usr/bin/
-	done
-
-	ls -la --color=auto $tmpDir
-
-	echo
-	echo "digite:"
-	echo "	sudo void-install"
-	echo "ou entre em: $tmpDir e digite:"
-	echo "	sudo ./void-install"
+# desliga cores se não for TTY
+[ -t 1 ] || {
+   RED= GREEN= YELLOW= BLUE= CYAN= RESET= BOLD=
 }
 
+###############################################################################
+# FUNÇÕES DE LOG
+###############################################################################
+msg()   { printf "%b\n" "${CYAN}==>${RESET} $*"; }
+ok()    { printf "%b\n" "${GREEN}[OK]${RESET} $*"; }
+warn()  { printf "%b\n" "${YELLOW}[WARN]${RESET} $*"; }
+err()   { printf "%b\n" "${RED}[ERRO]${RESET} $*" >&2; }
+oops()  { err "$*"; exit 1; }
+
+###############################################################################
+# CONFIGURAÇÃO
+###############################################################################
+umask 0022
+
+url="https://raw.githubusercontent.com/voidlinuxbr/void-installer/master"
+url_blob="https://github.com/voidlinuxbr/void-installer/blob/master"
+
+files_bin="void-install void-testmirror void-remove-vg void-clonedisk"
+files_home="LICENSE README.md"
+files_lang="void-install void-testmirror void-remove-vg void-clonedisk"
+files_blob="void-x86_64-base-custom-current.tar.xz"
+idioma="en es pt-BR"
+
+tmpDir="$HOME/void-installer"
+dir_locale="usr/share/locale"
+
+###############################################################################
+# PREPARAÇÃO
+###############################################################################
+msg "Preparando diretório temporário"
+[ -d "$tmpDir" ] || mkdir -p "$tmpDir" || oops "Unable to create $tmpDir"
+ok "Diretório $tmpDir pronto"
+
+require_util() {
+   command -v "$1" >/dev/null 2>&1 ||
+      oops "Você não tem '$1' instalado (necessário para $2)"
+}
+
+###############################################################################
+# DOWNLOAD TOOL
+###############################################################################
+if command -v curl >/dev/null 2>&1; then
+   cmdfetch() { curl -fsSL "$1" -o "$2"; }
+elif command -v wget >/dev/null 2>&1; then
+   cmdfetch() { wget -q "$1" -O "$2"; }
+else
+   require_util curl downloader
+   require_util wget downloader
+fi
+
+###############################################################################
+# DOWNLOAD BINÁRIOS
+###############################################################################
+for f in $files_bin; do
+   msg "Baixando $f"
+   cmdfetch "$url/$f" "$tmpDir/$f" || oops "Falha no download: $f"
+   ok "$f baixado"
+done
+
+###############################################################################
+# DOWNLOAD ARQUIVOS HOME
+###############################################################################
+for f in $files_home; do
+   msg "Baixando $f"
+   cmdfetch "$url/$f" "$tmpDir/$f" || oops "Falha no download: $f"
+   ok "$f baixado"
+done
+
+###############################################################################
+# DOWNLOAD BLOBS
+###############################################################################
+for f in $files_blob; do
+   msg "Baixando $f"
+   cmdfetch "$url_blob/$f" "$tmpDir/$f" || oops "Falha no download: $f"
+   ok "$f baixado"
+done
+
+###############################################################################
+# DOWNLOAD IDIOMAS
+###############################################################################
+for lang in $idioma; do
+   for f in $files_lang; do
+      target="$tmpDir/$dir_locale/$lang/LC_MESSAGES"
+      [ -d "$target" ] || mkdir -p "$target" || oops "Unable to create $target"
+      msg "Idioma $lang: $f.mo"
+      cmdfetch "$url/$dir_locale/$lang/LC_MESSAGES/$f.mo" \
+         "$target/$f.mo" >/dev/null 2>&1 || true
+   done
+done
+ok "Idiomas processados"
+
+###############################################################################
+# INSTALA LOCALES
+###############################################################################
+msg "Instalando arquivos de idioma"
+sudo cp -rf "$tmpDir/usr/share/locale/"* /usr/share/locale/ \
+   || oops "Falha ao instalar locales"
+ok "Locales instalados"
+
+###############################################################################
+# INSTALA BINÁRIOS
+###############################################################################
+msg "Instalando binários"
+for f in $files_bin; do
+   sudo chmod +x "$tmpDir/$f"
+   sudo cp -f "$tmpDir/$f" /usr/bin/ || oops "Falha ao instalar $f"
+done
+ok "Binários instalados"
+
+###############################################################################
+# FINAL
+###############################################################################
+echo
+msg "Conteúdo de $tmpDir"
+ls -la --color=auto "$tmpDir"
+
+echo
+printf "%b\n" "${BOLD}${GREEN}Pronto! Para continuar:${RESET}"
+echo
+printf "%b\n" "   ${YELLOW}sudo bash void-install -i${RESET}"
+echo
+printf "%b\n" "${CYAN}ou entre em:${RESET} ${BOLD}$tmpDir${RESET}"
+printf "%b\n" "   ${BLUE}cd $tmpDir${RESET}"
+printf "%b\n" "   ${YELLOW}sudo bash void-install -i${RESET}"
+echo
