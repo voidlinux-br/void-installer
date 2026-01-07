@@ -87,7 +87,7 @@ declare DEFITEM=''
 declare -gi njobs=73
 declare -gi ncounter=0
 declare -gi quiet=0
-declare -gi grafico=1
+declare -gi grafico=0
 #
 declare -gA AsUser=([cpass]='voidlinux' [cpassroot]='voidlinux' [chostname]='voidlinux' [cgroups]='wheel,audio,video,floppy,cdrom,optical,kvm,xbuilder')
 declare -gA Amkfs
@@ -136,7 +136,7 @@ check_gettext() {
 	if ! command -v gettext >/dev/null; then
 		if readconf "${red}ERRO: Comando 'gettext' nao encontrado. Instalar pacote ?"; then
 			:
-			xbps-install -Sf gettext rsync parted curl xz
+			xbps-install -Sf bash gettext rsync parted curl xz
 		else
 			exit 1
 		fi
@@ -1655,6 +1655,13 @@ sh_cmd_job() {
 	return "$lretval"
 }
 
+strip_ansi() {
+   printf '%s' "$1" |
+      sed \
+         -e 's/\x1B\[[0-9;]*[A-Za-z]//g' \
+         -e 's/\x1B[][()#;?]*[0-9A-Za-z]//g'
+}
+
 sh_chroot_job() {
 	local cmsg="$1"
 	local cjob="$2"
@@ -1663,17 +1670,24 @@ sh_chroot_job() {
 	local lretval=0
 
 	last_msg="$cmsg"
-	if [[ -n "$level" ]]; then
-		msg "INFO" "$last_msg" "$(log_info_msg_level "$last_msg")"
-	else
-		msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	fi
+  	if [[ -n "$level" ]]; then
+  		msg "INFO" "$last_msg" "$(log_info_msg_level "$last_msg")"
+  	else
+  		msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+  	fi
+
 	if ((grafico)); then
+      clean_logmessage="$(strip_ansi "$logmessage")"
 		chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" |
-			dialog --colors --backtitle "$ccabec" --title "${YELLOW}Step:$ufmt ${RED}==> ${RESET}[$logmessage] ${BOLD}${WHITE}[$(sh_time_elapsed)]" --progressbox $(($MAXROW / 2)) $(($MAXCOL - 20))
+         dialog \
+           --colors \
+   		  --backtitle "$ccabec" \
+           --title "\Zb\Z3Step:$ufmt \Z1==>\Zn \Z7[$clean_logmessage]\Zn \Z6[$(sh_time_elapsed)]\Zn" \
+           --progressbox $((MAXROW / 2)) $((MAXCOL - 20))
 	else
 		chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	fi
+
 	lretval="${PIPESTATUS[0]}"
 	evaluate_retval "$lretval" "$erro_fatal" "" "$level"
 	shell='/bin/sh'
@@ -5564,18 +5578,23 @@ sh_setLogPrefix
    exit $(($# ? 0 : 1))
 }
 
-[[ -z "${1-}" || "${1-}" = @(-h|--help) ]] && {
+[[ "${1-}" = @(-h|--help) ]] && {
    sh_usage
    exit $(($# ? 0 : 1))
 }
 
 sh_checkDependencies
+sh_checkRoot
 sh_checkDisplay
 #sh_update_self "$@"
 sh_loadSavedConfig
 sh_disablePrintk
 sh_loadconf
-sh_init "$@"
+
+case " $* " in
+   *" -c "*|*" --chroot "*) grafico=0; sh_init "$@" ;;
+   *)                       grafico=1; sh_init -i "$@" ;;
+esac
 
 # sanity checks
 if ! $LINSTALL && ! $LCHROOT; then

@@ -173,9 +173,9 @@ ls -la --color=auto "$tmpDir"
 echo
 printf "%b\n" "${BOLD}${GREEN}Pronto! Para continuar:${RESET}"
 echo
-printf "%b\n" "   ${YELLOW}sudo bash void-install -i${RESET}"
+printf "%b\n" "   ${YELLOW}sudo bash void-install${RESET}"
 echo
 printf "%b\n" "${CYAN}ou entre em:${RESET} ${BOLD}$tmpDir${RESET}"
 printf "%b\n" "   ${BLUE}cd $tmpDir${RESET}"
-printf "%b\n" "   ${YELLOW}sudo bash void-install -i${RESET}"
+printf "%b\n" "   ${YELLOW}sudo bash void-install${RESET}"
 echo
