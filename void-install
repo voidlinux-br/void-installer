@@ -4672,54 +4672,6 @@ sh_version() {
 	EOF
 }
 
-sh_init() {
-	while test $# -gt 0; do
-		case $1 in
-		-h | -H | --help)
-			sh_usage
-			exit $(($# ? 0 : 1))
-			;;
-		-V | --version)
-			sh_version
-			exit $(($# ? 0 : 1))
-			;;
-		-f | --file)
-			LFILE=$true
-			if [[ -n "$2" && "${2:0:1}" != '-' ]]; then
-				app_conf="$2"
-				shift
-			fi
-			sh_checkRoot
-			sh_loadconf
-			;;
-		-n | --nocolor)
-			log_msg "$(gettext "Desligando saída de cores")"
-			sh_unsetVarColors
-			;;
-		-q | --quiet)
-			log_msg "$(gettext "Ativando resumo na saída")"
-			quiet=$true
-			;;
-		-g | --grafico)
-			log_msg "$(gettext "Ligando modo gráfico")"
-			grafico=$true
-			;;
-		-i | -I | --install)
-			sh_checkRoot
-			LINSTALL=true
-			appexec+=('sh_main_menu')
-			;;
-		-c | -C | --chroot)
-			sh_checkRoot
-			LCHROOT=true
-			appexec+=('sh_dryrun')
-			;;
-		*) die "${cmsg_operNotSupported[LC_DEFAULT]}: $1 $(gettext 'usar -h para ajuda')" ;;
-		esac
-		shift
-	done
-}
-
 sh_getfullusernameloggeduser() {
 	local passwd_fields
 	IFS=: read -r -a passwd_fields <<<"$(grep -w "$USER" /etc/passwd)"
@@ -5573,6 +5525,54 @@ sh_rebuild_amntpoint_for_new_disk() {
       | grep -P 'TYPE="(part)"' \
       | sort -k5,5 -k2,2
    )
+}
+
+sh_init() {
+	while test $# -gt 0; do
+		case $1 in
+		-h | -H | --help)
+			sh_usage
+			exit $(($# ? 0 : 1))
+			;;
+		-V | --version)
+			sh_version
+			exit $(($# ? 0 : 1))
+			;;
+		-f | --file)
+			LFILE=$true
+			if [[ -n "$2" && "${2:0:1}" != '-' ]]; then
+				app_conf="$2"
+				shift
+			fi
+			sh_checkRoot
+			sh_loadconf
+			;;
+		-n | --nocolor)
+			log_msg "$(gettext "Desligando saída de cores")"
+			sh_unsetVarColors
+			;;
+		-q | --quiet)
+			log_msg "$(gettext "Ativando resumo na saída")"
+			quiet=$true
+			;;
+		-g | --grafico)
+			log_msg "$(gettext "Ligando modo gráfico")"
+			grafico=$true
+			;;
+		-i | -I | --install)
+			sh_checkRoot
+			LINSTALL=true
+			appexec+=('sh_main_menu')
+			;;
+		-c | -C | --chroot)
+			sh_checkRoot
+			LCHROOT=true
+			appexec+=('sh_dryrun')
+			;;
+		*) die "${cmsg_operNotSupported[LC_DEFAULT]}: $1 $(gettext 'usar -h para ajuda')" ;;
+		esac
+		shift
+	done
 }
 
 sh_setEnvironment
