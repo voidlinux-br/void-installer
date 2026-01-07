@@ -3802,14 +3802,29 @@ sh_extract_root_fs() {
 	fi
 }
 
+sh_install_pkgs_in_chroot() {
+   local msg="$1"
+   local pkgs="$2"
+
+   [[ -n "$pkgs" ]] || return 1
+
+   sh_chroot_job "$(gettext "$msg") $dir_install" \
+      "${XBPS_INSTALL_UNPACK_ONLY} $pkgs" \
+      "$err_not_fatal" \
+      "$err_not_fatal"
+}
+
 sh_install() {
 	local user="${AsUser[cuser]}"
 	local start_datetime
 	local end_datetime
-	local akernel=(linux dbus)
+	local akernel=(linux)
+#        akernel+=(dbus)
 	local afirmware=(wifi-firmware)
-	local abase=(zstd xz cryptsetup lvm2 wireless_tools wpa_supplicant)
-	local agrub=(grub os-prober grub-i386-efi grub-x86_64-efi grub-utils)
+	local abase=(cryptsetup lvm2 wireless_tools wpa_supplicant)
+#      abase+=(zstd xz)
+	local agrub=(grub-i386-efi grub-utils)
+#        agrub+=(grub os-prober grub-x86_64-efi)
 
 	if $LCUSTOM; then
 		abase+=(socklog-void openntpd)
@@ -3833,7 +3848,7 @@ sh_install() {
 		if sh_getBootEFI; then
 			agrub+=(grub-"$TARGET_EFI")
 			agrub+=(efivar)
-			agrub+=(efibootmgr)
+#			agrub+=(efibootmgr)
 		else
 			LEFI=false
 			LBIOS=true
@@ -3849,34 +3864,28 @@ sh_install() {
 		sh_copy_keys
 		if sh_extract_root_fs; then
 			sh_init_bind
-			last_msg="${cmsg_Copiando[$LC_DEFAULT]} /etc/resolv.conf ${cmsg_Em[$LC_DEFAULT]} $dir_install"
-			msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-			cp /etc/resolv.conf "$dir_install/etc/" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-			evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
+         sh_cmd_job "${cmsg_Copiando[$LC_DEFAULT]} /etc/resolv.conf ${cmsg_Em[$LC_DEFAULT]} $dir_install" "cp -f /etc/resolv.conf $dir_install/etc/"
 			sh_update_mirror
-			#			sh_checkNet "$url_mirror" || return 1
+#			sh_checkNet "$url_mirror" || return 1
 
 			# Go install
 			sh_chroot_job "${cmsg_Atualizando[$LC_DEFAULT]} xbps ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install --sync --update xbps --yes"
 			sh_chroot_job "${cmsg_AtualizandoRepositorio[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "LC_ALL=C xbps-install --sync --update --yes"
+
 			if [[ "${AConfMirror[_SOURCE]}" = "local" ]]; then
-				sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "${XBPS_INSTALL_UNPACK_ONLY} ${agrub[*]}"
+				sh_install_pkgs_in_chroot "Atualizando Pacotes Base" "${agrub[*]}"
 			else
-				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Kernel ${cmsg_Em[$LC_DEFAULT]} $dir_install" "${XBPS_INSTALL_UNPACK_ONLY} ${akernel[*]}"
-				sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Grub ${cmsg_Em[$LC_DEFAULT]} $dir_install" "${XBPS_INSTALL_UNPACK_ONLY} ${agrub[*]}"
-				sh_chroot_job "${cmsg_AtualizandoPacotesBase[$LC_DEFAULT]} ${cmsg_Em[$LC_DEFAULT]} $dir_install" "${XBPS_INSTALL_UNPACK_ONLY} ${abase[*]}"
-				#  			sh_chroot_job "${cmsg_Instalando[$LC_DEFAULT]} Wifi Firmware ${cmsg_Em[$LC_DEFAULT]} $dir_install"    "${XBPS_INSTALL_UNPACK_ONLY} ${afirmware[*]}"
-				if [[ -n "$_PKGS" ]]; then
-					sh_chroot_job "${cmsg_AtualizandoPacotesAdicionais[$LC_DEFAULT]} $dir_install" "${XBPS_INSTALL_UNPACK_ONLY} $_PKGS" "$err_not_fatal" "$err_not_fatal"
-				fi
-				sh_chroot_job "$(gettext "Instalando Daemons em") $dir_install" "${XBPS_INSTALL_UNPACK_ONLY} ${aDaemons[*]}" "$err_not_fatal" "$err_not_fatal"
-				sh_chroot_job "$(gettext "Instalando Editores texto em") $dir_install" "${XBPS_INSTALL_UNPACK_ONLY} ${aEditorTxt[*]}" "$err_not_fatal" "$err_not_fatal"
-				sh_chroot_job "$(gettext "Instalando Downloaders em") $dir_install" "${XBPS_INSTALL_UNPACK_ONLY} ${aDownloader[*]}" "$err_not_fatal" "$err_not_fatal"
-				sh_chroot_job "$(gettext "Instalando Utilitários em") $dir_install" "${XBPS_INSTALL_UNPACK_ONLY} ${aUtility[*]}" "$err_not_fatal" "$err_not_fatal"
-				sh_chroot_job "$(gettext "Instalando Archiver's tty em") $dir_install" "${XBPS_INSTALL_UNPACK_ONLY} ${aArchiverTty[*]}" "$err_not_fatal" "$err_not_fatal"
-				if [[ -n "$_EXTRAS" ]]; then
-					sh_chroot_job "$(gettext "Instalando Extras's em") $dir_install" "${XBPS_INSTALL_UNPACK_ONLY} $_EXTRAS" "$err_not_fatal"
-				fi
+				sh_install_pkgs_in_chroot "Instalando Kernel" "${akernel[*]}"
+				sh_install_pkgs_in_chroot "Instalando GRUB" "${agrub[*]}"
+				sh_install_pkgs_in_chroot "Atualizando Pacotes Base" "${abase[*]}"
+#  			sh_install_pkgs_in_chroot "Instalando Wifi Firmware" "${afirmware[*]}"
+				sh_install_pkgs_in_chroot "Atualizando Pacotes Adicionais" "$_PKGS"
+				sh_install_pkgs_in_chroot "Instalando Daemons em" "${aDaemons[*]}"
+				sh_install_pkgs_in_chroot "Instalando Editores texto em" "${aEditorTxt[*]}"
+				sh_install_pkgs_in_chroot "Instalando Downloaders em" "${aDownloader[*]}"
+            sh_install_pkgs_in_chroot "Instalando Utilitário em" "${aUtility[*]}"
+            sh_install_pkgs_in_chroot "Instalando Archiver's tty em" "${aArchiverTty[*]}"
+				sh_install_pkgs_in_chroot "Instalando Extras em" "$_EXTRAS"
 			fi
 			sh_update_bashrc
 			sh_grubInstall

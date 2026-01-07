@@ -2,8 +2,10 @@
 #  install.sh
 #  Created: 2023/01/10
 #  Altered: 2024/09/23
+#  Updated: ter 06 jan 2026 22:00:53 -04
 #
-#  Copyright (c) 2023-2024, Vilmar Catafesta <vcatafesta@gmail.com>
+#  Copyright (c) 2019-2026, Vilmar Catafesta <vcatafesta@gmail.com>
+#  Copyright (c) 2025-2026, VoidLinuxBR Team
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,10 +28,10 @@
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 #  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#sh <(curl -s -L https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
-#sh <(wget -q -O - https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
-#source <(curl -s -L https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
-#source <(wget -q -O - https://raw.githubusercontent.com/voidlinux-br/void-installer/master/install.sh)
+#sh <(curl -s -L https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh)
+#sh <(wget -q -O - https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh)
+#source <(curl -s -L https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh)
+#source <(wget -q -O - https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh)
 
 {
 	oops() {
@@ -38,8 +40,8 @@
 	}
 
 	umask 0022
-	url="https://raw.githubusercontent.com/voidlinux-br/void-installer/master"
-	url_blob="https://github.com/voidlinux-br/void-installer/blob/master"
+	url="https://raw.githubusercontent.com/voidlinuxbr/void-installer/master"
+	url_blob="https://github.com/voidlinuxbr/void-installer/blob/master"
 	declare -a files_bin=('void-install' 'void-maketar' 'void-mirror' 'void-services' 'void-testmirror' 'void-wifi' 'void-remove-vg' 'void-clonedisk' 'void-xrandr' 'void-runimage' 'void-gitclone' 'void-parted' 'void-chroot' 'void-efivar' 'void-setfont')
 	declare -a files_home=('LICENSE' 'Makefile' 'README.md' 'bashrc.sh' '.dircolors' 'install.sh')
 	declare -a files_lang=('void-clonedisk' 'void-gitclone' 'void-install' 'void-maketar' 'void-mirror' 'void-remove-vg' 'void-services' 'void-testmirror' 'void-wifi' 'void-xrandr' 'void-runimage')
