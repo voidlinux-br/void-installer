@@ -3297,12 +3297,14 @@ EOF
 sh_loadconf() {
 	last_msg="$(gettext "Loading configuration file"): $app_conf"
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	# shellcheck source=/dev/null
-	if [[ -f "$app_conf" ]]; then
+
+	if [[ -r "$app_conf" ]]; then
+   	# shellcheck source=/dev/null
 		source "$app_conf"
 		evaluate_retval "$?"
 		sh_parseconf
 	else
+      rm -f "$app_conf"
 		evaluate_retval "$?" "1" "${cmsg_falhaAbertura[$LC_DEFAULT]} $app_conf!"
 	fi
 }
