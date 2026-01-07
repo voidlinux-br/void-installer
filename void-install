@@ -1644,11 +1644,20 @@ sh_cmd_job() {
 	last_msg="$cmsg"
 	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
 	#	eval "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+
 	if ((grafico)); then
-		eval "$cjob" 2>&1 | tee -i -a "$BOOTLOG" | dialog --colors --backtitle "$cmsg" --title "$cmsg" --begin 10 50 --progressbox 24 120 --and-widget
+		eval "$cjob" 2>&1 | tee -i -a "$BOOTLOG" | \
+		   ${DIALOG} \
+		      --colors \
+		      --backtitle "$cmsg" \
+		      --title "$cmsg" \
+		      --begin 10 50 \
+		      --progressbox 24 120 \
+		      --and-widget
 	else
 		eval "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	fi
+
 	lretval="${PIPESTATUS[0]}"
 	evaluate_retval "$lretval" "$erro_fatal"
 	shell='/bin/sh'
@@ -3743,7 +3752,7 @@ sh_cp_rootfs() {
 }
 
 sh_touch_keys() {
-   sh_cmd_job "Criando chaves ${cmsg_Em[$LC_DEFAULT]} $dir_install" "mkdir -p keys"
+   sh_cmd_job "Criando chaves ${cmsg_Em[$LC_DEFAULT]} $dir_install" "mkdir -p keys" "$err_not_fatal"
 
    cat >keys/60:ae:0c:d6:f0:95:17:80:bc:93:46:7a:89:af:a3:2d.plist <<-EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -3827,9 +3836,9 @@ sh_copy_keys() {
    local destdirkeys="$dir_install/var/db/xbps/keys"
 
 	sh_touch_keys
-	sh_cmd_job "Criando diretorio de chaves em $destdirkeys" "mkdir -p $destdirkeys"
-	sh_cmd_job "Copiando chaves da ISO para $destdirkeys" "cp -f /var/db/xbps/keys/*.plist $destdirkeys/"
-	sh_cmd_job "Copiando chaves locais para $destdirkeys" "cp -f keys/*.plist $destdirkeys/"
+	sh_cmd_job "Criando diretorio de chaves em $destdirkeys" "mkdir -p $destdirkeys" "$err_not_fatal"
+	sh_cmd_job "Copiando chaves da ISO para $destdirkeys" "cp -f /var/db/xbps/keys/*.plist $destdirkeys/" "$err_not_fatal"
+	sh_cmd_job "Copiando chaves locais para $destdirkeys" "cp -f keys/*.plist $destdirkeys/" "$err_not_fatal"
 }
 
 sh_install_prereqs() {
