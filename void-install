@@ -5,7 +5,7 @@
 #  void-install
 #  Created: 2022/12/24
 #  Altered: 2024/03/11
-#  Updated: qui 08 jan 2026 04:48:08 -04
+#  Updated: sex 09 jan 2026 13:31:26 -04
 #
 #  Copyright (c) 2022-2025, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -51,7 +51,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='3.01.07-20260107'
+readonly _VERSION_='3.01.09-20260109'
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 #                      cfdisk gdisk  efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
 declare distro=$(uname -n)
@@ -3785,8 +3785,8 @@ sh_checkInstall() {
 		#		DEFITEM="Wifi"
 		#		return 1
 	elif ! $LEXTRA; then
-		alerta "EXTRA" "${cmsg_NotConfExtra[$LC_DEFAULT]}"
-		DEFITEM="Extra"
+		alerta "EXTRA" "${RED}${cmsg_NotConfExtra[$LC_DEFAULT]}${RESET}"
+		DEFITEM="${cmsg_Usuario[$LC_DEFAULT]}"
 		return 1
 	fi
 
@@ -4733,7 +4733,7 @@ sh_menu_language() {
 
 sh_voidServices() {
 	if [[ -n $(command -v void-services) || -n $(command -v ./void-services) ]]; then
-		void-services "$LC_DEFAULT" "-g"
+		bash void-services "$LC_DEFAULT" "-g"
 		return 0
 	fi
 	msg "INFO" "$(log_info_msg "$(gettext "Aguarde...") ${cmsg_Gerando[$LC_DEFAULT]} test with void-mirror ${xurl}")"
@@ -4764,11 +4764,12 @@ sh_main_menu() {
 		$LSOURCE && MENU_SOURCE="${YELLOW}[${AConfMirror[_SOURCE]}]${RST} ● " || MENU_SOURCE="${RED}[not defined]${RST} ● "
 		$LDISK && MENU_DEVICE="${YELLOW}[${AConfDisk[_DEVICE]}]${RST} ● " || MENU_DEVICE="${RED}[not defined]${RST} ● "
 		$LGRUB && MENU_BOOTLOADER="${YELLOW}[${AConfDisk[_BOOTLOADER]}]${RST} ● " || MENU_BOOTLOADER="${RED}[not defined]${RST} ● "
-		$LMKPARTED && MENU_FS="${YELLOW}[OK]${RST} ● " || MENU_FS="${RED}[not defined]${RST} ● "
+		$LMKPARTED && MENU_FS="${YELLOW}[OK => revise! ]${RST} ● " || MENU_FS="${RED}[not defined]${RST} ● "
 		$LKEYMAP && MENU_KEYMAP="${YELLOW}[${AConfLocale[_KEYMAP]}]${RST} ● " || MENU_KEYMAP="${RED}[not defined]${RST} ● "
 		$LTIMEZONE && MENU_TIMEZONE="${YELLOW}[${AConfLocale[_TIMEZONE]}]${RST} ● " || MENU_TIMEZONE="${RED}[not defined]${RST} ● "
 		$LAUDIO && MENU_AUDIO="${YELLOW}[${AConfAudio[_AUDIOSERVER]}]${RST} ● " || MENU_AUDIO="${RED}[not defined]${RST} ● "
-		$LWM && MENU_WM="${YELLOW}[${_WINDOWMANAGER[*]}]${RST} ● " || MENU_WM="${RED}[not defined]${RST} ● "
+		$LCUSTOM && MENU_CUSTOM="CUSTOM" || MENU_CUSTOM=""
+		$LWM && MENU_WM="${YELLOW}[${_WINDOWMANAGER[*]} ${MENU_CUSTOM}]${RST} ● " || MENU_WM="${RED}[not defined]${RST} ● "
 		$LEXTRA && MENU_EXTRA="${YELLOW}[OK]${RST} ● " || MENU_EXTRA="${RED}[not defined]${RST} ● "
 
 		menu=$(${DIALOG} \
@@ -4793,11 +4794,14 @@ sh_main_menu() {
 			"${cmsg_Usuario[$LC_DEFAULT]}" "${MENU_EXTRA}${cmsg_descExtra[LC_DEFAULT]}" \
 			"Audio" "${MENU_AUDIO}${cmsg_DefinirAudioServer[LC_DEFAULT]}" \
 			"${cmsg_Instalar[$LC_DEFAULT]}" "${cmsg_descInstalar[$LC_DEFAULT]}" \
+         '↑↓' '↓↑' \
+			"Tema" "Seletor de temas do dialog (opcional)" \
+			"${cmsg_Servicos[$LC_DEFAULT]}" "${cmsg_utilvoidservices[LC_DEFAULT]}" \
+			"Clonedisk" "Utilitário para clonar discos (opcional)" \
 			"Fde" "Full-Disk Encryption + Lvm (optional)" \
 			"Lvm" "Logical Volume Management (optional)" \
 			"Vg" "Delete/Clear Volume Group (VG) from LVM (optional)" \
 			"Wifi" "${cmsg_descWifi[LC_DEFAULT]}" \
-			"${cmsg_Servicos[$LC_DEFAULT]}" "${cmsg_utilvoidservices[LC_DEFAULT]}" \
 			"${cmsg_Sair[$LC_DEFAULT]}" "${cmsg_descSair[LC_DEFAULT]}" 2>&1 >/dev/tty)
 
 		if [ $? -eq 3 ]; then
@@ -4818,11 +4822,14 @@ sh_main_menu() {
 		"${cmsg_Usuario[$LC_DEFAULT]}") sh_confadduser "$@" && [ -n "$LEXTRA" ] && DEFITEM="Audio" ;;
 		"Audio") sh_chooseaudioserver "$@" && [ -n "$LAUDIO" ] && DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}" ;;
 		"${cmsg_Instalar[$LC_DEFAULT]}") sh_install ;;
+      '↑↓') : ;;
+  	   "Tema") bash void-dialog-theme-selector ;;
+		"${cmsg_Servicos[$LC_DEFAULT]}") sh_voidServices ;;
+  	   "Clonedisk") bash void-clonedisk ;;
 		"Fde") sh_confLvm && [ -n "$LFDE" ] && DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}" ;;
 		"Lvm") sh_confLvm && [ -n "$LVM" ] && DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}" ;;
 		"Vg") sh_chooseVg ;;
 		"Wifi") sh_confWifi "$@" && [ -n "$LWIFI" ] && DEFITEM="${cmsg_Instalar[$LC_DEFAULT]}" ;;
-		"${cmsg_Servicos[$LC_DEFAULT]}") sh_voidServices ;;
 		"${cmsg_Sair[$LC_DEFAULT]}") die "${cmsg_InstalacaoAbortada[$LC_DEFAULT]}..." ;;
 		*)
 			errorbeep
@@ -5528,7 +5535,7 @@ sh_setLanguage() {
 	cmsg_NotConfTimezone[pt_BR]=$(gettext "Timezone não foi configurado!")
 	cmsg_NotConfWm[pt_BR]=$(gettext "Gerenciador de Janelas não foi configurado!")
 	cmsg_NotConfWifi[pt_BR]=$(gettext "Rede wifi não foi configurado!")
-	cmsg_NotConfExtra[pt_BR]=$(gettext "Extra não foi configurado!")
+	cmsg_NotConfExtra[pt_BR]=$(gettext "Usuário não foi configurado!")
 	cmsg_DefinirAudioServer[pt_BR]=$(gettext "Definir servidor de audio")
 }
 
