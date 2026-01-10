@@ -1,0 +1,42 @@
+#!/usr/bin/bash
+# Maintainer  : Vilmar Catafesta <vcatafesta@gmail.com>
+
+pkgname=void-installer
+pkgdesc="Instalador oficial do Void Linux da comunidade Brasil"
+pkgver=$(date +%Y%m%d)
+pkgrel=$(date +%H%M)
+arch=('any')
+license=('MIT')
+url="https://github.com/voidlinuxbr/$pkgname"
+provides=("$pkgname")
+source=("git+${url}.git")
+md5sums=('SKIP')
+depends=("bash>=0")
+
+package() {
+	local dirs=("usr" "etc" "opt")
+	#   echo "DESTDIR=$DESTDIR"
+	#   echo "pkgdir=$pkgdir"
+	#   echo "srcdir=$srcdir"
+	#   echo "_pkgsrc=$_pkgsrc"
+
+	cd ${srcdir}/${pkgname}
+	for dir in "${dirs[@]}"; do
+		if [ -d "${_pkgsrc}/${dir}" ]; then
+			cp -a "${_pkgsrc}/${dir}" "$DESTDIR/"
+		fi
+	done
+
+   # Install binary
+   install -Dm755 ${_pkgsrc}/void-install "${pkgdir}/usr/bin/void-install"
+   install -Dm755 ${_pkgsrc}/void-clonedisk "${pkgdir}/usr/bin/void-clonedisk"
+   install -Dm755 ${_pkgsrc}/void-services "${pkgdir}/usr/bin/void-services"
+   install -Dm755 ${_pkgsrc}/void-dialog-theme-selector "${pkgdir}/usr/bin/void-dialog-theme-selector"
+
+   # Install license file if present
+   if [ -f "LICENSE" ]; then
+      install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+   fi
+
+
+}
