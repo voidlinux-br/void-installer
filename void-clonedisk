@@ -10,7 +10,7 @@
 #
 #  Created: 2019/04/05
 #  Altered: 2022/10/14
-#  Updated: seg 29 set 2025 14:12:27 -04
+#  Updated: sex 09 jan 2026 18:13:25 -04
 #
 #  Copyright (c) 2019-2025, Vilmar Catafesta <vcatafesta@gmail.com>
 #
@@ -41,37 +41,42 @@ export TEXTDOMAIN=chili-clonedisk
 
 #declare -r APP="${0##*/}"
 declare -r _APP_="chili-clonedisk"
-declare -r _VERSION_="5.9.29.20250929"
+declare -r _VERSION_="6.1.09.20260109"
 declare -gA Alanguage=([pt_BR]=0 [en_US]=1 [de_DE]=2 [fr_FR]=3 [es_ES]=4 [it_IT]=5)
 declare -gA Alocale=([0]=pt_BR [1]=en_US [2]=de_DE [3]=fr_FR [4]=es_ES [5]=it_IT)
 declare dialogRcFile="$HOME/.dialogrc"
-readonly -a DEPENDENCIES=(
-  'dd'
-  'awk'
-  'ionice'
-  'dialog'
-  'pv'
-  'tput'
-  'find'
-  'smartctl'
-)
+readonly -a DEPENDENCIES=(dd awk ionice dialog pv tput find smartctl)
 readonly -A PACKAGEDEP=(
-  ['dd']='coreutils'
-  ['awk']='gawk'
-  ['ionice']='util-linux'
-  ['dialog']='dialog'
-  ['pv']='pv'
-  ['tput']='ncurses'
-  ['find']='findutils'
-  ['smartctl']='smartmontools'
+	['dd']='coreutils'
+	['awk']='gawk'
+	['ionice']='util-linux'
+	['dialog']='dialog'
+	['pv']='pv'
+	['tput']='ncurses'
+	['find']='findutils'
+	['smartctl']='smartmontools'
 )
-
 
 # debug
 export PS4=$'${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 #set -x
 #set -e
 shopt -s extglob
+
+detect_distro() {
+	local id=""
+
+	if [[ -r /etc/os-release ]]; then
+		# Lê ID=void|arch|debian|... exatamente como a distro declara
+		id=$(grep -E '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"')
+	elif [[ -r /usr/lib/os-release ]]; then
+		id=$(grep -E '^ID=' /usr/lib/os-release | cut -d= -f2 | tr -d '"')
+	else
+		echo "unknown"
+		return
+	fi
+	echo "$id"
+}
 
 # Testa se o terminal suporta caracteres gráficos estendidos
 sh_ascii-lines() {
@@ -90,48 +95,50 @@ cleanup() {
 #trap cleanup EXIT
 
 sh_create_dialogrc() {
-	# Cria o arquivo .dialogrc com configurações de cores personalizadas
-	cat >"$dialogRcFile" <<-EOF
-		  use_shadow = OFF
-		  use_colors = ON
-		  screen_color = (YELLOW,DEFAULT,OFF)
-		  dialog_color = (WHITE,DEFAULT,OFF)
-		  title_color = (YELLOW,DEFAULT,ON)
-		  border_color = (WHITE,DEFAULT,ON)
-		  button_active_color = (BLACK,YELLOW,ON)
-		  button_inactive_color = (WHITE,DEFAULT,OFF)
-		  button_key_active_color = (BLACK,YELLOW,ON)
-		  button_key_inactive_color = (RED,DEFAULT,OFF)
-		  button_label_active_color = (BLACK,YELLOW,ON)
-		  button_label_inactive_color = (WHITE,DEFAULT,ON)
-		  inputbox_color = (WHITE,DEFAULT,OFF)
-		  inputbox_border_color = (WHITE,DEFAULT,OFF)
-		  searchbox_color = (WHITE,DEFAULT,OFF)
-		  searchbox_title_color = (YELLOW,DEFAULT,ON)
-		  searchbox_border_color = (WHITE,DEFAULT,ON)
-		  position_indicator_color = (YELLOW,DEFAULT,ON)
-		  menubox_color = (WHITE,DEFAULT,OFF)
-		  menubox_border_color = (WHITE,DEFAULT,ON)
-		  item_color = (WHITE,DEFAULT,OFF)
-		  item_selected_color = (BLACK,YELLOW,ON)
-		  tag_color = (YELLOW,DEFAULT,ON)
-		  tag_selected_color = (BLACK,YELLOW,ON)
-		  tag_key_color = (RED,DEFAULT,OFF)
-		  tag_key_selected_color = (RED,YELLOW,ON)
-		  check_color = (WHITE,DEFAULT,OFF)
-		  check_selected_color = (BLACK,YELLOW,ON)
-		  uarrow_color = (YELLOW,DEFAULT,ON)
-		  darrow_color = (YELLOW,DEFAULT,ON)
-		  itemhelp_color = (WHITE,DEFAULT,OFF)
-		  form_active_text_color = (WHITE,DEFAULT,ON)
-		  form_text_color = (WHITE,DEFAULT,ON)
-		  form_item_readonly_color = (WHITE,DEFAULT,ON)
-		  gauge_color = (YELLOW,DEFAULT,ON)
-		  border2_color = (WHITE,DEFAULT,ON)
-		  inputbox_border2_color = (WHITE,DEFAULT,OFF)
-		  searchbox_border2_color = (WHITE,DEFAULT,ON)
-		  menubox_border2_color = (WHITE,DEFAULT,ON)
-	EOF
+	cat >"$dialogRcFile" <<-'EOF'
+		screen_color = (white,black,off)
+		dialog_color = (white,black,off)
+		title_color = (cyan,black,on)
+		border_color = dialog_color
+		shadow_color = (black,black,on)
+		button_inactive_color = dialog_color
+		button_key_inactive_color = dialog_color
+		button_label_inactive_color = dialog_color
+		button_active_color = (white,cyan,on)
+		button_key_active_color = button_active_color
+		button_label_active_color = (black,cyan,on)
+		tag_key_selected_color = (white,cyan,on)
+		item_selected_color = tag_key_selected_color
+		form_text_color = (BLUE,black,ON)
+		form_item_readonly_color = (green,black,on)
+		itemhelp_color = (white,cyan,off)
+		inputbox_color = dialog_color
+		inputbox_border_color = dialog_color
+		searchbox_color = dialog_color
+		searchbox_title_color = title_color
+		searchbox_border_color = border_color
+		position_indicator_color = title_color
+		menubox_color = dialog_color
+		menubox_border_color = border_color
+		item_color = dialog_color
+		tag_color = title_color
+		tag_selected_color = button_label_active_color
+		tag_key_color = button_key_inactive_color
+		check_color = dialog_color
+		check_selected_color = button_active_color
+		uarrow_color = screen_color
+		darrow_color = screen_color
+		form_active_text_color = button_active_color
+		gauge_color = title_color
+		border2_color = dialog_color
+		searchbox_border2_color = dialog_color
+		menubox_border2_color = dialog_color
+		separate_widget = ''
+		tab_len = 0
+		visit_items = off
+		use_shadow = off
+		use_colors = on
+EOF
 	export DIALOGRC="$dialogRcFile"
 }
 
@@ -340,7 +347,7 @@ display_result() {
 		--no-cr-wrap \
 		--no-collapse \
 		--msgbox "$*" \
-		25 100 > /dev/tty
+		25 100 >/dev/tty
 }
 
 info() {
@@ -350,7 +357,7 @@ info() {
 		--title "$ctitle" \
 		--backtitle "$ccabec" \
 		--msgbox "\Z1$*" \
-		10 60 > /dev/tty
+		10 60 >/dev/tty
 }
 
 debug() {
@@ -360,7 +367,7 @@ debug() {
 		--backtitle "[debug]$0" \
 		--title "[debug]$0" \
 		--yesno "${*}\n" \
-		0 40 > /dev/tty
+		0 40 >/dev/tty
 	result=$?
 	if ((result)); then
 		exit
@@ -399,7 +406,7 @@ conf() {
 		--yes-label "${cmsg_yeslabel[$LC_DEFAULT]}" \
 		--no-label "${cmsg_nolabel[$LC_DEFAULT]}" \
 		--yesno "$*" \
-		15 100 > /dev/tty
+		15 100 >/dev/tty
 	nchoice=$?
 	return "$nchoice"
 }
@@ -413,7 +420,7 @@ confmulti() {
 		--yes-label "${cmsg_yeslabel[$LC_DEFAULT]}" \
 		--no-label "${cmsg_nolabel[$LC_DEFAULT]}" \
 		--yesno "$*" \
-		10 100 > /dev/tty
+		10 100 >/dev/tty
 	return $?
 }
 
@@ -510,7 +517,7 @@ sh_disk_info() {
 		ARRAY_DSK_PTTYPE+=("${PTTYPE_:-""}")
 		ARRAY_DSK_FSTYPE+=("${FSTYPE_:-none}")
 		AARRAY_DSK_DEVICES+=(["$PATH_"]="$NAME_|$SIZE_|${TRAN_:-${TYPE_}}|${MODEL_:-${TYPE_} device}|${LABEL_:-""}|${SERIAL_:-""}|${PTTYPE_:-""}|${FSTYPE_:-"none"}")
-  done < <(lsblk -PAo TYPE,NAME,PATH,SIZE,TRAN,MODEL,LABEL,SERIAL,PTTYPE | grep -P 'TYPE="(disk|loop|lvm)"' | sort -k5,5 -k2,2)
+	done < <(lsblk -PAo TYPE,NAME,PATH,SIZE,TRAN,MODEL,LABEL,SERIAL,PTTYPE | grep -P 'TYPE="(disk|loop|lvm)"' | sort -k5,5 -k2,2)
 	#done < <(lsblk -PAo TYPE,NAME,PATH,SIZE,TRAN,MODEL,LABEL,SERIAL | grep -P 'TYPE="(disk)"' | sort -k5,5 -k2,2)
 	#done < <(lsblk -Pao TYPE,NAME,PATH,SIZE,TRAN,MODEL | grep -P 'TYPE="(disk)')
 	#done < <(lsblk -Pao TYPE,NAME,PATH,SIZE,TRAN,MODEL | grep disk)
@@ -549,92 +556,92 @@ sh_end_time_elapsed() {
 }
 
 sh_conf_image_name() {
-  source="$1"
-  local txtDiskName
+	source="$1"
+	local txtDiskName
 
-  DEVICE_SOURCE="$source"
-  DEVICE_NAME="$(sh_splitarray "${AARRAY_DSK_DEVICES[$source]}" "$DSK_NAME")"
-  MODEL_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$source]}" "$DSK_MODEL")"
-  SIZE_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$source]}" "$DSK_SIZE")"
-  LABEL_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$source]}" "$DSK_LABEL")"
-  TRAN_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$source]}" "$DSK_TRAN")"
-  FSTYPE_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$source]}" "$DSK_FSTYPE")"
+	DEVICE_SOURCE="$source"
+	DEVICE_NAME="$(sh_splitarray "${AARRAY_DSK_DEVICES[$source]}" "$DSK_NAME")"
+	MODEL_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$source]}" "$DSK_MODEL")"
+	SIZE_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$source]}" "$DSK_SIZE")"
+	LABEL_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$source]}" "$DSK_LABEL")"
+	TRAN_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$source]}" "$DSK_TRAN")"
+	FSTYPE_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$source]}" "$DSK_FSTYPE")"
 
-  # Escolhe formato da imagem
-  image_format=$(sh_choose_image_format) || return 1
+	# Escolhe formato da imagem
+	image_format=$(sh_choose_image_format) || return 1
 
-  # Nome default da imagem
-  cvdisk_name="${DEVICE_SOURCE//\//_}"
-  cvdisk_name="${PWD}/${cvdisk_name#_}_${FSTYPE_SOURCE}.${image_format}"
+	# Nome default da imagem
+	cvdisk_name="${DEVICE_SOURCE//\//_}"
+	cvdisk_name="${PWD}/${cvdisk_name#_}_${FSTYPE_SOURCE}.${image_format}"
 
-  while true; do
-    # Debug: verifica se variáveis estão corretas
-    echo "DEBUG: DEVICE_SOURCE='$DEVICE_SOURCE' DEVICE_NAME='$DEVICE_NAME' MODEL_SOURCE='$MODEL_SOURCE' SIZE_SOURCE='$SIZE_SOURCE' LABEL_SOURCE='$LABEL_SOURCE' TRAN_SOURCE='$TRAN_SOURCE'"
-    echo "DEBUG: cvdisk_name='$cvdisk_name'"
-    # Mostra o formulário
-    exec 3>&1
-    txtDiskName=$(${DIALOG} \
-      --backtitle "$ccabec" \
-      --title "** CLONAR DISCO PARA IMAGEM **" \
-      --ok-label "${cmsg_Select[$LC_DEFAULT]}" \
-      --cancel-label "${cmsg_button_voltar[$LC_DEFAULT]}" \
-      --colors \
-      --insecure \
-      --mixedform "${cmsg_LABEL[$LC_DEFAULT]}" \
-      16 100 0 \
-      "Device                     : " 1 1 "$DEVICE_SOURCE" 1 28 20 0 2 \
-      "Name                       : " 2 1 "$DEVICE_NAME" 2 28 20 0 2 \
-      "Tran                       : " 3 1 "$TRAN_SOURCE" 3 28 20 0 2 \
-      "Label                      : " 4 1 "$LABEL_SOURCE" 4 28 20 0 2 \
-      "Modelo                     : " 5 1 "$MODEL_SOURCE" 5 28 20 0 2 \
-      "Tamanho                    : " 6 1 "$SIZE_SOURCE" 6 28 20 0 2 \
-      "File System                : " 7 1 "$FSTYPE_SOURCE" 7 28 20 0 2 \
-      "Entre com o nome da imagem : " 8 1 "$cvdisk_name" 8 28 60 0 0 \
-      2>&1 1>&3)
+	while true; do
+		# Debug: verifica se variáveis estão corretas
+		echo "DEBUG: DEVICE_SOURCE='$DEVICE_SOURCE' DEVICE_NAME='$DEVICE_NAME' MODEL_SOURCE='$MODEL_SOURCE' SIZE_SOURCE='$SIZE_SOURCE' LABEL_SOURCE='$LABEL_SOURCE' TRAN_SOURCE='$TRAN_SOURCE'"
+		echo "DEBUG: cvdisk_name='$cvdisk_name'"
+		# Mostra o formulário
+		exec 3>&1
+		txtDiskName=$(${DIALOG} \
+			--backtitle "$ccabec" \
+			--title "** CLONAR DISCO PARA IMAGEM **" \
+			--ok-label "${cmsg_Select[$LC_DEFAULT]}" \
+			--cancel-label "${cmsg_button_voltar[$LC_DEFAULT]}" \
+			--colors \
+			--insecure \
+			--mixedform "${cmsg_LABEL[$LC_DEFAULT]}" \
+			16 100 0 \
+			"Device                     : " 1 1 "$DEVICE_SOURCE" 1 28 20 0 2 \
+			"Name                       : " 2 1 "$DEVICE_NAME" 2 28 20 0 2 \
+			"Tran                       : " 3 1 "$TRAN_SOURCE" 3 28 20 0 2 \
+			"Label                      : " 4 1 "$LABEL_SOURCE" 4 28 20 0 2 \
+			"Modelo                     : " 5 1 "$MODEL_SOURCE" 5 28 20 0 2 \
+			"Tamanho                    : " 6 1 "$SIZE_SOURCE" 6 28 20 0 2 \
+			"File System                : " 7 1 "$FSTYPE_SOURCE" 7 28 20 0 2 \
+			"Entre com o nome da imagem : " 8 1 "$cvdisk_name" 8 28 60 0 0 \
+			2>&1 1>&3)
 
-    local exit_status=$?
-    case $exit_status in
-      1|255)  # Cancel ou ESC
-        echo "DEBUG: Usuário cancelou ou pressionou ESC"
-        return 1
-        ;;
-      0)      # OK
-        mapfile -t aDiskName <<<"$txtDiskName"
-        cvdisk_name="${aDiskName[7]}"
+		local exit_status=$?
+		case $exit_status in
+		1 | 255) # Cancel ou ESC
+			echo "DEBUG: Usuário cancelou ou pressionou ESC"
+			return 1
+			;;
+		0) # OK
+			mapfile -t aDiskName <<<"$txtDiskName"
+			cvdisk_name="${aDiskName[7]}"
 
-        if [[ -z "$cvdisk_name" ]]; then
-          conf "*** IMAGE NAME ***" "\nNome da imagem inválido! Tente novamente.\n" || die "*** IMAGE NAME ***"
-          continue
-        fi
+			if [[ -z "$cvdisk_name" ]]; then
+				conf "*** IMAGE NAME ***" "\nNome da imagem inválido! Tente novamente.\n" || die "*** IMAGE NAME ***"
+				continue
+			fi
 
-        if [[ -e "$cvdisk_name" ]]; then
-          if conf "*** IMAGE NAME ***" "${RED}Imagem '$cvdisk_name' já existe. Tentar outro nome?"; then
-            continue
-          fi
-          return 1
-        fi
-        echo "DEBUG: Nome da imagem definido: $cvdisk_name"
-        return 0
-        ;;
-      *)
-        echo "DEBUG: exit_status inesperado: $exit_status"
-        return 1
-        ;;
-    esac
-    exec 3>&-
-  done
+			if [[ -e "$cvdisk_name" ]]; then
+				if conf "*** IMAGE NAME ***" "${RED}Imagem '$cvdisk_name' já existe. Tentar outro nome?"; then
+					continue
+				fi
+				return 1
+			fi
+			echo "DEBUG: Nome da imagem definido: $cvdisk_name"
+			return 0
+			;;
+		*)
+			echo "DEBUG: exit_status inesperado: $exit_status"
+			return 1
+			;;
+		esac
+		exec 3>&-
+	done
 }
 
 # função para escolher o formato da imagem
 sh_choose_image_format() {
-  source="$1"
+	source="$1"
 	local choice
 	choice=$(${DIALOG} \
 		--backtitle "$ccabec" \
 		--title "** ESCOLHA O FORMATO DE SAIDA DA IMAGEM**" \
-	  --clear \
-	  --stdout \
-	  --colors \
+		--clear \
+		--stdout \
+		--colors \
 		--menu "${cmsg_LABEL[$LC_DEFAULT]}\n\n\
 ${BOLD}${REVERSE}${WHITE}$(gettext "Selecione o formato da imagem do device"):\
 ${RESET}${BOLD}${YELLOW} ${source}|${SIZE_SOURCE}|${MODEL_SOURCE}${RESET}" \
@@ -665,7 +672,7 @@ sh_clone_disk_to_image() {
 }
 
 sh_make_clone_disk_to_image() {
-  source="$1"
+	source="$1"
 	local -i nchoice
 	set -o pipefail
 
@@ -692,16 +699,16 @@ IMAGEM DESTINO : ${RED}$outfile\n\n" \
 				src_size=$(stat -c%s "$source")
 			fi
 
-      SECTOR_SIZE=$(blockdev --getss $source)   # setor físico (4096)
-      DISK_SIZE=$(blockdev --getsize64 $source) # tamanho em bytes
+			SECTOR_SIZE=$(blockdev --getss $source)   # setor físico (4096)
+			DISK_SIZE=$(blockdev --getsize64 $source) # tamanho em bytes
 
-      (
-#       dd if="$source" bs=32M          conv=notrunc,noerror,sync status=none | pv --numeric --size "$src_size" > "$outfile"
-#       dd if="$source" bs=$SECTOR_SIZE conv=notrunc,noerror,sync status=none | pv --numeric --size "$src_size" > "$outfile"
-#       pv --numeric --size "$src_size" "$source" | dd of="$outfile" bs=32M conv=notrunc,noerror,sync status=none
-#       pv --numeric --size "$src_size" "$source" | dd of="$outfile" bs=32M conv=notrunc,noerror status=none
-			  pv --numeric --size "$src_size" "$source" >"$outfile"
-      ) 2>&1 |
+			(
+				#       dd if="$source" bs=32M          conv=notrunc,noerror,sync status=none | pv --numeric --size "$src_size" > "$outfile"
+				#       dd if="$source" bs=$SECTOR_SIZE conv=notrunc,noerror,sync status=none | pv --numeric --size "$src_size" > "$outfile"
+				#       pv --numeric --size "$src_size" "$source" | dd of="$outfile" bs=32M conv=notrunc,noerror,sync status=none
+				#       pv --numeric --size "$src_size" "$source" | dd of="$outfile" bs=32M conv=notrunc,noerror status=none
+				pv --numeric --size "$src_size" "$source" >"$outfile"
+			) 2>&1 |
 				${DIALOG} \
 					--title "${cmsg_running_disk_cloning[LC_DEFAULT]^^}" \
 					--colors \
@@ -726,18 +733,18 @@ IMAGEM DESTINO : ${RED}$outfile" \
       Aguarde, esta operação pode levar alguns minutos..." 10 70
 
 			# Conversão efetiva
-			if qemu-img convert -p -O qcow2 "$tmp_raw" "$outfile" > /dev/null ; then
-  			rm -f "$tmp_raw"
-  		fi
+			if qemu-img convert -p -O qcow2 "$tmp_raw" "$outfile" >/dev/null; then
+				rm -f "$tmp_raw"
+			fi
 		fi
 
 		sh_end_time_elapsed
 		result="$(fdisk -b $SECTOR_SIZE -l $outfile)"
-    message="$(printf "\n\n%s" "$result")"
+		message="$(printf "\n\n%s" "$result")"
 
 		[[ $nchoice -eq 0 ]] && display_result \
 			"fdisk -b $SECTOR_SIZE -l $outfile" \
-      "${BOLD}${GREEN}${REVERSE}Clonagem concluída!${RESET}\n\n" \
+			"${BOLD}${GREEN}${REVERSE}Clonagem concluída!${RESET}\n\n" \
 			"${BOLD}${GREEN}${REVERSE}Info disk : $outfile${RESET}\n" \
 			"${BOLD}${WHITE}$message\n\n" \
 			"Start Date time  : ${BOLD}${BLUE}$start_datetime${RESET}\n" \
@@ -804,10 +811,10 @@ $(printf "%${nlen}s$sep%-6s$sep%6s$sep%-6s$sep%-20s$sep%-30s" "DEVICE" "TRAN" "S
 		exit_status=$?
 		case $exit_status in
 		"$D_ESC")
-      return 1
+			return 1
 			;;
 		"$D_CANCEL")
-      return 1
+			return 1
 			;;
 		3)
 			result=$(fdisk -l "$selected")
@@ -885,11 +892,11 @@ $(printf "%${nlen}s$sep%-6s$sep%6s$sep%-6s$sep%-20s$sep%-30s" "DEVICE" "TRAN" "S
 		exit_status=$?
 		case $exit_status in
 		"$D_ESC")
-#			init
-      return
+			#			init
+			return
 			;;
 		"$D_CANCEL")
-#			init
+			#			init
 			return
 			;;
 		3)
@@ -912,131 +919,131 @@ $(printf "%${nlen}s$sep%-6s$sep%6s$sep%-6s$sep%-20s$sep%-30s" "DEVICE" "TRAN" "S
 }
 
 sh_clone_part_to_part() {
-  if sh_choose_source_partition; then
-    if sh_choose_target_partition; then
-  		sh_confclone "$part_source" "$part_target"
-  		sh_reset_conf
-      :
-    fi
-  fi
+	if sh_choose_source_partition; then
+		if sh_choose_target_partition; then
+			sh_confclone "$part_source" "$part_target"
+			sh_reset_conf
+			:
+		fi
+	fi
 }
 
 get_fstype() {
-  local img="$1"
-  local out fs
+	local img="$1"
+	local out fs
 
-  out=$(file "$img")
-  # tenta extrair a parte que parece filesystem (ext, fat, ntfs, xfs, btrfs, exfat etc)
-  # pega a última palavra que aparece em maiúscula ou ext/ext4/fat/ntfs
-  fs=$(echo "$out" | grep -o -E '(ext[2-4]|fat|exfat|ntfs|xfs|btrfs|reiserfs|hfs|hfsplus|f2fs|vfat|swap)' | tail -n1)
-  echo "$fs"
+	out=$(file "$img")
+	# tenta extrair a parte que parece filesystem (ext, fat, ntfs, xfs, btrfs, exfat etc)
+	# pega a última palavra que aparece em maiúscula ou ext/ext4/fat/ntfs
+	fs=$(echo "$out" | grep -o -E '(ext[2-4]|fat|exfat|ntfs|xfs|btrfs|reiserfs|hfs|hfsplus|f2fs|vfat|swap)' | tail -n1)
+	echo "$fs"
 }
 
 sh_list_image() {
-  local localtitle="$1"
-  local imageselected="$2"
+	local localtitle="$1"
+	local imageselected="$2"
 
-  while true; do
-    # Lista imagens no diretório atual (pode trocar o "." pelo diretório que quiser)
-    mapfile -t ARRAY_IMG_FILES < <(find . -maxdepth 1 -type f \( -iname "*.raw" -o -iname "*.qcow2" -o -iname "*.img" \) | sort)
+	while true; do
+		# Lista imagens no diretório atual (pode trocar o "." pelo diretório que quiser)
+		mapfile -t ARRAY_IMG_FILES < <(find . -maxdepth 1 -type f \( -iname "*.raw" -o -iname "*.qcow2" -o -iname "*.img" \) | sort)
 
-    if [[ "${#ARRAY_IMG_FILES[@]}" -eq 0 ]]; then
-      info "erro: nenhuma imagem encontrada em '$PWD'"
-      return 1
-    fi
+		if [[ "${#ARRAY_IMG_FILES[@]}" -eq 0 ]]; then
+			info "erro: nenhuma imagem encontrada em '$PWD'"
+			return 1
+		fi
 
-    local array=()
-    local i
-    local n=0
-    local nlen=0
-    local result
-    maxcols=$(tput cols)  # largura do terminal
-    ntam=0
+		local array=()
+		local i
+		local n=0
+		local nlen=0
+		local result
+		maxcols=$(tput cols) # largura do terminal
+		ntam=0
 
-    for i in "${ARRAY_IMG_FILES[@]}"; do
-      if [[ "${i}" = "${imageselected}" ]]; then
-        continue
-      fi
+		for i in "${ARRAY_IMG_FILES[@]}"; do
+			if [[ "${i}" = "${imageselected}" ]]; then
+				continue
+			fi
 
-      # path completo
-      local fpath=$(readlink -f "$i")
+			# path completo
+			local fpath=$(readlink -f "$i")
 
-      # calcula largura máxima para alinhar
-      if ((nlen < ${#fpath})); then
-        nlen=${#fpath}
-      fi
+			# calcula largura máxima para alinhar
+			if ((nlen < ${#fpath})); then
+				nlen=${#fpath}
+			fi
 
-      # pega infos extras: tamanho e tipo
-      local fsize=$(du -h "$i" | awk '{print $1}')
-      local ftype=$(file -b "$i")
-      local fstype=$(get_fstype "$i")
+			# pega infos extras: tamanho e tipo
+			local fsize=$(du -h "$i" | awk '{print $1}')
+			local ftype=$(file -b "$i")
+			local fstype=$(get_fstype "$i")
 
-#      array+=("$fpath" "$(printf "$sep%-8s$sep%-30s" "$fsize" "$ftype")")
-      array+=("$fpath" "$(printf "$sep%-8s$sep%-8s$sep%-30s" "$fsize" "$fstype" "$ftype")")
-      ((++n))
-      ntemp=$(( ${#fpath} + ${#fsize} + ${#ftype} ))
-      (( ntemp > maxcols )) && ntemp=$maxcols
-      (( ntemp > ntam )) && ntam=$ntemp
-    done
-    ((nlen += 3))
-    ((ntam -= 4))
+			#      array+=("$fpath" "$(printf "$sep%-8s$sep%-30s" "$fsize" "$ftype")")
+			array+=("$fpath" "$(printf "$sep%-8s$sep%-8s$sep%-30s" "$fsize" "$fstype" "$ftype")")
+			((++n))
+			ntemp=$((${#fpath} + ${#fsize} + ${#ftype}))
+			((ntemp > maxcols)) && ntemp=$maxcols
+			((ntemp > ntam)) && ntam=$ntemp
+		done
+		((nlen += 3))
+		((ntam -= 4))
 
-    selected=$(${DIALOG} \
-      --default-item "$imageselected" \
-      --backtitle "$ccabec" \
-      --title "${localtitle}" \
-      --ok-label "${cmsg_Select[$LC_DEFAULT]}" \
-      --cancel-label "${cmsg_button_voltar[$LC_DEFAULT]}" \
-      --colors \
-      --stdout \
-      --extra-button \
-      --extra-label "Info image" \
-      --menu "\
+		selected=$(${DIALOG} \
+			--default-item "$imageselected" \
+			--backtitle "$ccabec" \
+			--title "${localtitle}" \
+			--ok-label "${cmsg_Select[$LC_DEFAULT]}" \
+			--cancel-label "${cmsg_button_voltar[$LC_DEFAULT]}" \
+			--colors \
+			--stdout \
+			--extra-button \
+			--extra-label "Info image" \
+			--menu "\
 ${YELLOW}Imagens encontradas (.img, .raw, .qcow2]:${RESET}\n
-$(replicate '─' $((maxcols -4)) )\n
+$(replicate '─' $((maxcols - 4)))\n
 $(printf "%-${nlen}s$sep%-8s$sep%-8s$sep%-30s" "PATH" "SIZE" "FS" "TYPE")" \
-     15 $maxcols 0 "${array[@]}")
+			15 $maxcols 0 "${array[@]}")
 
-    exit_status=$?
-    case $exit_status in
-    "$D_ESC" | "$D_CANCEL")
-      return 1
-      ;;
-    3)
-      result=$(file "$selected")
-      result0=$(qemu-img info "$selected" 2>/dev/null || echo "No qemu-img info available")
-      message=$(printf "\n\n%s\n\n%s" "$result" "$result0")
-      display_result "Image info" \
-        "${BOLD}${GREEN}${REVERSE}Info image : $selected${RESET}" \
-        "${BOLD}${WHITE}$message"
-      continue
-      ;;
-    esac
+		exit_status=$?
+		case $exit_status in
+		"$D_ESC" | "$D_CANCEL")
+			return 1
+			;;
+		3)
+			result=$(file "$selected")
+			result0=$(qemu-img info "$selected" 2>/dev/null || echo "No qemu-img info available")
+			message=$(printf "\n\n%s\n\n%s" "$result" "$result0")
+			display_result "Image info" \
+				"${BOLD}${GREEN}${REVERSE}Info image : $selected${RESET}" \
+				"${BOLD}${WHITE}$message"
+			continue
+			;;
+		esac
 
-    if [[ -n "$selected" ]]; then
-      echo "$selected"
-      break
-      return 0
-    fi
-    break
-  done
+		if [[ -n "$selected" ]]; then
+			echo "$selected"
+			break
+			return 0
+		fi
+		break
+	done
 }
 
 sh_clone_image_to_part() {
-  image=$(sh_list_image "** IMAGENS em $PWD **") || return 1
+	image=$(sh_list_image "** IMAGENS em $PWD **") || return 1
 
-  if sh_choose_target_partition; then
-    sh_confclone "$part_source" "$target"
-    sh_reset_conf
-    :
-  fi
+	if sh_choose_target_partition; then
+		sh_confclone "$part_source" "$target"
+		sh_reset_conf
+		:
+	fi
 }
 
 sh_clone_part_to_image() {
-  if sh_choose_source_partition; then
-    sh_make_clone_part_to_image
-    :
-  fi
+	if sh_choose_source_partition; then
+		sh_make_clone_part_to_image
+		:
+	fi
 }
 
 sh_make_clone_part_to_image() {
@@ -1066,16 +1073,16 @@ IMAGEM DESTINO : ${RED}$outfile\n\n" \
 				src_size=$(stat -c%s "$source")
 			fi
 
-      SECTOR_SIZE=$(blockdev --getss $source)   # setor físico (4096)
-      DISK_SIZE=$(blockdev --getsize64 $source) # tamanho em bytes
+			SECTOR_SIZE=$(blockdev --getss $source)   # setor físico (4096)
+			DISK_SIZE=$(blockdev --getsize64 $source) # tamanho em bytes
 
-      (
-#       dd if="$source" bs=32M          conv=notrunc,noerror,sync status=none | pv --numeric --size "$src_size" > "$outfile"
-#       dd if="$source" bs=$SECTOR_SIZE conv=notrunc,noerror,sync status=none | pv --numeric --size "$src_size" > "$outfile"
-#       pv --numeric --size "$src_size" "$source" | dd of="$outfile" bs=32M conv=notrunc,noerror,sync status=none
-#       pv --numeric --size "$src_size" "$source" | dd of="$outfile" bs=32M conv=notrunc,noerror status=none
-			  pv --numeric --size "$src_size" "$source" >"$outfile"
-      ) 2>&1 |
+			(
+				#       dd if="$source" bs=32M          conv=notrunc,noerror,sync status=none | pv --numeric --size "$src_size" > "$outfile"
+				#       dd if="$source" bs=$SECTOR_SIZE conv=notrunc,noerror,sync status=none | pv --numeric --size "$src_size" > "$outfile"
+				#       pv --numeric --size "$src_size" "$source" | dd of="$outfile" bs=32M conv=notrunc,noerror,sync status=none
+				#       pv --numeric --size "$src_size" "$source" | dd of="$outfile" bs=32M conv=notrunc,noerror status=none
+				pv --numeric --size "$src_size" "$source" >"$outfile"
+			) 2>&1 |
 				${DIALOG} \
 					--title "${cmsg_running_disk_cloning[LC_DEFAULT]^^}" \
 					--colors \
@@ -1100,18 +1107,18 @@ IMAGEM DESTINO : ${RED}$outfile" \
       Aguarde, esta operação pode levar alguns minutos..." 10 70
 
 			# Conversão efetiva
-			if qemu-img convert -p -O qcow2 "$tmp_raw" "$outfile" > /dev/null ; then
-  			rm -f "$tmp_raw"
-  		fi
+			if qemu-img convert -p -O qcow2 "$tmp_raw" "$outfile" >/dev/null; then
+				rm -f "$tmp_raw"
+			fi
 		fi
 
 		sh_end_time_elapsed
 		result="$(fdisk -b $SECTOR_SIZE -l $outfile)"
-    message="$(printf "\n\n%s" "$result")"
+		message="$(printf "\n\n%s" "$result")"
 
 		[[ $nchoice -eq 0 ]] && display_result \
 			"fdisk -b $SECTOR_SIZE -l $outfile" \
-      "${BOLD}${GREEN}${REVERSE}Clonagem concluída!${RESET}\n\n" \
+			"${BOLD}${GREEN}${REVERSE}Clonagem concluída!${RESET}\n\n" \
 			"${BOLD}${GREEN}${REVERSE}Info disk : $outfile${RESET}\n" \
 			"${BOLD}${WHITE}$message\n\n" \
 			"Start Date time  : ${BOLD}${BLUE}$start_datetime${RESET}\n" \
@@ -1122,11 +1129,11 @@ IMAGEM DESTINO : ${RED}$outfile" \
 }
 
 sh_clone_disk_to_disk() {
-  if sh_choose_source_disk; then
-    if sh_choose_target_disk; then
-      :
-    fi
-  fi
+	if sh_choose_source_disk; then
+		if sh_choose_target_disk; then
+			:
+		fi
+	fi
 }
 
 sh_choose_source_disk() {
@@ -1168,7 +1175,7 @@ sh_choose_target_disk() {
 				"${BOLD}${WHITE}${cmsg_disco_origem[LC_DEFAULT]} : $DEVICE_SOURCE | $SIZE_SOURCE | $MODEL_SOURCE\n" \
 				"${BOLD}${WHITE}${cmsg_disco_destino[LC_DEFAULT]}: $DEVICE_TARGET | $SIZE_TARGET | $MODEL_TARGET${RESET}\n\n" \
 				"${YELLOW}$(gettext "Prosseguir?")"; then
-#				init
+				#				init
 				return
 			fi
 		fi
@@ -1195,7 +1202,7 @@ sh_choose_source_partition() {
 		MODEL_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$part_source]}" "$DSK_MODEL")"
 		NAME_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$part_source]}" "$DSK_NAME")"
 		SIZE_SOURCE="$(sh_splitarray "${AARRAY_DSK_DEVICES[$part_source]}" "$DSK_SIZE")"
-    return 0
+		return 0
 	fi
 	return 1
 }
@@ -1223,7 +1230,7 @@ sh_choose_target_partition() {
 				"${BOLD}${WHITE}${cmsg_part_origem[LC_DEFAULT]} : $DEVICE_SOURCE | $SIZE_SOURCE | $MODEL_SOURCE ${RESET} \n" \
 				"${BOLD}${WHITE}${cmsg_part_destino[LC_DEFAULT]}: $DEVICE_TARGET | $SIZE_TARGET | $MODEL_TARGET ${RESET} \n\n" \
 				"${YELLOW}$(gettext "Prosseguir?")"; then
-        return 1
+				return 1
 			fi
 		fi
 		sh_backup_partitions "$part_target" "$NAME_TARGET"
@@ -1231,7 +1238,7 @@ sh_choose_target_partition() {
 			alerta "CHOOSEDISK" "${cmsg_nec_dismount[LC_DEFAULT]}"
 			die "ERRO: ${cmsg_nec_dismount[LC_DEFAULT]}"
 		fi
-    return 0
+		return 0
 	fi
 	return 1
 }
@@ -1364,7 +1371,7 @@ init() {
 			;;
 		esac
 		LC_DEFAULT=$i18
-    sh_choose_clone_type
+		sh_choose_clone_type
 	done
 }
 
@@ -1449,45 +1456,75 @@ log_msg() {
 	fi
 }
 
+run_dialog_stream() {
+  local title="$1"; shift
+    stdbuf -oL -eL "$@" 2>&1 \
+        | dialog \
+    		--backtitle "$ccabec" \
+            --progressbox "$title" 20 70
+  local status=${PIPESTATUS[0]}
+  return "$status"
+}
+
 sh_setup() {
-  msg_info "Instalando necessários pacotes"
-  pacman -S --needed --quiet --noconfirm \
-    awk \
-    util-linux \
-    dialog \
-    pv \
-    ncurses \
-    findutils 1>/dev/null
+	local DISTRO=$(detect_distro)
+	msg "$_APP_" "Instalando necessários pacotes"
+
+	case "$DISTRO" in
+	void | voidlinux | void-live)
+		if ! run_dialog_stream "Instalando pacoates no ${DISTRO^^}" \
+			xbps-install -Sy "${PACKAGEDEP[@]}"; then
+			die "[ERRO] Falha ao instalar pacotes."
+		fi
+		;;
+	chili | chililinux | arch | manjaro | biglinux)
+		if ! run_dialog_stream "Instalando pacoates no ${DISTRO^^}" \
+			pacman -S --neeeded --quiet --noconfirm "${PACKAGEDEP[@]}"; then
+			die "[ERRO] Falha ao instalar pacotes."
+		fi
+		;;
+	manjaro) : ;;
+	debian) : ;;
+	ubuntu) : ;;
+	ubuntu) : ;;
+	fedora) : ;;
+	endeavouros) : ;;
+	*)
+		echo "Outra distro: $DISTRO"
+		;;
+	esac
 }
 
 sh_checkDependencies() {
-  local aBlock_files=()
-  local d
-  local errorFound=false
-  declare -a missing
+	local aBlock_files=()
+	local d
+	local errorFound=false
+	declare -a missing
 
-  for d in "${DEPENDENCIES[@]}"; do
-    if ! command -v "$d" &>/dev/null; then
-      log_err "Check: ${red}ERROR${reset}: $(gettext "Não foi possível encontrar o comando") ${cyan}'$d'${reset} -> $(gettext "instalar pacote") ${cyan}"${PACKAGEDEP[$d]}"${reset}"
-      missing+=("$d")
-      errorFound=true
-    else
-#     log_msg "Check: ${cyan}$d"
-      :
-    fi
-  done
+	for d in "${DEPENDENCIES[@]}"; do
+		if ! command -v "$d" &>/dev/null; then
+			log_err "Check: ${red}ERROR${reset}: $(gettext "Não foi possível encontrar o comando") ${cyan}'$d'${reset} -> $(gettext "instalar pacote") ${cyan}"${PACKAGEDEP[$d]}"${reset}"
+			missing+=("$d")
+			errorFound=true
+		else
+			#     log_msg "Check: ${cyan}$d"
+			:
+		fi
+	done
 
-  if $errorFound; then
-    replicate '='
-    echo "${yellow}             $(gettext "IMPOSSÍVEL CONTINUAR")"
-    echo "${black}$(gettext "Este script precisa dos comandos listados acima")"
-    echo "${black}$(gettext "Instale-os e/ou verifique se eles estão em seu") ${red}\$PATH${reset}"
-    replicate '='
-    #die $(gettext "Abortando...")
-    if readconf "Deseja instalar os pacotes e suprir os aplicativos necessários ?"; then
-      sh_setup
-    fi
-  fi
+	if $errorFound; then
+		replicate '='
+		echo "${yellow}             $(gettext "IMPOSSÍVEL CONTINUAR")"
+		echo "${black}$(gettext "Este script precisa dos comandos listados acima")"
+		echo "${black}$(gettext "Instale-os e/ou verifique se eles estão em seu") ${red}\$PATH${reset}"
+		replicate '='
+		#die $(gettext "Abortando...")
+		if readconf "Deseja instalar os pacotes e suprir os aplicativos necessários ?"; then
+			sh_setup
+		else
+			exit 1
+		fi
+	fi
 }
 export -f sh_checkDependencies
 
