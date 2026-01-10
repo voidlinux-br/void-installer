@@ -4842,7 +4842,7 @@ sh_main_menu() {
 			"FileSystem" "${MENU_FS}${cmsg_descFileSystem[LC_DEFAULT]}" \
 			"${cmsg_Teclado[$LC_DEFAULT]}" "${MENU_KEYMAP}${cmsg_descTeclado[LC_DEFAULT]}" \
 			"Timezone" "${MENU_TIMEZONE}${cmsg_descTimezone[LC_DEFAULT]}" \
-			"Locale" "${MENU_LOCALE}${cmsg_descTimezone[LC_DEFAULT]}" \
+			"Locale" "${MENU_LOCALE}${cmsg_descLocale[LC_DEFAULT]}" \
 			"Wm" "${MENU_WM}${cmsg_descWm[LC_DEFAULT]}" \
 			"${cmsg_Usuario[$LC_DEFAULT]}" "${MENU_EXTRA}${cmsg_descExtra[LC_DEFAULT]}" \
 			"Audio" "${MENU_AUDIO}${cmsg_DefinirAudioServer[LC_DEFAULT]}" \
@@ -5461,6 +5461,7 @@ sh_setLanguage() {
 	cmsg_descBootLoader[pt_BR]=$(gettext "Definir bootloader")
 	cmsg_descTeclado[pt_BR]=$(gettext "Definir teclado do sistema")
 	cmsg_descTimezone[pt_BR]=$(gettext "Definir fuso horário")
+	cmsg_descLocale[pt_BR]=$(gettext "Definir localidade do sistema")
 	cmsg_descWm[pt_BR]=$(gettext "Definir gerenciador de janelas")
 	cmsg_descWifi[pt_BR]=$(gettext "Definir rede e senha wifi (opcional)")
 	cmsg_opcional[pt_BR]=$(gettext "opcional")
