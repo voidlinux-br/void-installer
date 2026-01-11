@@ -111,7 +111,9 @@ util_choice=$(dialog \
 	--colors \
 	--title "$ctitle" \
 	--backtitle "$ccabec" \
-	--menu "Escolha o utilitário desejado" 0 0 0 "${theme_list[@]}" 2>&1 >/dev/tty)
+	--menu "Escolha o utilitário desejado" \
+	20 0 2 \
+	"${theme_list[@]}" 2>&1 >/dev/tty)
 
 if [ -n "$util_choice" ]; then
 	sudo bash "$util_choice"

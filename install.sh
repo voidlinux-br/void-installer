@@ -75,7 +75,7 @@ files_bin="void-install void-testmirror void-remove-vg void-clonedisk"
 files_home="LICENSE README.md"
 files_lang="void-install void-testmirror void-remove-vg void-clonedisk"
 files_blob="void-x86_64-base-custom-current.tar.xz"
-idioma="en es pt-BR"
+idioma="en es it de fr ru zh-CN zh-TW ja ko"
 
 tmpDir="$HOME/void-installer"
 dir_locale="usr/share/locale"

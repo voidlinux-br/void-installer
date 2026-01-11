@@ -1,0 +1,122 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-11 12:22-0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: /chili/chili-remove-vg:114
+msgid "Verificação de usuário root"
+msgstr ""
+
+#: /chili/chili-remove-vg:116
+msgid "erro: você não pode executar esta operação a menos que seja root"
+msgstr ""
+
+#: /chili/chili-remove-vg:135
+msgid "Licença GPLv3+: GNU GPL versão 3 ou posterior"
+msgstr ""
+
+#: /chili/chili-remove-vg:136
+msgid "Este é um software livre: você é livre para alterá-lo e redistribuí-lo."
+msgstr ""
+
+#: /chili/chili-remove-vg:137
+msgid "NÃO HÁ GARANTIA, em toda a extensão permitida por lei."
+msgstr ""
+
+#: /chili/chili-remove-vg:147
+msgid "#listar VGs (grupo de volumes)"
+msgstr ""
+
+#: /chili/chili-remove-vg:148
+msgid "#listar PVs (Volumes físicos)"
+msgstr ""
+
+#: /chili/chili-remove-vg:149
+msgid "#listar LVs (Volumes lógicos)"
+msgstr ""
+
+#: /chili/chili-remove-vg:150
+msgid "#remover VG (obrigatório)"
+msgstr ""
+
+#: /chili/chili-remove-vg:151
+msgid "#forçar"
+msgstr ""
+
+#: /chili/chili-remove-vg:152
+msgid "#imprimir versão do aplicativo"
+msgstr ""
+
+#: /chili/chili-remove-vg:153
+msgid "#remover cores da saída"
+msgstr ""
+
+#: /chili/chili-remove-vg:154
+msgid "#esta ajuda"
+msgstr ""
+
+#: /chili/chili-remove-vg:161
+msgid "iniciando limpeza"
+msgstr ""
+
+#: /chili/chili-remove-vg:164 /chili/chili-remove-vg:167
+msgid "Desmontando"
+msgstr ""
+
+#: /chili/chili-remove-vg:170 /chili/chili-remove-vg:173
+msgid "Removendo"
+msgstr ""
+
+#: /chili/chili-remove-vg:177
+msgid "Ignorando a remoção dos Volumes Físicos, talvez queira recuperar algo"
+msgstr ""
+
+#: /chili/chili-remove-vg:178
+msgid "Feito."
+msgstr ""
+
+#: /chili/chili-remove-vg:236
+msgid "Modo remoção ..."
+msgstr ""
+
+#: /chili/chili-remove-vg:242
+msgid "Listando VGs ..."
+msgstr ""
+
+#: /chili/chili-remove-vg:249
+msgid "Listando PVs ..."
+msgstr ""
+
+#: /chili/chili-remove-vg:256
+msgid "Listando LVs ..."
+msgstr ""
+
+#: /chili/chili-remove-vg:263
+msgid "Ligando force mode"
+msgstr ""
+
+#: /chili/chili-remove-vg:267
+msgid "Desligando saida em cores"
+msgstr ""
+
+#: /chili/chili-remove-vg:300
+msgid "Cancelado!"
+msgstr ""
+
+#: /chili/chili-remove-vg:300
+msgid "não encontrado!"
+msgstr ""

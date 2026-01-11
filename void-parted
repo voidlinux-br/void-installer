@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-#shellcheck disable=SC2145,SC2001,SC2188,SC2015,SC2155,SC2317,SC2320,SC2291,SC2034,SC2120,SC2086,SC2319
-#shellcheck disable=SC2016,SC2154,SC2207,SC2166,SC2128,SC2059,SC2140,SC2031,SC2030,SC2036,SC2119,SC2027
-
-#  void-parted - disk partitioning utility
-#  Created: 2022/12/24
-#  Altered: 2024/03/08
+# -*- coding: utf-8 -*-
+# shellcheck shell=bash disable=SC1091,SC2039,SC2166,SC2034,SC2155
 #
-#  Copyright (c) 2022-2024, Vilmar Catafesta <vcatafesta@gmail.com>
+#  chili-parted - Wrapper parted para particionamento de disco
+#  Created: 2022/09/10 - 00:13
+#  Altered: 2025/01/20 - 10:48
+#  Updated: dom 11 jan 2026 12:20:36 -04
+#
+#  Copyright (c) 2019-2026, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -18,7 +19,7 @@
 #     notice, this list of conditions and the following disclaimer in the
 #     documentation and/or other materials provided with the distribution.
 #
-#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AS IS'' AND ANY EXPRESS OR
 #  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 #  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 #  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
@@ -28,48 +29,76 @@
 #  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 #  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-############################################################################
+##############################################################################
 #export LANGUAGE=pt_BR
 export TEXTDOMAINDIR=/usr/share/locale
-export TEXTDOMAIN=void-parted
+export TEXTDOMAIN=t
 
 #debug
-export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
+export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset}'
 #set -x
 #set -e
 shopt -s extglob
 
 #system
-readonly APP="${0##*/}"
-readonly _VERSION_='1.0.1-20240308'
-readonly distro=$(uname -n)
-readonly DEPENDENCIES=(parted fdisk)
+declare APP="${0##*/}"
+declare _VERSION_="1.1.11-20260111"
+declare distro="$(uname -n)"
+declare DEPENDENCIES=(losetup tput parted kpartx smartctl qemu-img)
+declare DEPPACKAGES=(util-linux ncurses parted multipath-tools smartmontools qemu-img)
 
 function conf() {
-    read -r -p "$1 [N/s]"
-	[[ ${REPLY^} == "" ]] && return 1
-	[[ ${REPLY^} == [SY] ]] && return 0 || return 1
+	read -r -p "$1 [Y/n]"
+	[[ ${REPLY^} == "" ]] && return 0
+	[[ ${REPLY^} == N ]] && return 1 || return 0
 }
 
 function sh_setvarcolors() {
 	# does the terminal support true-color?
-	if [[ $(tput colors) -eq 256 ]]; then
+	if [[ -n "$(command -v "tput")" ]]; then
 		#tput setaf 127 | cat -v  #capturar saida
-		tput sgr0 # reset colors
-		bold=$(tput bold)
 		reset=$(tput sgr0)
-		black=$(tput setaf 0)
-		red=$(tput setaf 1)
-		green=$(tput setaf 2)
+		rst=$(tput sgr0)
+		bold=$(tput bold)
+		underline=$(tput smul)
+		nounderline=$(tput rmul)
+		reverse=$(tput rev)
+
+		black=$(tput bold)$(tput setaf 0)
+		red=$(tput bold)$(tput setaf 196)
+		green=$(tput bold)$(tput setaf 2)
 		yellow=$(tput bold)$(tput setaf 3)
-		blue=$(tput setaf 4)
-		pink=$(tput setaf 5)
+		#       blue=$(tput setaf 4)
+		blue=$(tput setaf 27)
+		magenta=$(tput setaf 5)
 		cyan=$(tput setaf 6)
 		white=$(tput setaf 7)
-		orange=$(tput setaf 3)
+		gray=$(tput setaf 8)
+		light_red=$(tput setaf 9)
+		light_green=$(tput setaf 10)
+		light_yellow=$(tput setaf 11)
+		light_blue=$(tput setaf 12)
+		light_magenta=$(tput setaf 13)
+		light_cyan=$(tput setaf 14)
+		light_white=$(tput setaf 15)
+		orange=$(tput setaf 202)
 		purple=$(tput setaf 125)
 		violet=$(tput setaf 61)
-	else # doesn't support true-color
+
+		# Definir cores de fundo
+		preto=$(tput setab 0)
+		vermelho=$(tput setab 196)
+		verde=$(tput setab 2)
+		amarelo=$(tput setab 3)
+		azul=$(tput setab 20)
+		roxo=$(tput setab 5)
+		ciano=$(tput setab 6)
+		branca="${black}$(tput setab 7)"
+		cinza=$(tput setab 8)
+		laranja=$(tput setab 202)
+		roxa=$(tput setab 125)
+		violeta=$(tput setab 61)
+	else
 		bold=''
 		reset="\e[0m"
 		blue="\e[1;34m"
@@ -156,36 +185,48 @@ function chili-setup-img() {
 
 function sh_checkroot() {
 	if [ "$(id -u)" != "0" ]; then
-		printf "%s\n" "${red} erro: Você não pode executar esta operação a menos que seja root!"
+		printf "%s\n" "${red} error: You cannot perform this operation unless you are root!"
 		exit 1
 	fi
 }
 
 sh_setvarcolors
 if [[ $# -eq 0 ]]; then
-	printf '%s\n' "${orange}$APP - utilitario para particionamento de disco${reset}"
+	printf '%s\n' "${orange}chili-parted - utilitario para particionar disco${reset}"
 	printf '%s\n' "${red}Usage:${reset}"
-	printf '\t%s\n' "$APP ${yellow}/dev/sdX${reset}"
-	printf '\t%s\n' "$APP ${yellow}image.img${reset}"
+	printf '\t%s\n' "chili-parted ${yellow}/dev/sdX${reset}"
+	printf '\t%s\n' "chili-parted ${yellow}image.img${reset}"
 	exit 1
 fi
 
 function sh_parted() {
+	local error=false
+
 	sd="$1"
+	if ! smartctl -Hi "$sd"; then
+		error=true
+	fi
 	if fdisk -l "$sd"; then
-		echo
-		echo "AVISO, CUIDADO, tudo será apagado!!"
+		if $error; then
+			echo "====================================================${reset}"
+			echo "${cyan}AVISO! disco $sd ${red}NÃO PASSOU ${cyan}no teste de SMART!${reset}"
+			echo "====================================================${reset}"
+		fi
+		echo -e "${yellow}AVISO, CUIDADO, tudo será apagado!!"
 		if conf "Continuar com o particionamento?"; then
 			parted --script "$sd" -- \
 				mklabel gpt \
 				mkpart primary fat32 1MiB 3MiB set 1 bios on name 1 BIOS \
 				mkpart primary fat32 3MiB 128MiB set 2 esp on name 2 EFI \
 				mkpart primary ext4 128MiB 100% name 3 ROOT \
-				align-check optimal 1
+				align-check optimal 1 \
+				align-check optimal 2 \
+				align-check optimal 3
 			parted --script "$sd" -- print
 		fi
 	fi
 }
 
+sh_setvarcolors
 sh_checkroot "$@"
 sh_parted "$@"
