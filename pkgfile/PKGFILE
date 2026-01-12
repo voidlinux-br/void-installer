@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 # Maintainer  : Vilmar Catafesta <vcatafesta@gmail.com>
 
-pkgname=void-installer
+pkgname=void-install
 pkgdesc="Instalador oficial do Void Linux da comunidade Brasil"
 pkgver=$(date +%Y%m%d)
 pkgrel=$(date +%H%M)

@@ -45,7 +45,7 @@ readonly _VERSION_='1.0.18-20240308'
 readonly distro=$(uname -n)
 readonly DEPENDENCIES=(xrandr cvt tput dialog awk grep sed gettext)
 readonly sep='\xe2\x94\x82'
-readonly ccabec="$APP v${_VERSION_} - https://github.com/voidlinux-br/void-installer"
+readonly ccabec="$APP v${_VERSION_} - https://github.com/voidlinux-br/void-install"
 
 sh_setconf() {
 	COL_NC='\e[0m' # No Color

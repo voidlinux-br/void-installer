@@ -30,10 +30,10 @@
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 #  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#sh <(curl -s -L https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh)
-#sh <(wget -q -O - https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh)
-#source <(curl -s -L https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh)
-#source <(wget -q -O - https://raw.githubusercontent.com/voidlinuxbr/void-installer/master/install.sh)
+#sh <(curl -s -L https://raw.githubusercontent.com/voidlinuxbr/void-install/master/install.sh)
+#sh <(wget -q -O - https://raw.githubusercontent.com/voidlinuxbr/void-install/master/install.sh)
+#source <(curl -s -L https://raw.githubusercontent.com/voidlinuxbr/void-install/master/install.sh)
+#source <(wget -q -O - https://raw.githubusercontent.com/voidlinuxbr/void-install/master/install.sh)
 
 #!/bin/sh
 # install.sh — POSIX sh, colorido, compatível com ISO (sh)
@@ -68,8 +68,8 @@ oops()  { err "$*"; exit 1; }
 ###############################################################################
 umask 0022
 
-url="https://raw.githubusercontent.com/voidlinuxbr/void-installer/master"
-url_blob="https://github.com/voidlinuxbr/void-installer/blob/master"
+url="https://raw.githubusercontent.com/voidlinuxbr/void-install/master"
+url_blob="https://github.com/voidlinuxbr/void-install/blob/master"
 
 files_bin="void-install void-testmirror void-remove-vg void-clonedisk"
 files_home="LICENSE README.md"
@@ -77,7 +77,7 @@ files_lang="void-install void-testmirror void-remove-vg void-clonedisk"
 files_blob="void-x86_64-base-custom-current.tar.xz"
 idioma="en es it de fr ru zh-CN zh-TW ja ko"
 
-tmpDir="$HOME/void-installer"
+tmpDir="$HOME/void-install"
 dir_locale="usr/share/locale"
 
 ###############################################################################
