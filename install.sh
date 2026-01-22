@@ -71,9 +71,9 @@ umask 0022
 url="https://raw.githubusercontent.com/voidlinuxbr/void-install/master"
 url_blob="https://github.com/voidlinuxbr/void-install/blob/master"
 
-files_bin="void-install void-testmirror void-remove-vg void-clonedisk"
+files_bin="void-install"
 files_home="LICENSE README.md"
-files_lang="void-install void-testmirror void-remove-vg void-clonedisk"
+files_lang="void-install"
 files_blob="void-x86_64-base-custom-current.tar.xz"
 idioma="en es it de fr ru zh-CN zh-TW ja ko"
 

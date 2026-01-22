@@ -1,0 +1,348 @@
+#!/usr/bin/env bash
+# -*- coding: utf-8 -*-
+# shellcheck shell=bash disable=SC1091,SC2039,SC2166,SC2034
+#
+#  rmake
+#  Created: dom 11 jan 2026 11:07:39 -04
+#  Altered: dom 11 jan 2026 11:07:39 -04
+#  Updated: dom 11 jan 2026 11:07:39 -04
+#
+#  Copyright (c) 2026-2026, Vilmar Catafesta <vcatafesta@gmail.com>
+#  Assembled By Vilmar Catafesta for the ChiliLinux project.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY Vilmar Catafesta ''AS IS'' AND ANY EXPRESS OR
+#  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+#  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+#  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+#  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+#  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+#  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##############################################################################
+#export LANGUAGE=pt_BR
+export TEXTDOMAINDIR=/usr/share/locale
+export TEXTDOMAIN=rmake
+
+#debug
+export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset}'
+#set -x
+#set -e
+shopt -s extglob
+
+#system
+declare APP="${0##*/}"
+declare _VERSION_="0.01.11-20260111"
+declare APPDESC="$APP - Wraper for "
+declare distro="$(uname -n)"
+declare DEPENDENCIES=(tput)
+declare dialogRcFile="$HOME/.dialogrc"
+
+cleanup() { rm -f "$dialogRcFile"; }
+#trap cleanup EXIT
+MostraErro() { echo "erro: ${red}$1${reset} => comando: ${cyan}'$2'${reset} => result=${yellow}$3${reset}";}
+trap 'MostraErro "$APP[$FUNCNAME][$LINENO]" "$BASH_COMMAND" "$?"; exit 1' ERR
+
+sh_check_terminal() { [ ! -t 1 ] && use_color=false; }
+
+set_varcolors() {
+  sh_check_terminal
+  # does the terminal support true-color?
+  if [[ -n "$(command -v "tput")" ]]; then
+    #tput setaf 127 | cat -v  #capturar saida
+    : "${RED=$(tput bold)$(tput setaf 196)}"
+    : "${GREEN=$(tput bold)$(tput setaf 2)}"
+    : "${YELLOW=$(tput bold)$(tput setaf 3)}"
+    : "${BLUE=$(tput setaf 4)}"
+    : "${PURPLE=$(tput setaf 125)}"
+    : "${CYAN=$(tput setaf 6)}"
+    : "${NC=$(tput sgr0)}"
+    : "${RESET=$(tput sgr0)}"
+    : "${BOLD=$(tput bold)}"
+    : "${black=$(tput bold)$(tput setaf 0)}"
+    : "${reverse=$(tput rev)}"
+    : "${branca=${black}$(tput setab 7)}"
+
+    : "${reset=$(tput sgr0)}"
+    : "${rst=$(tput sgr0)}"
+    : "${bold=$(tput bold)}"
+    : "${underline=$(tput smul)}"
+    : "${nounderline=$(tput rmul)}"
+    : "${reverse=$(tput rev)}"
+
+    : "${black=$(tput bold)$(tput setaf 0)}"
+    : "${red=$(tput bold)$(tput setaf 196)}"
+    : "${green=$(tput bold)$(tput setaf 2)}"
+    : "${yellow=$(tput bold)$(tput setaf 3)}"
+    : "${blue=$(tput setaf 27)}"
+    : "${pink=$(tput setaf 5)}"
+    : "${magenta=$(tput setaf 5)}"
+    : "${cyan=$(tput setaf 6)}"
+    : "${white=$(tput setaf 7)}"
+    : "${gray=$(tput setaf 8)}"
+    : "${light_red=$(tput setaf 9)}"
+    : "${light_green=$(tput setaf 10)}"
+    : "${light_yellow=$(tput setaf 11)}"
+    : "${light_blue=$(tput setaf 12)}"
+    : "${light_magenta=$(tput setaf 13)}"
+    : "${light_cyan=$(tput setaf 14)}"
+    : "${light_white=$(tput setaf 15)}"
+    : "${orange=$(tput setaf 202)}"
+    : "${purple=$(tput setaf 125)}"
+    : "${violet=$(tput setaf 61)}"
+
+    # Definir cores de fundo
+    : "${preto=$(tput setab 0)}"
+    : "${vermelho=$(tput setab 196)}"
+    : "${verde=$(tput setab 2)}"
+    : "${amarelo=$(tput setab 3)}"
+    : "${azul=$(tput setab 20)}"
+    : "${roxo=$(tput setab 5)}"
+    : "${ciano=$(tput setab 6)}"
+    : "${branca="${black}$(tput setab 7)"}"
+    : "${cinza=$(tput setab 8)}"
+    : "${laranja=$(tput setab 202)}"
+    : "${roxa=$(tput setab 125)}"
+    : "${violeta=$(tput setab 61)}"
+
+    : "${COL_NC='\e[0m'}" # No Color
+    : "${COL_LIGHT_GREEN='\e[1;32m'}"
+    : "${COL_LIGHT_RED='\e[1;31m'}"
+    : "${DONE="${COL_LIGHT_GREEN} done!${COL_NC}"}"
+    : "${OVER="\\r\\033[K"}"
+    : "${DOTPREFIX="  ${black}::${reset} "}"
+    : "${clrkey=${light_white}}"
+    : "${TICK="${clrkey}[${green}✓✓✓${clrkey}]${rst}"}"
+    : "${CROSS="${clrkey}[${red}✗✗✗${clrkey}]${rst}"}"
+    : "${MID="${clrkey}[${red}✗✗${green}✓${clrkey}]${rst}"}"
+    : "${WARN="${clrkey}[${yellow}⚠  ${clrkey}]${yellow}"}"
+    : "${INFO="${clrkey}[${yellow}➡  ${clrkey}]${rst}"}"
+
+    # dialog colors
+    REVERSE="\Zr"
+    UNDERLINE="\Zu"
+    BOLD="\Zb"
+    RESET="\Zn"
+    BLACK="\Z0"
+    YELLOW="\Z3"
+    AMARELO="\Zb\Z3"
+    WHITE="\Z7"
+    BLUE="\Z4"
+    AZUL="\Zb\Z4"
+    CYAN="\Z6"
+    RED="\Z1"
+    GREEN="\Z2"
+    MAGENTA="\Z5"
+  else
+    unset_varcolors
+  fi
+}
+
+unset_varcolors() {
+  unset RED GREEN YELLOW BLUE PURPLE CYAN NC RESET BOLD
+  unset reset rst bold underline nounderline reverse
+  unset black red green yellow blue magenta cyan white gray orange purple violet
+  unset light_red light_green light_yellow light_blue light_magenta light_cyan light_white
+  unset preto vermelho verde amarelo azul roxo ciano branca cinza laranja roxa violeta
+  TICK="${white}[${verde}✓${rst}${white}]${rst}"
+  CROSS="${white}[${roxa}✗${rst}${white}]${rst}"
+  INFO="${white}[${cinza}i${rst}${white}]${rst}"
+}
+
+sh_create_dialogrc() {
+  cat > "$dialogRcFile" <<EOF_DIALOGRC
+screen_color = (white,black,off)
+dialog_color = (white,black,off)
+title_color = (cyan,black,on)
+border_color = dialog_color
+shadow_color = (black,black,on)
+button_inactive_color = dialog_color
+button_key_inactive_color = dialog_color
+button_label_inactive_color = dialog_color
+button_active_color = (white,cyan,on)
+button_key_active_color = button_active_color
+button_label_active_color = (black,cyan,on)
+tag_key_selected_color = (white,cyan,on)
+item_selected_color = tag_key_selected_color
+form_text_color = (BLUE,black,ON)
+form_item_readonly_color = (green,black,on)
+itemhelp_color = (white,cyan,off)
+inputbox_color = dialog_color
+inputbox_border_color = dialog_color
+searchbox_color = dialog_color
+searchbox_title_color = title_color
+searchbox_border_color = border_color
+position_indicator_color = title_color
+menubox_color = dialog_color
+menubox_border_color = border_color
+item_color = dialog_color
+tag_color = title_color
+tag_selected_color = button_label_active_color
+tag_key_color = button_key_inactive_color
+check_color = dialog_color
+check_selected_color = button_active_color
+uarrow_color = screen_color
+darrow_color = screen_color
+form_active_text_color = button_active_color
+gauge_color = title_color
+border2_color = dialog_color
+searchbox_border2_color = dialog_color
+menubox_border2_color = dialog_color
+separate_widget = ''
+tab_len = 0
+visit_items = off
+use_shadow = off
+use_colors = on
+EOF_DIALOGRC
+export DIALOGRC="$dialogRcFile"
+}
+
+# Teste se o terminal suporta caracteres gráficos estendidos
+sh_ascii_lines() {
+  #Isso força o dialog a usar caracteres ASCII básicos para as bordas.
+  #if [[ "$LANG" =~ 'UTF-8' ]]; then
+  [[ "$(printf '\u250C')" == "┌" ]]
+  export NCURSES_NO_UTF8_ACS=$((!$?))
+}
+
+sh_setEnvironment() {
+  [[ ! -e "$dialogRcFile" ]] && sh_create_dialogrc
+  sh_ascii_lines
+}
+
+sh_checkroot() {
+  (( EUID != 0 )) && elevate_to_root "$@" || return 0
+}
+
+elevate_to_root() {
+  log_err "This script must be run as root. Elevating privileges..."
+  ccabec+='root [elevated]'
+  # Tenta usar sudo primeiro (caso esteja configurado)
+  if command -v sudo >/dev/null 2>&1; then
+    exec sudo bash "$0" "$@"
+  fi
+  # Se sudo falhar, tenta su
+  if command -v su >/dev/null 2>&1; then
+    exec su -c "$0 $*"
+  fi
+  die "Error: Unable to elevate privileges. Run manually as root."
+}
+
+replicate() {
+  local char="${1:-#}"
+  local nsize="${2:-$(tput cols)}"
+  # Gera linha com substituição direta sem forks extras
+  printf -v _line "%*s" "$nsize" && printf '%b\n' "${blue}${_line// /$char}${reset}"
+}
+
+readconf() {
+  local msg="$1"
+  local color="${2:-${yellow}}"
+
+  echo -n -e "$color"
+  if [[ $LC_DEFAULT -eq 0 ]]; then
+    read -r -p "$msg [N/s] :"
+  else
+    read -r -p "$msg [N/y] :"
+  fi
+  echo -n -e "$reset"
+  case "${REPLY^}" in
+  [SY]) return 0 ;;
+  "") return 1 ;;
+  *) return 1 ;;
+  esac
+}
+
+debug() {
+# dialog
+  whiptail --fb  --clear --backtitle "[debug]$0" --title "[debug]$0" --yesno "${*}\n"  0 40
+  local result="$?"
+  ((result)) && exit "$result"
+  return "$result"
+}
+
+# ===================================================================
+# Funções auxiliares
+# ===================================================================
+run_cmd() {
+  local cmd="$*"
+
+  if [[ $DRYRUN -eq 1 ]]; then
+    msg "${cyan}[DRY-RUN]${rst} ${cmd}"
+  else
+    echo -e "  [⚙  ] ${cyan}${cmd}${rst}"
+    # Executa o comando, falha se houver erro
+    # Redireciona stderr para /dev/null apenas para mkdir -p e ummount -R
+    if [[ "$cmd" =~ ^mkdir\ -p ]] || [[ "$cmd" =~ ^umount\ -R ]]; then
+      eval "$cmd" &>/dev/null || true
+    else
+      eval "$cmd" || log_warn_tab "Falha ao executar: $cmd"
+    fi
+  fi
+}
+
+sh_copyright() {
+  cat <<-EOF-COPY
+${bold}${cyan}${0##*/} v${_VERSION_}${rst}
+${bold}${cyan}${APPDESC}${rst}
+${bold}${orange}Copyright (c) 2019-2025, ${reset}ChiliLinux Development Team <https://chililinux.com> <https://github.com/chililin>
+${bold}${orange}Copyright (c) 2019-2025, ${reset}Vilmar Catafesta <vcatafesta@gmail.com>${black}
+EOF-COPY
+}
+
+sh_version() {
+  cat <<-EOF-VERSION
+$(sh_copyright)
+
+        Este é um software livre: você é livre para alterá-lo e redistribuí-lo.
+        O $APP é disponibilizado para você sob a ${yellow}Licença MIT${black}, e
+        inclui software de código aberto sob uma variedade de outras licenças.
+        Você pode ler instruções sobre como baixar e criar para você mesmo
+        o código fonte específico usado para criar esta cópia.
+        ${red}Este programa vem com absolutamente NENHUMA garantia.${reset}
+EOF-VERSION
+}
+
+msg()          { echo -e "${INFO} ${*}${reset}"; }
+log_ok()       { echo -e "${TICK} ${*}${reset}"; }
+log_err()      { echo -e "${CROSS} ${*}${reset}"; }
+log_mid()      { echo -e "${MID} ${*}${reset}"; }
+log_warn()     { echo -e "${WARN} ${*}${reset}"; }
+msg_tab()      { echo -e "  ${INFO} ${*}${reset}"; }
+log_ok_tab()   { echo -e "  ${TICK} ${*}${reset}"; }
+log_err_tab()  { echo -e "  ${CROSS} ${*}${reset}"; }
+log_mid_tab()  { echo -e "  ${MID} ${*}${reset}"; }
+log_warn_tab() { echo -e "  ${WARN} ${*}${reset}"; }
+die() {
+  echo -e "${CROSS} ${red}${*}${reset}"
+  exit 1
+}
+
+# configure ambiente
+set_varcolors
+#sh_checkroot "$@"
+
+##########################################################################################################
+#######################################################################################
+out="${2:-${1%.go}}"
+msg "Compiling : ${cyan}$1"
+msg "Out       : ${cyan}${out}"
+
+if go build -o "$out" "$1"; then
+   msg "Build     : ${green}OK"
+   ls -la --color=auto "$out"
+else
+   msg "Build     : ${red}FAILED"
+fi
+

@@ -11,8 +11,7 @@ url="https://github.com/voidlinuxbr/$pkgname"
 provides=("$pkgname")
 source=("git+${url}.git")
 md5sums=('SKIP')
-depends=("bash>=0")
-
+depends=('bash>=0' gettext dialog pv rsync gawk grep parted curl lvm2 cryptsetup void-utils xz)
 package() {
 	local dirs=("usr" "etc" "opt")
 	#   echo "DESTDIR=$DESTDIR"
@@ -29,9 +28,6 @@ package() {
 
    # Install binary
    install -Dm755 ${_pkgsrc}/void-install "${pkgdir}/usr/bin/void-install"
-   install -Dm755 ${_pkgsrc}/void-clonedisk "${pkgdir}/usr/bin/void-clonedisk"
-   install -Dm755 ${_pkgsrc}/void-services "${pkgdir}/usr/bin/void-services"
-   install -Dm755 ${_pkgsrc}/void-dialog-theme-selector "${pkgdir}/usr/bin/void-dialog-theme-selector"
 
    # Install license file if present
    if [ -f "LICENSE" ]; then

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #shellcheck disable=SC2145,SC2001,SC2188,SC2015,SC2155,SC2317,SC2320,SC2291,SC2034,SC2120,SC2086,SC2319
 #shellcheck disable=SC2016,SC2154,SC2207,SC2166,SC2128,SC2059,SC2140,SC2031,SC2030,SC2036,SC2119,SC2027
-
+#
 #  void-install
 #  Created: 2022/12/24
 #  Altered: 2024/03/11
-#  Updated: dom 11 jan 2026 12:47:56 -04
+#  Updated: qui 22 jan 2026 02:08:59 -04
 #
 #  Copyright (c) 2022-2025, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -43,6 +43,7 @@ green=$(tput bold)$(tput setaf 2)
 pink=$(tput setaf 5)
 cyan=$(tput setaf 6)
 reset=$(tput sgr0)
+rst=$(tput sgr0)
 #export PS4='${red}${0##*/}${green}[$FUNCNAME]${pink}[$LINENO]${reset} '
 export PS4='${red}${0##*/}${green}[${FUNCNAME[0]:-MAIN}]${pink}[$LINENO]${reset} '
 #set -x
@@ -51,9 +52,9 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='3.1.11-20260111'
+readonly _VERSION_='3.1.22-020859'
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
-#                      cfdisk gdisk  efivar mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.f2fs mkfs.jfs mkfs.reiserfs)
+readonly LOCKFILE="/tmp/void-install.lock"
 
 # Mapa: [distro]="lista de pacotes"
 declare -gA DISTRO_PKGS=(
@@ -103,17 +104,17 @@ declare HYPRLAND=false
 declare LVM=false
 declare LFDE=false
 declare LONLY_TTY=true
+declare LSERVER=false
 declare LEXTRA=false
 declare LLOCALE=true
+declare LXORG=false
 #
-declare -ga _PKGS
-declare -ga _EXTRAS
 declare DEFITEM
 #
 declare -gi njobs=73
 declare -gi ncounter=0
 declare -gi quiet=0
-declare -gi grafico=0
+declare -gi grafico=1
 #
 declare -gA Amkfs
 declare -gA Amntpoint
@@ -150,7 +151,7 @@ declare -gA AConfLocale=(
 	[_TIMEZONE]='America/Sao_Paulo'
 	[_KEYMAP]='br-abnt2'
 	[_CLOCK]='UTC'
-	[_FONT]='Lat2-Terminus16'
+	[_FONT]='Uni2-TerminusBold16'
 	[_LOCALE]='pt_BR.utf8'
 	[_REGION]='Portuguese Brazil'
 )
@@ -161,7 +162,7 @@ declare -gA AConfMirror=(
 	[location]='Fastly Global CDN'
 )
 declare -gA AConfAudio=(
-	[_AUDIOSERVER]='Pipewire'
+	[_AUDIOSERVER]='None'
 )
 declare -gA AConfWifi=(
 	[_NETWORK]='wifi_ssid'
@@ -268,7 +269,7 @@ get_option() {
 
 die() {
 	if test $# -ge 2; then
-		evaluate_retval 1
+		evaluate_retval $one
 	fi
 	local msg=$1
 	shift
@@ -366,6 +367,35 @@ sh_create_dialogrc() {
 	export DIALOGRC="$dialogRcFile"
 }
 
+sh_update_sshd() {
+	sh_chroot_job "$(gettext 'Atualizando config sshd')" '
+   	mkdir -p /etc/ssh/sshd_config.d/
+	   cat >/etc/ssh/sshd_config.d/10-custom.conf <<'EOF'
+# Configurações gerais
+PermitTTY yes
+PrintMotd yes
+PrintLastLog yes
+Banner /etc/issue.net
+
+# Autenticação
+PermitRootLogin yes
+PasswordAuthentication yes
+KbdInteractiveAuthentication yes
+ChallengeResponseAuthentication yes
+PubkeyAuthentication yes
+PubkeyAcceptedKeyTypes=+ssh-rsa
+AuthorizedKeysFile .ssh/authorized_keys
+UsePAM yes
+
+# Recursos
+X11Forwarding yes
+Subsystem sftp internal-sftp
+EOF
+
+   ' $err_not_fatal
+
+}
+
 sh_update_locale() {
 	local f="${dir_install}/etc/default/libc-locales"
 	local cConf_file="${dir_install}/etc/locale.conf"
@@ -375,17 +405,22 @@ sh_update_locale() {
 	export locale="${raw}.UTF-8 UTF-8"
 
 	sh_cmd_job "${cmsg_Ajustando} locales [/etc/default/libc-locales, /etc/locale.conf]" "
-      sed -i '/^[^#]/ s/^/#/' \"$f\"
-      printf '%s\n' \"$locale\" >> \"$f\"
+	sed -i '/^[^#]/ s/^/#/' \"$f\"
+	printf '%s\n' \"$locale\" >>\"$f\"
 
-      touch "$cConf_file"
-      cat > "$cConf_file" <<-EOF
+	touch "$cConf_file"
+	cat >"$cConf_file" <<EOF
 LANG=$base
 LANGUAGE=$base
 LC_COLLATE=C
 LC_ALL=$base
 EOF
-   " $err_not_fatal
+	" $err_not_fatal
+
+	#   sh_chroot_job "${cmsg_Configurando} locales" "
+	#      xbps-reconfigure --force glibc-locales
+	#   "
+
 }
 
 sh_update_self() {
@@ -427,88 +462,109 @@ sh_update_self() {
 	fi
 }
 
-sh_choose_packages() {
-	if sh_checkRepo 'https://void.chililinux.com/voidlinux/current'; then
-		_EXTRAS='nano-syntax-highlighting'
-		_EXTRAS+=' chili-void-grub-theme'
-		_EXTRAS+=' chili-void-tools'
-		_EXTRAS+=' chili-nano-config'
-		_EXTRAS+=' chili-skel'
-		_EXTRAS+=' chili-utils'
-		_EXTRAS+=' void-utils'
-		#		_EXTRAS+=' voidbr-plymouth-theme'
-	fi
+sh_choose_common_packages() {
+	declare -ga aSuplemento=(
+		chili-void-grub-theme
+#	   voidbr-plymouth-theme
+		chili-utils
+		void-utils
+		chili-nano-config
+	)
 
-	if grep -qi xorg <<<"${_WINDOWMANAGER[@]}"; then
-		return
-	fi
+	declare -ga aExtra=(
+		bash-completion
+		fzf
+		gettext
+		dialog
+		pv
+		tree
+		duf
+		parted
+		rsync
+		tmate
+		inetutils
+		iputils
+		net-tools
+		cifs-utils
+		ntfs-3g
+		htop
+		parallel
+		exa
+		nvme-cli
+		fastfetch
+		sed
+		grep
+		curl
+		wget
+		git
+		nano
+		vim
+	)
+
+   if $LXORG; then
+   	return
+   fi
 
 	## begin packages
 	declare -ga aXorg=(xorg xinit xterm xorg-fonts dbus-x11 elogind dbus-elogind polkit-elogind xdg-user-dirs xrdb)
 	declare -ga aVideo=(mesa-dri linux-firmware-intel xf86-video-amdgpu xf86-video-ati mesa-nouveau-dri)
 	declare -ga aPulseaudio=(pulseaudio pavucontrol pasystray gst-plugins-bad1 gst-plugins-good1 gst-plugins-ugly1 gst-plugins-base1 alsa-plugins-pulseaudio)
 	declare -ga aPipewire=(pipewire wireplumber alsa-pipewire pulseaudio-utils pavucontrol libspa-bluetooth libjack-pipewire alsa-plugins-pulseaudio)
-	declare -ga aDisplaymanager=(lxdm lxdm-theme-vdojo)
+	declare -ga aDisplaymanager=(lxdm lxdm-theme-vdojo sddm voidbr-sddm-themes)
 
 	if $LCUSTOM; then
 		## X11
-#		if ! $LONLY_TTY; then
-			declare -ga aIconsAndThemes=('Adapta' 'adwaita-icon-theme' 'chili-void-beauty-icons' 'chili-void-wallpapers' 'chili-void-gnome-professional-theme' 'xfwm-axiom-theme')
-			declare -ga aArchiverX=('xarchiver')
-			declare -ga aBrowser=('firefox' "firefox-i18n-$(sh_get_language_without_utf8)" 'brave-bin')
-			declare -ga aBluetooth=('bluez' 'bluez-alsa' 'bluedevil' 'blueman' 'bluez-cups' 'bluez-deprecated' 'gnome-bluetooth1' 'blueberry')
-			declare -ga aFilemanager=('Thunar' 'thunar-archive-plugin' 'thunar-volman' 'pcmanfm' 'octoxbps')
-			declare -ga aFont+=('liberation-fonts-ttf' 'dejavu-fonts-ttf' 'fonts-droid-ttf' 'fonts-croscore-ttf' 'terminus-font' 'ttf-ubuntu-font-family' 'font-iosevka')
-			aFont+=('unicode-emoji' 'noto-fonts-emoji' 'font-emoji-one-color' 'unicode-emoji' 'nerd-fonts-symbols-ttf' 'font-hack-ttf')
-			aFont+=('font-awesome' 'font-awesome5' 'font-awesome6' nerd-fonts-ttf)
-			declare -ga aPerfumery=('conky' 'setxkbmap' 'numlockx' 'nitrogen' 'ristretto' 'mate-notification-daemon')
-			declare -ga aPrinter=('cups' 'system-config-printer' 'system-config-printer-udev' 'splix' 'samsung-unified-driver' 'brother-brlaser' 'cups-pdf')
-			declare -ga aTerminal=('rxvt-unicode' 'xfce4-terminal' 'cool-retro-term')
-			declare -ga aEditorX=('kate' 'mousepad')
-			declare -ga aMicrocode=('intel-ucode' 'linux-firmware-amd')
-			declare -ga aNetworkX=('network-manager-applet' 'gvfs' 'gvfs-smb' 'gvfs-cdda')
-			declare -ga aUtilityX=('mate-calc' 'xkill' 'menulibre' 'mugshot' 'ocs-url' 'remmina' 'remmina-kwallet' gparted)
-#		else
-			## tty
-			declare -ga aDaemons=('NetworkManager' 'acpi' 'acpid' 'connman' 'irqbalance' 'avahi')
-			declare -ga aArchiverTty=('unrar' 'zip' 'p7zip' 'unzip' 'bzip2')
-			declare -ga aDownloader=('curl' 'wget' 'git')
-			declare -ga aEditorTxt=(nano vim)
-			declare -ga aUtility=('dialog' 'gettext' 'binutils' 'sed' 'grep' 'tree' 'pv' 'parted' 'rsync' 'duf' 'dfc' 'tmate' 'inetutils' 'iputils')
-			aUtility+=('cifs-utils' 'ntfs-3g' 'btop' 'htop' 'parallel' 'evtest' 'bubblewrap' 'pacman' 'fakeroot' 'bsdtar' 'exa' 'cmatrix')
-			aUtility+=('nvme-cli')
-			declare -ga _PKGS='fastfetch pfetch bc bat fzf bash-completion vpm vsv xtools geoip geoipupdate pigz #geoip-data'
-			#--repository=https://void.chililinux.com/voidlinux/current
-			## end packages
-#		fi
+		declare -ga aIconsAndThemes=(Adapta adwaita-icon-theme chili-void-beauty-icons chili-void-wallpapers chili-void-gnome-professional-theme xfwm-axiom-theme)
+		declare -ga aArchiverX=(xarchiver)
+		declare -ga aBrowser=(firefox firefox-i18n-$(sh_get_language_without_utf8) brave-bin)
+		declare -ga aBluetooth=(bluez bluez-alsa bluedevil blueman bluez-cups bluez-deprecated gnome-bluetooth1 blueberry)
+		declare -ga aFont+=(liberation-fonts-ttf dejavu-fonts-ttf fonts-droid-ttf fonts-croscore-ttf
+			terminus-font ttf-ubuntu-font-family font-iosevka
+			unicode-emoji noto-fonts-emoji font-emoji-one-color unicode-emoji
+			nerd-fonts-symbols-ttf font-hack-ttf
+			font-awesome font-awesome5 font-awesome6 nerd-fonts-ttf
+		)
+		declare -ga aPerfumery=(conky setxkbmap numlockx nitrogen ristretto mate-notification-daemon)
+		declare -ga aPrinter=(cups system-config-printer system-config-printer-udev splix samsung-unified-driver brother-brlaser cups-pdf)
+		declare -ga aFilemanager=(Thunar thunar-archive-plugin thunar-volman octoxbps)
+		declare -ga aTerminal=(rxvt-unicode cool-retro-term)
+		declare -ga aEditorX=(kate mousepad)
+		declare -ga aMicrocode=(intel-ucode linux-firmware-amd)
+		declare -ga aNetworkX=(gvfs gvfs-smb gvfs-mtp gvfs-afc gvfs-cdda udisks2)
+		declare -ga aUtilityX=(mate-calc xkill menulibre mugshot ocs-url gparted)
+		## tty
+		declare -ga aDaemons=(acpi acpid irqbalance avahi avahi-discover)
+		declare -ga aArchiverTty=(unrar zip p7zip unzip bzip2)
+		declare -ga aDownloader=()
+		declare -ga aUtility=(binutils dfc btop parallel bubblewrap cmatrix pfetch bc bat xtools geoip geoipupdate)
+		declare -ga aEditorTxt=()
 	else
-#		if ! $LONLY_TTY; then
-			## X11
-			declare -ga aIconsAndThemes=(Adapta adwaita-icon-theme)
-			declare -ga aArchiverX=()
-			declare -ga aBrowser=(firefox firefox-i18n-$(sh_get_language_without_utf8))
-			declare -ga aBluetooth=()
-			declare -ga aFilemanager=(Thunar pcmanfm)
-			declare -ga aFont+=()
-			declare -ga aPerfumery=()
-			declare -ga aPrinter=()
-			declare -ga aTerminal=(xfce4-terminal)
-			declare -ga aEditorX=()
-			declare -ga aMicrocode=()
-			declare -ga aNetworkX=(network-manager-applet)
-			declare -ga aUtilityX=(gettext)
-#		else
-			## tty
-			declare -ga aDaemons=(NetworkManager)
-			declare -ga aArchiverTty=()
-			declare -ga aDownloader=()
-			declare -ga aEditorTxt=()
-			declare -ga aUtility=()
-			declare -ga _PKGS=''
-			#--repository=https://void.chililinux.com/voidlinux/current
-			## end packages
-#		fi
+		## X11
+		declare -ga aIconsAndThemes=(Adapta adwaita-icon-theme)
+		declare -ga aArchiverX=()
+		declare -ga aBrowser=(firefox firefox-i18n-$(sh_get_language_without_utf8))
+		declare -ga aFilemanager=(Thunar)
+		declare -ga aBluetooth=()
+		declare -ga aFont=(noto-fonts-emoji)
+		declare -ga aPerfumery=()
+		declare -ga aPrinter=()
+		declare -ga aTerminal=()
+		declare -ga aEditorX=()
+		declare -ga aMicrocode=()
+		declare -ga aNetworkX=()
+		declare -ga aUtilityX=()
+		## tty
+		declare -ga aDaemons=()
+		declare -ga aArchiverTty=()
+		declare -ga aDownloader=()
+		declare -ga aUtility=()
 	fi
+	aTerminal+=(xfce4-terminal)
+
+	if ! $LSERVER; then
+		aDaemons+=(NetworkManager)
+	fi
+	aNetworkX=(network-manager-applet)
 
 }
 
@@ -550,10 +606,10 @@ sh_setEnvironment() {
 	readonly _TARBALL_ROOTFS=void-x86_64-base-custom-current.tar.xz
 	readonly url_tarball="https://raw.githubusercontent.com/voidlinuxbr/void-install/refs/heads/main/${_TARBALL_ROOTFS}"
 	readonly url_tarball_md5="https://raw.githubusercontent.com/voidlinuxbr/void-install/refs/heads/main/${_TARBALL_ROOTFS}.md5"
-	readonly true=1
-	readonly false=0
-	readonly err_fatal=$true
-	readonly err_not_fatal=$false
+	readonly zero=0
+	readonly one=1
+	readonly err_not_fatal=0
+	readonly err_fatal=1
 	readonly BOOTLOG="/tmp/void-install-$(sh_diahora).log"
 	readonly LOGGER='/dev/tty8'
 	shell='/bin/sh'
@@ -652,12 +708,11 @@ sh_touchConf() {
 		######################################################################
 		WIFI_NETWORK=$_WIFI_NETWORK
 		WIFI_PASSWORD=$_WIFI_PASSWORD
-		PKGS="$_PKGS"
-		EXTRAS="$_EXTRAS"
 	EOF
 	{
 		declare -p LDISK
 		declare -p LEFI
+		declare -p LAUDIO
 		declare -p LGRUB
 		declare -p LBIOS
 		declare -p LMKPARTED
@@ -816,10 +871,10 @@ sh_checkRepo() {
 	response=$(curl -o /dev/null -s -w "%{http_code}\n" -L "$url_repo")
 	retval=$?
 	if [[ "$response" -eq 200 ]]; then
-		evaluate_retval "0" "$err_not_fatal" "response: $response ($url_repo)"
+		evaluate_retval $zero "$err_not_fatal" "${green}response: $response ($url_repo)${rst}"
 		return 0
 	fi
-	evaluate_retval "1" "$err_not_fatal" "response: $response: ${cmsg_SemRota} ($url_repo) - ${cmsg_CheckNet}"
+	evaluate_retval $one "$err_not_fatal" "response: $response: ${cmsg_SemRota} ($url_repo) - ${cmsg_CheckNet}"
 	return 1
 }
 
@@ -833,8 +888,9 @@ sh_checkNet() {
 	retval=$?
 	if [[ "$response" -eq 000 || "$response" -eq 404 ]]; then
 		evaluate_retval "$err_fatal" "$err_fatal" "reponse: $response - ${cmsg_SemRota} ($xurl) - ${cmsg_CheckNet}"
+		return $one
 	fi
-	evaluate_retval "0" "$err_not_fatal" "response: $response ($xurl)"
+	evaluate_retval $zero "$err_not_fatal" "response: $response ($xurl)"
 	return 0
 }
 
@@ -843,9 +899,9 @@ sh_downloadTarball() {
 	sh_info_msg "${cmsg_IniciandoDownload} $url_tarball"
 	curl -L -C - --insecure --silent --remote-name "$url_tarball" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	if [[ "${PIPESTATUS[0]}" -eq 1 ]]; then
-		evaluate_retval "1" "$err_fatal" "${cmsg_SemRota} ($url_mirror) - ${cmsg_CheckNet}"
+		evaluate_retval $one "$err_fatal" "${cmsg_SemRota} ($url_mirror) - ${cmsg_CheckNet}"
 	fi
-	evaluate_retval "0"
+	evaluate_retval $zero
 	return 0
 }
 
@@ -853,11 +909,11 @@ sh_checkTarball() {
 	sh_info_msg "${cmsg_ChecandoTarball} rootfs $_TARBALL_ROOTFS"
 
 	if ! [[ -e "$_TARBALL_ROOTFS" ]]; then
-		evaluate_retval "1" "$err_not_fatal"
+		evaluate_retval $one "$err_not_fatal"
 		rm -f "$_TARBALL_ROOTFS"
 		sh_downloadTarball
 	else
-		evaluate_retval "0"
+		evaluate_retval $zero
 		return 0
 	fi
 	return "$?"
@@ -869,11 +925,11 @@ sh_checkIntegrityTarball() {
 	sh_info_msg "${cmsg_VerificandoIntegridadeTarball} rootfs $_TARBALL_ROOTFS"
 	tar -tf "$_TARBALL_ROOTFS" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	if ! [[ "${PIPESTATUS[0]}" -eq 0 ]]; then
-		evaluate_retval "1" "$err_not_fatal"
+		evaluate_retval $one "$err_not_fatal"
 		rm -f "$_TARBALL_ROOTFS"
 		sh_downloadTarball
 	else
-		evaluate_retval "0"
+		evaluate_retval $zero
 		return 0
 	fi
 	return "${PIPESTATUS[0]}"
@@ -1008,6 +1064,12 @@ padr() {
 	printf "%*s\n" "$COLS" "$text" | sed "s/ /$char/g"
 }
 
+sh_info_msg() {
+	local _msg="$1"
+	last_msg="$_msg"
+	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
+}
+
 msg() {
 	((++ncounter))
 	cinfo="$1"
@@ -1016,52 +1078,20 @@ msg() {
 	last_msg="$2"
 	logmessage="$ufmt $last_msg"
 	logmessage=${logmessage/INFO /}
-	#	notify-send "${ccabec}" "${logmessage}"
-	printf "%s\n" "$(timespec) [ $cinfo ]$ufmt ${logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+	clean_logmessage="$(strip_ansi "$logmessage")"
+	printf "%s\n" "$(timespec) [ $cinfo ]$ufmt ${clean_logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 
 	if ((grafico)); then
-		logmessage="$last_msg"
+		logmessage="$(strip_ansi "$last_msg")"
 		${DIALOG} \
 			--no-collapse \
 			--colors \
 			--title "$cinfo" \
 			--backtitle "$ccabec" \
 			--infobox "\nStep:${BOLD}${YELLOW}${ufmt} ${RESET}${BOLD}$logmessage" \
-			8 100
+			6 100
 	else
-		log_info_msg "$(fmt) ${last_msg}"
-	fi
-}
-
-msgNEW() {
-	((++ncounter))
-	local cinfo="$1"
-	local last_msg="$2"
-	# Pega o último argumento para ver se é "silent"
-	local mode="${@: -1}"
-
-	cfmt="$(fmt)"
-	ufmt=$(unfmt "$cfmt")
-	logmessage="$ufmt $last_msg"
-	logmessage=${logmessage/INFO /}
-
-	# Seu log original
-	printf "%s\n" "$(timespec) [ $cinfo ]$ufmt ${logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-
-	if ((grafico)); then
-		# Só abre o infobox se NÃO for silent
-		if [[ "$mode" != "silent" ]]; then
-			logmessage="$last_msg"
-			${DIALOG} \
-				--no-collapse \
-				--colors \
-				--title "$cinfo" \
-				--backtitle "$ccabec" \
-				--infobox "\nStep:${BOLD}${YELLOW}${ufmt} ${RESET}${BOLD}$logmessage" \
-				8 100
-		fi
-	else
-		log_info_msg "$(fmt) ${last_msg}"
+		log_info_msg "$(fmt) ${logmessage}"
 	fi
 }
 
@@ -1129,12 +1159,10 @@ log_msg() {
 }
 
 evaluate_retval() {
-	local error_value="$?"
-	local error_fatal="$2"
+	local error_value=$? # captura retorno anterior
+	local error_fatal=${2:-$one}
 	local cmsgdie="$3"
 	local level="$4"
-
-	[[ -z "$error_fatal" ]] && error_fatal=$true
 
 	if [[ $# -gt 0 ]]; then
 		error_value="$1"
@@ -1179,9 +1207,10 @@ log_failure_msg_level() {
 
 log_success_msg_level() {
 	if ! ((quiet)) && ! ((grafico)); then
-		echo -n -e "     ${BMPREFIX}${@}"
+		echo -n -e "     ${BMPREFIX}${green}=>${reset} ${*}"
 		echo -e "   ${CURS_ZERO}${SUCCESS_PREFIX}${SET_COL}${SUCCESS_SUFFIX}"
 	fi
+
 	logmessage=$(unfmt "$last_msg")
 	printf "%s\n" "$(timespec) [  OK  ]${logmessage}" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	replicate "#" "100" | tee -i -a "$BOOTLOG" >$LOGGER
@@ -1233,7 +1262,7 @@ function debug() {
 
 info() {
 	msg "${fmt} $@"
-	evaluate_retval "0"
+	evaluate_retval $zero
 
 	${DIALOG} \
 		--colors \
@@ -1257,7 +1286,7 @@ infobox() {
 
 alerta() {
 	msg "${fmt} $@"
-	evaluate_retval "0"
+	evaluate_retval $zero
 
 	${DIALOG} \
 		--colors \
@@ -1470,7 +1499,7 @@ sh_mkparted() {
 }
 
 sh_update_mirror() {
-	sh_cmd_job "${cmsg_Configurando} ${cmsg_Mirror,,} ${cmsg_Em} $dir_install" "
+	sh_cmd_job "${cmsg_Configurando} ${cmsg_Mirror,,}" "
       cat >"$dir_install/etc/xbps.d/00-repository-main.conf" <<-EOF
 repository=${url_mirror}/current
 repository=${url_mirror}/current/nonfree
@@ -1482,22 +1511,6 @@ repository=https://void.chililinux.com/voidlinux/current
 #repository=https://void.chililinux.com/voidlinux/current/nonfree
 #repository=https://void.chililinux.com/voidlinux/current/multilib
 #repository=https://void.chililinux.com/voidlinux/current/multilib/nonfree
-EOF
-   " $err_not_fatal
-}
-
-sh_update_sshd() {
-	sh_cmd_job "${cmsg_Ajustando} sshd_config" "
-   cat >> ${dir_install}/etc/ssh/sshd_config <<-EOF
-KbdInteractiveAuthentication Yes
-X11Forwarding Yes
-PermitRootLogin Yes
-PubkeyAuthentication Yes
-PubkeyAcceptedKeyTypes=+ssh-rsa
-AuthorizedKeysFile      .ssh/authorized_keys
-PasswordAuthentication Yes
-ChallengeResponseAuthentication Yes
-UsePAM yes
 EOF
    " $err_not_fatal
 }
@@ -1546,52 +1559,6 @@ EOF
    " $err_not_fatal
 }
 
-install_skel_user() {
-	local aname=('config-common')
-	local x
-
-	for x in "${_WINDOWMANAGER[@]}"; do
-		case "$x" in
-		"tty") : ;;
-		"awesome") aname+=(config-awesome) ;;
-		"xorg") : ;;
-		"bspwm") aname+=(config-bspwm) ;;
-		"blackbox") aname+=(config-blackbox) ;;
-		"dwm") aname+=(config-dwm) ;;
-		"enlightenment") aname+=(config-enlightenment) ;;
-		"fluxbox") aname+=(config-fluxbox) ;;
-		"gnome") aname+=(config-gnome) ;;
-		"hyprland") aname+=(config-hyprland) ;;
-		"i3wm") aname+=(config-i3wm) ;;
-		"lxde") aname+=(config-lxde) ;;
-		"lxqt") aname+=(config-lxqt) ;;
-		"mate") aname+=(config-mate) ;;
-		"openbox") aname+=(config-openbox) ;;
-		"plasma") aname+=(config-plasma) ;;
-		"sway") aname+=(config-sway) ;;
-		"twm") aname+=(config-twm) ;;
-		"xfce4") aname+=(config-xfce) ;;
-		esac
-	done
-
-	#skel
-	for path in "${aname[@]}"; do
-		if [[ -d "$path" ]]; then
-			cp -RLf $path/. "$dir_install/" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-		fi
-	done
-	cp -RLf config-common/etc/skel/. "$dir_install/root/" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-	return 0
-}
-
-sh_update_bashrc() {
-	if $LCUSTOM; then
-		sh_cmd_job "${cmsg_Ajustando} bashrc" "
-         install_skel_user
-      " $err_not_fatal
-	fi
-}
-
 sh_update_wpa_suplicant() {
 	sh_cmd_job "${cmsg_Ajustando} wpa_supplicant.conf" "
       cat >"$dir_install/etc/wpa_supplicant/wpa_supplicant.conf" <<-EOF
@@ -1626,12 +1593,13 @@ sh_update_Xkeymap() {
 		return 0
 	fi
 
-	sh_cmd_job "${cmsg_Ajustando} ${cmsg_Teclado,,} ${AConfLocale[_KEYMAP]} (X11)" "
-   	if [[ ! -d "$dir_install/etc/X11/xorg.conf.d" ]]; then
-   	   mkdir -p "$dir_install/etc/X11/xorg.conf.d"
-      fi
-   	if [[ ! -e "$dir_install/etc/X11/xorg.conf.d/10-keyboard.conf" ]]; then
-   	   cat >"$dir_install/etc/X11/xorg.conf.d/10-keyboard.conf" <<-EOF
+	sh_info_msg "${cmsg_Ajustando} ${cmsg_Teclado,,} ${AConfLocale[_KEYMAP]} (X11)"
+	if [[ ! -d "$dir_install/etc/X11/xorg.conf.d" ]]; then
+		mkdir -p "$dir_install/etc/X11/xorg.conf.d"
+	fi
+
+	if [[ ! -e "$dir_install/etc/X11/xorg.conf.d/10-keyboard.conf" ]]; then
+		cat >"$dir_install/etc/X11/xorg.conf.d/10-keyboard.conf" <<EOF
 Section "InputClass"
    Identifier "Keyboard Br Abnt2"
    MatchIsKeyboard "on"
@@ -1641,8 +1609,7 @@ Section "InputClass"
    Option "XKbOptions" ""
 EndSection
 EOF
-      fi
-   " $err_not_fatal
+	fi
 }
 
 sh_check_util_fs() {
@@ -1668,6 +1635,18 @@ sh_make_fs() {
 	local format
 	local fstype
 
+	declare -A fsparms=(
+		[ext2]="-F -L VOID"
+		[ext3]="-F -L VOID"
+		[ext4]="-F -L VOID"
+		[btrfs]="-f -L VOID"
+		[f2fs]="-f -l VOID"
+		[xfs]="-f -L VOID"
+		[jfs]="-f -L VOID"
+		[vfat]="-F32 -n EFI"
+		[reiserfs]="-f -l VOID"
+	)
+
 	sh_check_util_fs
 	for i in "${!Amntpoint[@]}"; do
 		_PART="$i"
@@ -1675,27 +1654,15 @@ sh_make_fs() {
 		format="$(sh_splitarray "${Amntpoint[$i]}" 3)"
 
 		if [[ "$format" = "1" ]]; then
-			sh_info_msg "${cmsg_FormatandoParticao} ${_PART} FS ${fstype,,}"
-			declare -A fsparms=(
-				[ext2]="-F -L VOID"
-				[ext3]="-F -L VOID"
-				[ext4]="-F -L VOID"
-				[btrfs]="-f -L VOID"
-				[f2fs]="-f -l VOID"
-				[xfs]="-f -L VOID"
-				[jfs]="-f -L VOID"
-				[vfat]="-F32 -n EFI"
-				[reiserfs]="-f -l VOID"
-			)
-
-			if [[ "$fstype" = "swap" ]]; then
-				wipefs -a "${_PART}"
-				mkswap "${_PART}" 2>&1 | tee -i -a "$BOOTLOG" >"$LOGGER"
-			else
-				wipefs -a "${_PART}"
-				mkfs.$fstype ${fsparms[$fstype]} ${_PART} 2>&1 | tee -i -a "$BOOTLOG" >"$LOGGER"
-			fi
-			evaluate_retval "${PIPESTATUS[0]}"
+			sh_cmd_job "${cmsg_FormatandoParticao} ${_PART} FS ${fstype,,}" "
+   			if [[ "$fstype" = "swap" ]]; then
+	   			wipefs -a "${_PART}"
+		   		mkswap "${_PART}"
+   			else
+	   			wipefs -a "${_PART}"
+		   		mkfs.$fstype ${fsparms[$fstype]} ${_PART}
+   			fi
+         "
 		fi
 	done
 
@@ -1705,10 +1672,10 @@ sh_make_fs() {
 }
 
 sh_umount_fs() {
-	sh_cmd_job "${cmsg_DismountFileSystem}" "
-	   umount -frl "$dir_install"
-      LBIND=false
-	" $err_not_fatal
+	sh_info_msg "${cmsg_DismountFileSystem}"
+	if umount -rfl "$dir_install"; then
+		LBIND=false
+	fi
 }
 
 sh_stop_mount() {
@@ -1718,8 +1685,8 @@ sh_stop_mount() {
       umount -rl "$dir_install"
       nchoice="${PIPESTATUS[0]}"
       evaluate_retval 0
-   	[[ $nchoice -eq 0 || $nchoice -eq 32 ]] && LMOUNT=$false
-	   [[ $LMOUNT -eq $false ]] && return 0 || return 1
+   	[[ $nchoice -eq 0 || $nchoice -eq 32 ]] && LMOUNT=$zero
+	   [[ $LMOUNT -eq $zero ]] && return 0 || return 1
    " $err_not_fatal
 }
 
@@ -1765,53 +1732,46 @@ sh_init_bind() {
 	$LBIND && return 0 || return 1
 }
 
+sh_run_clean() {
+	local ret
+	eval "$1" 2>&1 |
+		strip_ansi |
+		tee -i -a "$BOOTLOG" \
+			>"$LOGGER"
+	ret="${PIPESTATUS[0]}"
+	return "$ret"
+}
+
 sh_stop_bind() {
 	local nchoice
 
 	sh_info_msg "${cmsg_DesMontandoAmbiente} chroot"
-	{
-		umount -r "${dir_install}/proc"
-		umount -r "${dir_install}/sys"
-		umount -r "$dir_install/sys/firmware/efi/efivars"
-		umount -r "${dir_install}/dev/shm"
-		umount -r "${dir_install}/dev/pts"
-		umount -r "${dir_install}/dev"
-		umount -r "${dir_install}/run"
-		umount -r "${dir_install}/tmp"
-	} 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-	nchoice="${PIPESTATUS[0]}"
+	sh_run_clean "
+      umount -r "${dir_install}/proc" \
+      umount -r "${dir_install}/sys" \
+      umount -r "$dir_install/sys/firmware/efi/efivars" \
+      umount -r "${dir_install}/dev/shm" \
+      umount -r "${dir_install}/dev/pts" \
+      umount -r "${dir_install}/dev" \
+      umount -r "${dir_install}/run" \
+      umount -r "${dir_install}/tmp"
+   "
+	nchoice="$?"
 	evaluate_retval 0
 
 	[[ $nchoice -eq 0 ]] && LBIND=false
 	$LBIND && return 1 || return 0
+
 }
 
-sh_info_msg() {
-	local _msg="$1"
-	last_msg="$_msg"
-	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-}
-
-sh_cmd_jobOLD() {
-	local cmsg="$1"
-	local cjob="$2"
-	local erro_fatal="$3"
-	local lretval=0
-
-	cmsg+=" ${cmsg_Em} ${yellow}$dir_install"
-	last_msg="$cmsg"
-	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-
-	if ((grafico)); then
-		eval "$cjob" 2>&1 | tee -i -a "$BOOTLOG" | dialog --colors --backtitle "$cmsg" --title "$cmsg" --begin 10 50 --progressbox 24 120 --and-widget
-	else
-		eval "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-	fi
-
-	lretval="${PIPESTATUS[0]}"
-	evaluate_retval "$lretval" "$erro_fatal"
-	shell='/bin/sh'
-	return "$lretval"
+strip_ansi() {
+	printf '%s' "$1" |
+		sed -E '
+      s/\x1B\[[0-9;]*m//g;      # Remove SGR (Cores, negrito, etc: 1m, 38;5;196m)
+      s/\x1B\[[0-9;?]*[@-~]//g; # Remove outros CSI (Movimento de cursor, etc)
+      s/\x1B\([a-zA-Z]//g;      # Remove Charset (O ^[(B que apareceu antes)
+      s/\x1B[@-Z\\-_]//g;       # Remove escapes de 2 caracteres
+    '
 }
 
 sh_cmd_job() {
@@ -1820,80 +1780,25 @@ sh_cmd_job() {
 	local erro_fatal="$3"
 	local lretval=0
 
-	# Adiciona contexto à mensagem
 	cmsg+=" ${cmsg_Em} ${yellow}$dir_install"
 	last_msg="$cmsg"
-
-	# Chama msg() com um flag 'silent' para não abrir um infobox redundante
-	# se o gráfico estiver ligado, já que vamos mostrar no progressbox abaixo.
-	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")" "silent"
+	msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
 
 	if ((grafico)); then
-		# Grupo de comandos { ... ; } garante que o echo e o eval entrem no mesmo pipe
-		{
-			echo -e "${BOLD}${YELLOW}>>> Step: ${ufmt} ${last_msg}${RESET}\n"
-			eval "$cjob"
-		} 2>&1 | tee -i -a "$BOOTLOG" | dialog \
-			--colors \
-			--backtitle "$ccabec" \
-			--title " [ $cinfo ] " \
-			--begin 10 50 \
-			--progressbox 24 120 \
-			--and-widget
-
-		lretval="${PIPESTATUS[0]}"
-	else
-		# Se não for gráfico, faz a mesma injeção mas joga para o LOGGER
-		# Assim, no TTY8, você vê o cabeçalho antes das linhas de comando
-		{
-			echo "-------------------------------------------------------"
-			echo ">>> TASK: $last_msg"
-			echo "-------------------------------------------------------"
-			eval "$cjob"
-		} 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-
-		lretval="${PIPESTATUS[0]}"
-	fi
-
-	evaluate_retval "$lretval" "$erro_fatal"
-	return "$lretval"
-}
-
-strip_ansi() {
-	printf '%s' "$1" |
-		sed \
-			-e 's/\x1B\[[0-9;]*[A-Za-z]//g' \
-			-e 's/\x1B[][()#;?]*[0-9A-Za-z]//g'
-}
-
-sh_chroot_jobOLD() {
-	local cmsg="$1"
-	local cjob="$2"
-	local erro_fatal="$3"
-	local level="$4"
-	local lretval=0
-
-	last_msg="$cmsg"
-	if [[ -n "$level" ]]; then
-		msg "INFO" "$last_msg" "$(log_info_msg_level "$last_msg")"
-	else
-		msg "INFO" "$last_msg" "$(log_info_msg "$last_msg")"
-	fi
-
-	if ((grafico)); then
-		clean_logmessage="$(strip_ansi "$logmessage")"
-		chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" |
-			dialog \
+		read LINES COLUMNS <<<"$(stty size)"
+		cmsg=$(strip_ansi "$cmsg")
+		eval "$cjob" 2>&1 | tee -i -a "$BOOTLOG" |
+			${DIALOG} \
 				--colors \
 				--backtitle "$ccabec" \
-				--title "\Zb\Z3Step:$ufmt \Z1==>\Zn \Z7[$clean_logmessage]\Zn \Z6[$(sh_time_elapsed)]\Zn" \
+				--title "\Zb\Z3Step:$ufmt \Z1==>\Zn \Z7[$cmsg]\Zn \Z6[$(sh_time_elapsed)]\Zn" \
 				--progressbox $((MAXROW / 2)) $((MAXCOL - 20))
 	else
-		chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
+		eval "$cjob" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	fi
 
 	lretval="${PIPESTATUS[0]}"
-	evaluate_retval "$lretval" "$erro_fatal" "" "$level"
+	evaluate_retval "$lretval" "$erro_fatal"
 	shell='/bin/sh'
 	return "$lretval"
 }
@@ -1915,10 +1820,11 @@ sh_chroot_job() {
 	fi
 
 	if ((grafico)); then
+		read LINES COLUMNS <<<"$(stty size)"
 		clean_logmessage="$(strip_ansi "$logmessage")"
 		# SEU CÓDIGO ORIGINAL ABAIXO
 		chroot "$dir_install" "$shell" -c "$cjob" 2>&1 | tee -i -a "$BOOTLOG" |
-			dialog \
+			${DIALOG} \
 				--colors \
 				--backtitle "$ccabec" \
 				--title "\Zb\Z3Step:$ufmt \Z1==>\Zn \Z7[$clean_logmessage]\Zn \Z6[$(sh_time_elapsed)]\Zn" \
@@ -1950,17 +1856,30 @@ sh_make_user() {
 		sh_chroot_job "${cmsg_AtivandoBashUsuario}: root" "chsh -s /bin/bash root"
 	fi
 
+	sh_cmd_job "$(gettext 'Copiando skel para root')" "
+      cp -Rpva $dir_install/etc/skel/.bash* $dir_install/root/
+      cp -Rpva $dir_install/etc/skel/.dircolors $dir_install/root/
+      cp -Rpva $dir_install/etc/skel/.git-prompt.sh $dir_install/root/
+   " $err_not_fatal
+
 	sh_update_sudoers
 }
 
 sh_update_sudoers() {
 	local user="${AsUser[cuser]}"
 
-	if [ -d $dir_install/etc/sudoers.d ]; then
+	sh_info_msg "$(gettext 'Atualizando sudoers')"
+	if [ -d "$dir_install/etc/sudoers.d" ]; then
+		# USER
 		echo "# Enable sudo for login '$user'" >"$dir_install/etc/sudoers.d/$user"
+		[ "$LSERVER" = true ] && echo 'Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/opt/samba/bin:/opt/samba/sbin"' >>"$dir_install/etc/sudoers.d/$user"
 		echo "$user ALL=(ALL:ALL) NOPASSWD: ALL" >>"$dir_install/etc/sudoers.d/$user"
+
+		# WHEEL
 		echo "# enable the sudoers entry for members of group wheel" >"$dir_install/etc/sudoers.d/wheel"
+		[ "$LSERVER" = true ] && echo 'Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/opt/samba/bin:/opt/samba/sbin"' >>"$dir_install/etc/sudoers.d/wheel"
 		echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" >>"$dir_install/etc/sudoers.d/wheel"
+
 		unset user
 	fi
 }
@@ -1976,11 +1895,10 @@ sh_make_fstab() {
 	local fsorder=1
 
 	if ! $LVM; then
-		sh_info_msg "${cmsg_Gerando} fstab pass1 ${cmsg_Em} $dir_install"
-
-		echo "tmpfs                                           /tmp           tmpfs            defaults,nosuid,nodev,noatime,mode=1777 0 0" >"$dir_install/etc/fstab"
-		echo "tmpfs                                           /var/log       tmpfs            defaults,noatime,mode=0755              0 0" >>"$dir_install/etc/fstab"
-		echo "proc                                            /proc          proc             nodev,noexec,nosuid                     0 0" >>"$dir_install/etc/fstab"
+		sh_info_msg "${cmsg_Gerando} fstab pass1"
+		echo "tmpfs /tmp tmpfs defaults,nosuid,nodev,noatime,mode=1777 0 0" >"$dir_install/etc/fstab"
+		echo "tmpfs /var/log tmpfs defaults,noatime,mode=0755 0 0" >>"$dir_install/etc/fstab"
+		echo "proc /proc proc nodev,noexec,nosuid 0 0" >>"$dir_install/etc/fstab"
 
 		for i in "${!Amntpoint[@]}"; do
 			_part="$i"
@@ -1993,13 +1911,13 @@ sh_make_fstab() {
 			fi
 
 			if [ "$fstype" = "swap" ]; then
-				echo "UUID=$(blkid -o value -s UUID "${_part}")  none          swap         none,nofail      0 0" >>"$dir_install/etc/fstab"
+				echo "UUID=$(blkid -o value -s UUID "${_part}") none swap none,nofail 0 0" >>"$dir_install/etc/fstab"
 				continue
 			fi
 
 			if [ -n "$mntpoint" ]; then
 				if [ "$mntpoint" = '/boot/efi' ]; then
-					echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults 0 2" >>"$dir_install/etc/fstab"
+					echo "UUID=$(blkid -o value -s UUID "${_part}") ${mntpoint} ${fstype,,} defaults 0 2" >>"$dir_install/etc/fstab"
 				else
 					if [ "$format" = 0 ]; then
 						if [ "$mntpoint" = 'none' ]; then
@@ -2007,17 +1925,16 @@ sh_make_fstab() {
 							mntpoint="/mnt/none${Npoint}"
 							mkdir -p "$dir_install/${mntpoint}"
 						fi
-						echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults,nofail,noatime,discard,lazytime 0 $fsorder" >>"$dir_install/etc/fstab"
+						echo "UUID=$(blkid -o value -s UUID "${_part}") ${mntpoint} ${fstype,,} defaults,nofail,noatime,discard,lazytime 0 $fsorder" >>"$dir_install/etc/fstab"
 					else
-						echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults,noatime,discard,lazytime 0 $fsorder" >>"$dir_install/etc/fstab"
+						echo "UUID=$(blkid -o value -s UUID "${_part}") ${mntpoint} ${fstype,,} defaults,noatime,discard,lazytime 0 $fsorder" >>"$dir_install/etc/fstab"
 					fi
 				fi
 			fi
 		done
-		evaluate_retval "$?"
+		#		evaluate_retval "$?"
 	else
-		sh_info_msg "${cmsg_Gerando} fstab pass1 ${cmsg_Em} $dir_install"
-
+		sh_info_msb "${cmsg_Gerando} fstab pass1"
 		for i in "${!Amntpoint[@]}"; do
 			_part="$i"
 			mntpoint="$(sh_splitarray "${Amntpoint[$i]}" 1)"
@@ -2025,7 +1942,7 @@ sh_make_fstab() {
 			format="$(sh_splitarray "${Amntpoint[$i]}" 3)"
 
 			if [[ "$mntpoint" = "/boot/efi" ]]; then
-				echo "UUID=$(blkid -o value -s UUID "${_part}")  ${mntpoint}   ${fstype,,}   defaults 0 $fsorder" >>"$dir_install/etc/fstab"
+				echo "UUID=$(blkid -o value -s UUID "${_part}") ${mntpoint} ${fstype,,} defaults 0 $fsorder" >>"$dir_install/etc/fstab"
 				break
 			fi
 		done
@@ -2037,43 +1954,48 @@ sh_make_fstab() {
 			format="$(sh_splitarray "${AmntpointFDE[$i]}" 3)"
 			size="$(sh_splitarray "${AmntpointFDE[$i]}" 4)"
 			mntpoint="$(sh_splitarray "${AmntpointFDE[$i]}" 5)"
-			#			echo "UUID=$(blkid -o value -s UUID "${_part}")	$mntpoint	${fstype,,}	defaults 0 0" >>"$dir_install/etc/fstab"
-			echo "UUID=$(blkid -o value -s UUID "${_part}")	$mntpoint	${fstype,,}	defaults,noatime,discard,lazytime 0 0" >>"$dir_install/etc/fstab"
+			#			echo "UUID=$(blkid -o value -s UUID "${_part}") $mntpoint ${fstype,,} defaults 0 0" >>"$dir_install/etc/fstab"
+			echo "UUID=$(blkid -o value -s UUID "${_part}") $mntpoint ${fstype,,} defaults,noatime,discard,lazytime 0 0" >>"$dir_install/etc/fstab"
 		done
-		evaluate_retval "$?"
+		#		evaluate_retval "$?"
 	fi
 
-	sh_chroot_job "${cmsg_Gerando} fstab pass2 ${cmsg_Em} $dir_install" \
+	sh_chroot_job "${cmsg_Gerando} fstab pass2" \
 		"sed 's/#.*//' /etc/fstab | column --table --table-columns SOURCES,DIR,TYPE,OPTIONS,DUMP,PASS --table-hide - >/tmp/fstab" "$err_not_fatal"
-	sh_chroot_job "${cmsg_Gerando} fstab pass3 ${cmsg_Em} $dir_install" \
+	sh_chroot_job "${cmsg_Gerando} fstab pass3" \
 		"sed -i 's/SOURCES/#SOURCE/' /tmp/fstab" "$err_not_fatal"
-	sh_chroot_job "${cmsg_Gerando} fstab pass4 ${cmsg_Em} $dir_install" \
+	sh_chroot_job "${cmsg_Gerando} fstab pass4" \
 		"cp /tmp/fstab /etc/fstab" "$err_not_fatal"
 }
 
 sh_activating_services() {
-	local aServicesTTY=(dbus dhcpcd sshd nanoklogd chronyd socklog-unix udevd)
-      	aServicesTTY+=(wpa_supplicant uuidd dmeventd)
-	local aServicesX=(elogind polkitd NetworkManager bluetoothd)
+	local aServicesTTY=(dbus dhcpcd sshd chronyd udevd wpa_supplicant uuidd dmeventd)
+	local aServicesX=(elogind polkitd bluetoothd)
 	local service
 	local level=2
 
+	if ! $LSERVER; then
+		aServicesTTY+=(NetworkManager)
+	fi
+
 	for x in "${aDE[@]}"; do
 		case $x in
-		tty) continue ;;
+		tty | server) continue ;;
 		gnome)
-			aServicesX+=(gdm)
+			#			aServicesX+=(gdm)
+			aServicesX+=(sddm)
 			break
 			;;
 		*)
-			aServicesX+=(lxdm)
+			#			aServicesX+=(lxdm)
+			aServicesX+=(sddm)
 			break
 			;;
 		esac
 	done
 
 	for service in "${aServicesTTY[@]}"; do
-		sh_chroot_job "${cmsg_AtivandoServico} $service ${cmsg_Em} $dir_install" \
+		sh_chroot_job "${cmsg_AtivandoServico} $service" \
 			"ln -sf /etc/sv/$service /etc/runit/runsvdir/current/" \
 			"$err_not_fatal" \
 			"$level"
@@ -2081,7 +2003,7 @@ sh_activating_services() {
 
 	if ! $LONLY_TTY; then
 		for service in "${aServicesX[@]}"; do
-			sh_chroot_job "${cmsg_AtivandoServico} $service ${cmsg_Em} $dir_install" \
+			sh_chroot_job "${cmsg_AtivandoServico} $service" \
 				"ln -sf /etc/sv/$service /etc/runit/runsvdir/current/" \
 				"$err_not_fatal" \
 				"$level"
@@ -2111,11 +2033,11 @@ sh_mk_working_dir() {
 		"$dir_install/etc/xbps.d"
 	)
 
-	sh_cmd_job "${cmsg_CriandoDiretorios}" "
-      for cdir in "${adir[@]}"; do
+	for cdir in "${adir[@]}"; do
+		sh_cmd_job "${cmsg_CriandoDiretorio}: $cdir" "
 		   [[ -d "$cdir" ]] || mkdir -p "$cdir"
-     	done
-   "
+      " $err_fatal
+	done
 }
 
 sh_mount_fs() {
@@ -2129,7 +2051,7 @@ sh_mount_fs() {
 			_part="$i"
 			mntpoint="$(sh_splitarray "${Amntpoint[$i]}" 1)"
 			if [[ -n "$mntpoint" && "$mntpoint" = "/" ]]; then
-				sh_info_msg "${cmsg_MontandoParticao} ${_part} ${red}(${mntpoint})${rst} ${cmsg_Em} $dir_install${mntpoint}"
+				sh_info_msg "${cmsg_MontandoParticao} ${_part} ${red}(${mntpoint})${rst} ${mntpoint}"
 				mkdir -p "$dir_install"
 				mount "$_part" "$dir_install"
 				evaluate_retval "$?"
@@ -2213,12 +2135,14 @@ sh_X11minimal() {
 	apkgs+=("${aUtilityX[@]}")
 	apkgs+=("${aIconsAndThemes[@]}")
 
-	if [[ "${AConfAudio[_AUDIOSERVER]}" == 'Pulseaudio' ]]; then
-		apkgs+=("${aPulseaudio[@]}")
-		aMedia+=("${aPulseaudio[@]}")
-	else
-		apkgs+=("${aPipewire[@]}")
-		aMedia+=("${aPipewire[@]}")
+	if $LAUDIO; then
+		if [[ "${AConfAudio[_AUDIOSERVER]}" == 'Pulseaudio' ]]; then
+			apkgs+=("${aPulseaudio[@]}")
+			aMedia+=("${aPulseaudio[@]}")
+		else
+			apkgs+=("${aPipewire[@]}")
+			aMedia+=("${aPipewire[@]}")
+		fi
 	fi
 
 	apkgs+=("${aPrinter[@]}")
@@ -2281,58 +2205,150 @@ sh_plasmaminimal() {
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_xfce4minimal() {
-	local DE='Xfce4'
-	local apkgs=(xfce4 Thunar thunar-volman elogind exo mousepad parole ristretto tumbler upower xdg-user-dirs-gtk xfce-polkit)
-	apkgs+=(xfce4-notifyd xfce4-panel xfce4-power-manager xfce4-screensaver xfce4-session xfce4-settings xfce4-taskmanager)
-	apkgs+=(xfce4-terminal xfconf xfdesktop xfwm4-themes xfwm4 xfce4-pulseaudio-plugin)
+sh_cinnamonminimal() {
+	local DE='cinnamon'
+	local apkgs=(cinnamon cinnamon-all)
 
 	if $LCUSTOM; then
-		apkgs+=(xfce4-battery-plugin
-			xfce4-clipman-plugin
-			xfce4-cpufreq-plugin
-			xfce4-cpugraph-plugin
-			xfce4-datetime-plugin
-			xfce4-screenshooter
-			xfce4-dict
-			xfce4-diskperf-plugin
-			xfce4-fsguard-plugin
-			xfce4-genmon-plugin
-			xfce4-mailwatch-plugin
-			xfce4-mpc-plugin
-			xfce4-netload-plugin
-			xfce4-pulseaudio-plugin
-			xfce4-sensors-plugin
-			xfce4-systemload-plugin
-			xfce4-time-out-plugin
-			xfce4-timer-plugin
-			xfce4-verve-plugin
-			xfce4-whiskermenu-plugin
-			xfce4-weather-plugin
-			xfce4-wavelan-plugin
-			xfce4-xkb-plugin
+		apkgs+=(
 			plank
 		)
-		if sh_checkRepo 'https://void.chililinux.com/voidlinux/current'; then
-			apkgs+=(chili-xfce-config)
-			#apkgs+=(chili-void-xfce-skel)
-		fi
+
 	fi
+	apkgs+=(
+		voidbr-cinnamon-config
+		voidbr-wallpapers
+		chili-gnome-theme-tokyo
+	)
+
+	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
+}
+
+sh_enlightenment_minimal() {
+	local DE='Enlightenment'
+	local apkgs=(
+	   enlightenment
+	   efl
+	   exquisite
+	   acpi
+	   acpid
+	   connman
+		voidbr-enlightenment-config
+		voidbr-wallpapers
+		chili-gnome-theme-tokyo
+   )
+
+	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
+}
+
+sh_xfce4minimal() {
+	local DE='Xfce4'
+	local apkgs=(xfce4
+		xfce4-plugins
+		xfce4-screenshooter
+		xfce4-dict
+		xfce4-datetime-plugin
+		xfce4-pulseaudio-plugin
+		ristretto
+		engrampa
+		file-roller
+		thunar-archive-plugin
+		plank
+		gvfs
+		bluez
+		bluez-alsa
+		blueman
+		libspa-bluetooth
+		blueberry
+		mate-calc
+		umc
+	)
+
+	if $LCUSTOM; then
+		apkgs+=(
+			plank
+		)
+
+	fi
+	apkgs+=(
+		voidbr-xfce-config
+		voidbr-wallpapers
+		chili-gnome-theme-tokyo
+	)
+
+	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
+}
+
+sh_serverminimal() {
+	local DE='Void server'
+	declare apkgs=(
+		bind-utils
+		ldns
+	)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
 sh_xorgminimal() {
 	local DE='Xorg Minimal'
-	declare apkgs=(xorg-minimal xinit xterm xorg-fonts xorg-video-drivers mesa-dri)
+	declare apkgs=(
+		xorg-minimal
+		xinit
+		xterm
+		xorg-fonts
+		xorg-video-drivers
+		mesa-dri
+	)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
 sh_gnomeminimal() {
 	local DE='Gnome'
-	local apkgs=(gnome gnome-apps gdm gnome-connections extension-manager
-		mime-types gnome-terminal gnome-backgrounds gnome-disk-utility)
+	local apkgs=(
+		"arc-theme"                # Tema Arc para janelas e interface
+		"bluez"                    # Pilha de protocolos Bluetooth
+		"cantarell-fonts"          # Fonte oficial da interface GNOME
+		"colord"                   # Gerenciador de perfis de cores
+		"cups"                     # Sistema de impressão (Common UNIX Printing System)
+		"extension-manager"        # App para gerenciar extensões sem navegador
+		"gdm"                      # Gerenciador de login (Display Manager)
+		"gnome"                    # Meta-pacote Core (Shell, Nautilus, Control Center)
+		"gnome-apps"               # Suite de aplicativos padrão (Calculadora, Mapas, etc.)
+		"gnome-backgrounds"        # Papéis de parede oficiais do GNOME
+		"gnome-bluetooth"          # Interface de controle do Bluetooth no GNOME
+		"gnome-browser-connector"  # Integração do navegador com extensões do Shell
+		"gnome-characters"         # Utilitário de mapa de caracteres e emojis
+		"gnome-connections"        # Cliente nativo para conexões remotas RDP/VNC
+		"gnome-disk-utility"       # Utilitário para gerenciamento de discos e partições
+		"gnome-keyring"            # Gerenciador de senhas, chaves SSH e GPG
+		"gnome-online-accounts"    # Configuração central de contas externas
+		"gnome-session"            # Gerenciador de sessão do GNOME
+		"gnome-shell-extensions"   # Extensões oficiais fornecidas pelo projeto GNOME
+		"gnome-system-monitor"     # Monitor de processos e recursos do sistema
+		"gnome-terminal"           # Emulador de terminal padrão do GNOME
+		"gnome-themes-extra"       # Temas extras para compatibilidade GTK2 e GTK3
+		"gnome-tweaks"             # Ajustes finos de interface e extensões
+		"gvfs-afp"                 # Suporte ao protocolo de rede Apple (AFP)
+		"gvfs-goa"                 # Integração de contas online (inclui Google Drive)
+		"gvfs-gphoto2"             # Suporte a câmeras digitais e dispositivos PTP
+		"gvfs-mtp"                 # Suporte a transferência de arquivos via MTP (Android/iOS)
+		"gvfs-smb"                 # Suporte a compartilhamentos Windows/Samba
+		"mime-types"               # Fornece o arquivo compartilhado /etc/mime.types
+		"NetworkManager"           # Gerenciador de conexões de rede
+		"papirus-icon-theme"       # Conjunto de ícones Papirus
+		"pipewire"                 # Servidor de áudio e vídeo moderno
+		"polkit"                   # Framework para definição de privilégios
+		"simple-scan"              # Utilitário de digitalização de documentos
+		"system-config-printer"    # Ferramenta gráfica para configuração de impressoras
+		"tracker3"                 # Motor de busca e indexação de arquivos
+		"tracker3-miners"          # Extratores de metadados para busca do Tracker
+		"udisks2"                  # Serviço de manipulação de dispositivos de armazenamento
+		"wireplumber"              # Gerenciador de sessão para Pipewire
+		"xdg-desktop-portal-gnome" # Integração de interface e permissões para Wayland
+		"xdg-user-dirs-gtk"        # Gerenciamento automático das pastas padrão de usuário
+		voidbr-change-gnome-wallpaper
+	)
 
 	if $LCUSTOM; then
 		apkgs+=(dconf-editor devhelp Endeavour evolution five-or-more four-in-a-row geary
@@ -2343,6 +2359,12 @@ sh_gnomeminimal() {
 			polari quadrapassel swell-foop sysprof tali
 		)
 	fi
+	apkgs+=(
+		voidbr-gnome-config
+		voidbr-wallpapers
+		chili-gnome-theme-tokyo
+		voidbr-change-gnome-wallpaper
+	)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
@@ -2395,13 +2417,6 @@ sh_bspwmminimal() {
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_enlightenmentminimal() {
-	local DE='Enlightenment'
-	local apkgs=(enlightenment efl exquisite acpi acpid connman)
-
-	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
-}
-
 sh_dwmminimal() {
 	local DE='Dwm'
 	local apkgs=(dwm)
@@ -2429,7 +2444,6 @@ sh_hyprlandminimal() {
 	apkgs+=(wofi)
 	#hyprland wiki
 	apkgs+=(bemenu fuzzel tofi)
-	apkgs+=(neovim)
 
 	shell='/bin/bash'
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
@@ -2737,16 +2751,29 @@ sh_chooseaudioserver() {
 	local x
 	local caudio
 
-	case "${AConfAudio[_AUDIOSERVER]:-Pulseaudio}" in
-	Pulseaudio)
-		array+=("Pulseaudio" "Pulseaudio" "on")
-		array+=("Pipewire" "Pipewire" "off")
-		;;
-	Pipewire)
+	if ! $LONLY_TTY; then
+		case "${AConfAudio[_AUDIOSERVER]:-Pulseaudio}" in
+		Pulseaudio)
+			array+=("Pulseaudio" "Pulseaudio" "on")
+			array+=("Pipewire" "Pipewire" "off")
+			array+=("None" "None" "off")
+			;;
+		Pipewire)
+			array+=("Pulseaudio" "Pulseaudio" "off")
+			array+=("Pipewire" "Pipewire" "on")
+			array+=("None" "None" "off")
+			;;
+		None)
+			array+=("Pulseaudio" "Pulseaudio" "off")
+			array+=("Pipewire" "Pipewire" "off")
+			array+=("None" "None" "on")
+			;;
+		esac
+	else
 		array+=("Pulseaudio" "Pulseaudio" "off")
-		array+=("Pipewire" "Pipewire" "on")
-		;;
-	esac
+		array+=("Pipewire" "Pipewire" "off")
+		array+=("None" "None" "on")
+	fi
 
 	caudio=$(${DIALOG} \
 		--title "${cmsg_DefinirAudioServer}" \
@@ -2763,7 +2790,11 @@ sh_chooseaudioserver() {
 		return 1
 		;;
 	esac
-	LAUDIO=true
+	if [[ "$caudio" == 'None' ]]; then
+		LAUDIO=false
+	else
+		LAUDIO=true
+	fi
 	AConfAudio[_AUDIOSERVER]="$caudio"
 	return 0
 }
@@ -3016,7 +3047,7 @@ sh_chooseMirror() {
 			;;
 		3)
 			oldgrafico=$grafico
-			grafico=$true
+			grafico=$one
 			if [[ -n $(command -v void-testmirror) || -n $(command -v ./void-testmirror) ]]; then
 				last_msg="Wait... ${cmsg_Gerando} test with void-testmirror ${xurl}"
 				msg "=== ${cmsg_Mirror^^} === void-testmirror" "$last_msg" "$(log_info_msg "$last_msg")"
@@ -3026,7 +3057,7 @@ sh_chooseMirror() {
 				info "=== ${cmsg_Mirror^^} === void-testmirror" "\n$result"
 			else
 				sh_info_msg "Wait... ${cmsg_Gerando} test with void-mirror ${xurl}"
-				evaluate_retval "1" "$err_not_fatal"
+				evaluate_retval $one "$err_not_fatal"
 				info "=== ${cmsg_Mirror^^} === void-testmirror" "\n${RED}void-testmirror não foi localizado no \$PATH${RESET}" \
 					"${RED}void-testmirror não foi localizado em $PWD!${RESET}"
 			fi
@@ -3155,7 +3186,7 @@ ${BOLD}MODEL   : ${RESET}${RED}$MODEL_ORIGEM${RESET}\n" \
 		if sh_chooseTablePartition; then
 			LMKPARTED=false
 			oldgrafico=$grafico
-			grafico=$true
+			grafico=$one
 			sh_mkparted
 			grafico=$oldgrafico
 			sh_disk_part_info
@@ -3218,10 +3249,10 @@ sh_chooseDisk() {
 
 		if [ $# -eq 0 ]; then
 			xtitle="${cmsg_TitleDisco}"
-			LCHOOSEBOOTLOADER=$false
+			LCHOOSEBOOTLOADER=$zero
 		else
 			xtitle="${cmsg_BootLoader^^}"
-			LCHOOSEBOOTLOADER=$true
+			LCHOOSEBOOTLOADER=$one
 		fi
 
 		for i in "${ARRAY_DSK_DEVICES[@]}"; do
@@ -3527,7 +3558,7 @@ sh_choosewifi() {
 		sh_info_msg "$(gettext 'Escaneando redes wifi...')"
 		wpa_cli scan_results 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 		if [[ "${PIPESTATUS[0]}" -gt 0 ]]; then
-			evaluate_retval "1" "$err_not_fatal"
+			evaluate_retval $one "$err_not_fatal"
 			info "WIFI" "${RED}$(gettext "A verificação não retornou nenhum resultado.")" \
 				"$(gettext "Aparentemente,") $(gettext "o serviço wpa_supplicant não está em execução.")" \
 				"" \
@@ -3536,7 +3567,7 @@ sh_choosewifi() {
 				"2-$(gettext "Verifique se há um dispositivo wi-fi conectado à máquina.")"
 			return 1
 		fi
-		evaluate_retval "0"
+		evaluate_retval $zero
 		scan_results=$(wpa_cli scan_results)
 		lines=$(wc -l <<<"$scan_results")
 		lines=$((lines - 2))
@@ -3605,7 +3636,7 @@ sh_confWifi() {
 			_WIFI_PASSWORD="${aWifi[1]}"
 			AConfWifi[_NETWORK]="${aWifi[0]}"
 			AConfWifi[_PASSWORD]="${aWifi[1]}"
-			LWIFI=$true
+			LWIFI=$one
 			;;
 		3)
 			sh_choosewifi
@@ -3626,6 +3657,10 @@ sh_dryrun() {
 	#	sh_update_rc_conf
 	#	sh_update_rc_local
 	#	sh_activating_services
+	#  sh_make_user
+	#  sh_update_sshd
+	#  sh_update_sudoers
+	#  sh_make_fstab
 	export PS1="[chroot $dir_install] $PS1"
 	LC_ALL=C chroot "$dir_install" "/bin/bash"
 	sh_umount_fs
@@ -3663,7 +3698,7 @@ sh_loadconf() {
 		evaluate_retval "$?"
 		sh_parseconf
 	else
-		evaluate_retval "$?" "1" "${cmsg_falhaAbertura} $app_conf!"
+		evaluate_retval "$?" $one "${cmsg_falhaAbertura} $app_conf!"
 	fi
 }
 
@@ -3685,13 +3720,12 @@ sh_parseconf() {
 sh_mkefiroaming() {
 	#Caminho de inicialização padrão/reserva
 	if [[ -e "$dir_install/boot/efi/EFI/$cnickefi/grubx64.efi" ]]; then
-		sh_info_msg "${cmsg_CriandoDiretorios}: $dir_install/boot/efi/EFI/BOOT"
-		mkdir -p "$dir_install/boot/efi/EFI/BOOT" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-		evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
-
-		sh_info_msg "${cmsg_CopiandoCaminhoReserva}: $dir_install/boot/efi/BOOT"
-		cp "$dir_install/boot/efi/EFI/$cnickefi/grubx64.efi" "$dir_install/boot/efi/EFI/BOOT/BOOTX64.EFI" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-		evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
+		sh_cmd_job "${cmsg_CriandoDiretorio}: $dir_install/boot/efi/EFI/BOOT" "
+   		mkdir -pv $dir_install/boot/efi/EFI/BOOT
+      " $err_not_fatal
+		sh_cmd_job "${cmsg_CopiandoCaminhoReserva}: $dir_install/boot/efi/BOOT" "
+   		cp -f $dir_install/boot/efi/EFI/$cnickefi/grubx64.efi $dir_install/boot/efi/EFI/BOOT/BOOTX64.EFI
+      " $err_not_fatal
 	fi
 }
 
@@ -3707,7 +3741,7 @@ sh_getBootEFI() {
 	return 1
 }
 
-sh_choosewm() {
+sh_choose_wm() {
 	declare -A aFlag
 	declare -A aWm
 	local x
@@ -3720,6 +3754,7 @@ sh_choosewm() {
 	fi
 
 	aWm[tty]="${cmsg_tty}"
+	aWm[server]="${cmsg_server}"
 	aWm[xorg]="Xorg Minimal"
 	aWm[awesome]="Awesome"
 	aWm[blackbox]="Blackbox"
@@ -3738,6 +3773,7 @@ sh_choosewm() {
 	aWm[sway]="Sway"
 	aWm[twm]="Twm"
 	aWm[xfce4]="Xfce4"
+	aWm[cinnamon]="Cinnamon"
 
 	for x in "${!aWm[@]}"; do
 		aFlag[$x]='off'
@@ -3747,6 +3783,19 @@ sh_choosewm() {
 		aFlag[$x]='on'
 	done
 
+	#		awesome "${aWm[awesome]}" "${aFlag[awesome]}" \
+	#		bspwm "${aWm[bspwm]}" "${aFlag[bspwm]}" \
+	#		dwm "${aWm[dwm]}" "${aFlag[dwm]}" \
+	#		blackbox "${aWm[blackbox]}" "${aFlag[blackbox]}" \
+	#		fluxbox "${aWm[fluxbox]}" "${aFlag[fluxbox]}" \
+	#		hyprland "${aWm[hyprland]}" "${aFlag[hyprland]}" \
+	#		i3wm "${aWm[i3wm]}" "${aFlag[i3wm]}" \
+	#		lxde "${aWm[lxde]}" "${aFlag[lxde]}" \
+	#		lxqt "${aWm[lxqt]}" "${aFlag[lxqt]}" \
+	#		openbox "${aWm[openbox]}" "${aFlag[openbox]}" \
+	#		sway "${aWm[sway]}" "${aFlag[sway]}" \
+	#		twm "${aWm[twm]}" "${aFlag[twm]}" \
+
 	wm=$(${DIALOG} --title "=== ${cmsg_Wm^^} ===" \
 		--default-item "$_WINDOWMANAGER" \
 		--colors \
@@ -3755,23 +3804,13 @@ sh_choosewm() {
 		--checklist "${cmsg_MENU}" \
 		0 0 0 \
 		tty "${aWm[tty]}" "${aFlag[tty]}" \
+		server "${aWm[server]}" "${aFlag[server]}" \
 		xorg "${aWm[xorg]}" "${aFlag[xorg]}" \
-		awesome "${aWm[awesome]}" "${aFlag[awesome]}" \
-		bspwm "${aWm[bspwm]}" "${aFlag[bspwm]}" \
-		dwm "${aWm[dwm]}" "${aFlag[dwm]}" \
-		blackbox "${aWm[blackbox]}" "${aFlag[blackbox]}" \
-		fluxbox "${aWm[fluxbox]}" "${aFlag[fluxbox]}" \
+		cinnamon "${aWm[cinnamon]}" "${aFlag[cinnamon]}" \
 		enlightenment "${aWm[enlightenment]}" "${aFlag[enlightenment]}" \
 		gnome "${aWm[gnome]}" "${aFlag[gnome]}" \
-		hyprland "${aWm[hyprland]}" "${aFlag[hyprland]}" \
-		i3wm "${aWm[i3wm]}" "${aFlag[i3wm]}" \
-		lxde "${aWm[lxde]}" "${aFlag[lxde]}" \
-		lxqt "${aWm[lxqt]}" "${aFlag[lxqt]}" \
 		mate "${aWm[mate]}" "${aFlag[mate]}" \
-		openbox "${aWm[openbox]}" "${aFlag[openbox]}" \
 		plasma "${aWm[plasma]}" "${aFlag[plasma]}" \
-		sway "${aWm[sway]}" "${aFlag[sway]}" \
-		twm "${aWm[twm]}" "${aFlag[twm]}" \
 		xfce4 "${aWm[xfce4]}" "${aFlag[xfce4]}" \
 		2>&1 >/dev/tty)
 
@@ -3792,11 +3831,30 @@ sh_choosewm() {
 		LCUSTOM=false
 	fi
 
+	LWM=true
 	_WINDOWMANAGER=($(strtoarray "$wm"))
+   ALLOWED=(tty server xorg)
+   ok=true
+   for wm in "${_WINDOWMANAGER[@]}"; do
+     case "$wm" in
+       tty|server|xorg) ;;
+       *) ok=false; break ;;
+     esac
+   done
+   if $ok; then
+     AConfAudio[_AUDIOSERVER]="None"
+   else
+     AConfAudio[_AUDIOSERVER]="Pipewire"
+   fi
+   LAUDIO=true
+
+	if grep -qi xorg <<<"${_WINDOWMANAGER[@]}"; then
+		LXORG=true
+	fi
+
 	if grep -qi hyprland <<<"${_WINDOWMANAGER[@]}"; then
 		HYPRLAND=true
 	fi
-	LWM=true
 }
 
 function pcount() {
@@ -3870,35 +3928,6 @@ sh_chmod_tmp() {
 		} >>"$cfile"
 	fi
 	evaluate_retval "$?" "$err_not_fatal"
-}
-
-sh_copy_scripts() {
-	local cfiles=(void-chroot
-		void-clonedisk
-		void-gitclone
-		void-install
-		void-maketar
-		void-mirror
-		void-parted
-		void-remove-vg
-		void-runimage
-		void-services
-		void-testmirror
-		void-wifi
-		void-wifi-config
-		void-wifi-config-wpa
-		void-dialog-theme-selector
-		void-xrandr
-	)
-	local script
-
-	sh_info_msg "${cmsg_Copiando} scripts ${cmsg_Para} $dir_install"
-	for script in "${cfiles[@]}"; do
-		if [[ -e "$script" ]]; then
-			cp -f "$script" "$dir_install/usr/bin/" 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
-		fi
-	done
-	evaluate_retval "${PIPESTATUS[0]}" "$err_not_fatal"
 }
 
 display_config() {
@@ -4037,7 +4066,33 @@ sh_checkInstall() {
 }
 
 sh_grubInstall() {
+	local cfile="$dir_install/etc/default/grub"
 	local xuuidfde
+
+	cat >$cfile <<EOF
+#
+# Configuration file for GRUB.
+#
+GRUB_DEFAULT=0
+#GRUB_HIDDEN_TIMEOUT=0
+#GRUB_HIDDEN_TIMEOUT_QUIET=false
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR="Void"
+# Uncomment to use basic console
+#GRUB_TERMINAL_INPUT="console"
+# Uncomment to disable graphical terminal
+#GRUB_TERMINAL_OUTPUT=console
+#GRUB_BACKGROUND=/usr/share/void-artwork/splash.png
+#GRUB_GFXMODE=1920x1080x32
+#GRUB_DISABLE_LINUX_UUID=true
+#GRUB_DISABLE_RECOVERY=true
+# Uncomment and set to the desired menu colors.  Used by normal and wallpaper
+# modes only.  Entries specified as foreground/background.
+#GRUB_COLOR_NORMAL="light-blue/black"
+#GRUB_COLOR_HIGHLIGHT="light-cyan/blue"
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet splash"
+GRUB_THEME="/boot/grub/themes/chili/theme.txt"
+EOF
 
 	#	echo "GRUB_THEME=/boot/grub/themes/void/theme.txt" >>"$dir_install/etc/default/grub"
 	echo "GRUB_THEME=/boot/grub/themes/chili/theme.txt" >>"$dir_install/etc/default/grub"
@@ -4063,18 +4118,22 @@ sh_grubInstall() {
 	fi
 
 	if $LBIOS; then
-		sh_chroot_job "${cmsg_Instalando} GRUB i386-pc ${cmsg_Em} ${AConfDisk[_BOOTLOADER]}" \
-			"grub-install ${AConfDisk[_BOOTLOADER]} --target=i386-pc"
+		sh_chroot_job "${cmsg_Instalando} GRUB $(gettext 'para a plataforma') i386-pc ${cmsg_Em} ${AConfDisk[_BOOTLOADER]}" "
+		   grub-install ${AConfDisk[_BOOTLOADER]} --target=i386-pc
+	   "
 	fi
 	if $LEFI; then
 		# --removable   = garante boot universal via Fallback
 		# --no-nvram    = não mexe na BIOS
-		sh_chroot_job "${cmsg_Instalando} GRUB EFI ${cmsg_Em} ${AConfDisk[_BOOTLOADER]}" \
-			"grub-install ${AConfDisk[_BOOTLOADER]} --target=$TARGET_EFI --efi-directory=/boot/efi --boot-directory=/boot --bootloader-id=$cnickefi --removable --no-nvram"
+		sh_chroot_job "${cmsg_Instalando} GRUB $(gettext 'para a plataforma') x86_64-efi ${cmsg_Em} ${AConfDisk[_BOOTLOADER]}" "
+		   grub-install ${AConfDisk[_BOOTLOADER]} --target=$TARGET_EFI --efi-directory=/boot/efi --boot-directory=/boot --bootloader-id=$cnickefi --removable --no-nvram
+	   "
 		#		sh_mkefiroaming
 	fi
 	if ! $LVM; then
-		sh_chroot_job "${cmsg_Gerando} grub.cfg ${cmsg_Em} $dir_install" "grub-mkconfig -o /boot/grub/grub.cfg"
+		sh_chroot_job "${cmsg_Gerando} grub.cfg ${cmsg_Em} $dir_install" "
+		   grub-mkconfig -o /boot/grub/grub.cfg
+	   "
 	fi
 }
 
@@ -4108,7 +4167,7 @@ sh_cp_rootfs() {
 }
 
 sh_touch_keys() {
-	sh_cmd_job "Criando chaves ${cmsg_Em} $dir_install" "mkdir -p keys" $err_not_fatal
+	sh_cmd_job "Criando chaves" "mkdir -p keys" $err_not_fatal
 
 	cat >keys/60:ae:0c:d6:f0:95:17:80:bc:93:46:7a:89:af:a3:2d.plist <<-EOF
 		<?xml version="1.0" encoding="UTF-8"?>
@@ -4192,9 +4251,18 @@ sh_copy_keys() {
 	local destdirkeys="$dir_install/var/db/xbps/keys"
 
 	sh_touch_keys
-	sh_cmd_job "Criando diretorio de chaves em $destdirkeys" "mkdir -p $destdirkeys" $err_not_fatal
-	sh_cmd_job "Copiando chaves da ISO para $destdirkeys" "cp -f /var/db/xbps/keys/*.plist $destdirkeys/" $err_not_fatal
-	sh_cmd_job "Copiando chaves locais para $destdirkeys" "cp -f keys/*.plist $destdirkeys/" $err_not_fatal
+	if [[ ! -d $destdirkeys ]]; then
+		sh_cmd_job "Criando diretorio de chaves em $destdirkeys" "mkdir -pv $destdirkeys" $err_not_fatal
+	fi
+
+	if [[ -d keys/ ]]; then
+		sh_cmd_job "Copiando chaves locais para $destdirkeys" "cp -fv keys/*.plist $destdirkeys/" $err_not_fatal
+	fi
+
+	if [[ -d /var/db/xbps/keys/ ]]; then
+		sh_cmd_job "Copiando chaves da ISO para $destdirkeys" "cp -fv /var/db/xbps/keys/*.plist $destdirkeys/" $err_not_fatal
+	fi
+
 }
 
 sh_install_prereqs() {
@@ -4203,7 +4271,7 @@ sh_install_prereqs() {
 	#	REQUIRED_PKGS="base-voidstrap xbps libgcc dash coreutils sed tar gawk grub-i386-efi grub-x86_64-efi binutils device-mapper dhclient dracut-network openresolv"
 	REQUIRED_PKGS="base-voidstrap" # xbps tar xz"
 
-	sh_cmd_job "Instalando bootstrap ${cmsg_Em} $dir_install" \
+	sh_cmd_job "Instalando bootstrap" \
 		"LC_ALL=C xbps-install --rootdir "$dir_install" --repository=${url_mirror}/current -c $CACHEDIR -y $REQUIRED_PKGS -S"
 }
 
@@ -4233,48 +4301,39 @@ sh_install_pkgs_in_chroot() {
 sh_update_lxdm_conf() {
 	local cfile="$dir_install/etc/lxdm/lxdm.conf"
 
-	cat >"$cfile" <<-EOF
-		[base]
-		# autologin=dgod
-		# timeout=10
-		# session=/usr/bin/startlxde
-		numlock=1
-		# xauth_path=/tmp
-		skip_password=1
-		greeter=/usr/libexec/lxdm-greeter-gtk
+	sh_info_msg "Customizando ${cfile}"
+	cat >"$cfile" <<EOF
+[base]
+autologin="${AsUser[cuser]}"
+# timeout=10
+# session=/usr/bin/startlxde
+session=/usr/bin/startxfce4
+numlock=1
+# xauth_path=/tmp
+skip_password=1
+greeter=/usr/libexec/lxdm-greeter-gtk
 
-		[server]
-		arg=/usr/bin/X -background vt7
-		# tcp_listen=1
-		# reset=1
+[server]
+arg=/usr/bin/X -background vt7
+# tcp_listen=1
+# reset=1
 
-		[display]
-		gtk_theme=Clearlooks
-		bg=/usr/share/backgrounds/chililinux/abstract-art3.jpg
-		bottom_pane=1
-		lang=1
-		# keyboard=1
-		theme=vdojo
-		transparent_pane=1
+[display]
+gtk_theme=Clearlooks
+bg=/usr/share/backgrounds/chililinux/abstract-art3.jpg
+bottom_pane=1
+lang=1
+# keyboard=1
+theme=vdojo
+transparent_pane=1
 
-		[input]
+[input]
 
-		[userlist]
-		disable=0
-		white=
-		black=
-	EOF
-}
-
-sh_update_lxmd_theme() {
-	sh_cmd_job "Customizando ${cfile}" "
-      sed -i '
-        /^theme=Industrial/ {
-          s/^/#&/
-          a theme=dojo
-        }
-      ' "$cfile"
-   " $err_not_fatal
+[userlist]
+disable=0
+white=
+black=
+EOF
 }
 
 sh_install() {
@@ -4282,16 +4341,22 @@ sh_install() {
 	local start_datetime
 	local end_datetime
 	local akernel=(linux)
-	#        akernel+=(dbus)
 	local afirmware=(wifi-firmware)
-	local abase=(cryptsetup lvm2 wireless_tools wpa_supplicant)
-	#      abase+=(zstd xz)
+	local abase=(voidbr-base-config chrony wireless_tools wpa_supplicant pigz)
 	local agrub=(grub-i386-efi grub-utils)
-	#        agrub+=(grub os-prober grub-x86_64-efi)
+
+	if $LVM; then
+		abase+=(lvm2)
+	fi
+
+	if $LFDE; then
+		abase+=(cryptsetup)
+	fi
 
 	if $LCUSTOM; then
-		abase+=(socklog-void chrony)
-		agrub+=(grub-terminus grub-btrfs-runit)
+		abase+=(socklog-void)
+		agrub+=(grub-terminus)
+		agrub+=(grub-btrfs-runit)
 	fi
 
 	ncounter=0
@@ -4304,7 +4369,7 @@ sh_install() {
 		sh_checkTarball
 	fi
 
-	sh_choose_packages
+   sh_choose_common_packages
 
 	start_time=$(date +%s) # Obtém o tempo de início em segundos desde a época Unix
 	start_datetime=$(date)
@@ -4333,13 +4398,13 @@ sh_install() {
 
 		if sh_extract_root_fs; then
 			sh_init_bind
-			sh_cmd_job "${cmsg_Copiando} /etc/resolv.conf ${cmsg_Em} $dir_install" "cp -f /etc/resolv.conf $dir_install/etc/"
+			sh_cmd_job "${cmsg_Copiando} /etc/resolv.conf" "cp -f /etc/resolv.conf $dir_install/etc/"
 			sh_update_mirror
 			#			sh_checkNet "$url_mirror" || return 1
 
 			# Go install
-			sh_chroot_job "${cmsg_Atualizando} xbps ${cmsg_Em} $dir_install" "LC_ALL=C xbps-install --sync --update xbps --yes"
-			sh_chroot_job "${cmsg_AtualizandoRepositorio} ${cmsg_Em} $dir_install" "LC_ALL=C xbps-install --sync --update --yes"
+			sh_chroot_job "${cmsg_Atualizando} xbps" "LC_ALL=C xbps-install --sync --update xbps --yes"
+			sh_chroot_job "${cmsg_AtualizandoRepositorio}" "LC_ALL=C xbps-install --sync --update --yes"
 
 			if [[ "${AConfMirror[_SOURCE]}" = "local" ]]; then
 				sh_install_pkgs_in_chroot "$(gettext 'Atualizando Pacotes Base')" "${agrub[*]}"
@@ -4348,37 +4413,30 @@ sh_install() {
 				sh_install_pkgs_in_chroot "$(gettext 'Instalando') GRUB" "${agrub[*]}"
 				sh_install_pkgs_in_chroot "$(gettext 'Atualizando Pacotes Base')" "${abase[*]}"
 				#  			sh_install_pkgs_in_chroot "$(gettext 'Instalando Wifi Firmware')" "${afirmware[*]}"
-				sh_install_pkgs_in_chroot "$(gettext 'Atualizando Pacotes Adicionais')" "$_PKGS"
 				sh_install_pkgs_in_chroot "$(gettext 'Instalando Daemons')" "${aDaemons[*]}"
 				sh_install_pkgs_in_chroot "$(gettext 'Instalando Editores texto')" "${aEditorTxt[*]}"
 				sh_install_pkgs_in_chroot "$(gettext 'Instalando Downloaders')" "${aDownloader[*]}"
 				sh_install_pkgs_in_chroot "$(gettext 'Instalando Utilitário')" "${aUtility[*]}"
 				sh_install_pkgs_in_chroot "$(gettext 'Instalando Archiver tty')" "${aArchiverTty[*]}"
-				sh_install_pkgs_in_chroot "$(gettext 'Instalando Extras')" "$_EXTRAS"
+				sh_install_pkgs_in_chroot "$(gettext 'Instalando Extras')" "${aExtra[*]}"
+				sh_install_pkgs_in_chroot "$(gettext 'Instalando Suplementos')" "${aSuplemento[*]}"
 			fi
-			sh_update_bashrc
-			sh_grubInstall
-			#sh_copy_scripts
-			sh_make_fstab
-			sh_make_user
-			sh_update_hostname
-			sh_update_rc_local
-			sh_update_sshd
-			sh_update_rc_conf
-			sh_update_locale
 
-			#			sh_chroot_job "${cmsg_Configurando} locales ${cmsg_Em} $dir_install" "xbps-reconfigure --force glibc-locales"
-			sh_update_wpa_suplicant
+			sh_grubInstall
+			sh_make_fstab
 
 			LONLY_TTY=false
-			if [[ "${#_WINDOWMANAGER[@]}" -eq 1 ]]; then
-				if [[ "${_WINDOWMANAGER}" = 'tty' ]]; then
-					LONLY_TTY=true
-					:
-				else
-					sh_update_Xkeymap
-					sh_X11minimal
-				fi
+			if ((${#_WINDOWMANAGER[@]} == 1)) && [[ "${_WINDOWMANAGER[0]}" == "tty" ]]; then
+				LONLY_TTY=true
+				LSERVER=false
+				:
+			elif ((${#_WINDOWMANAGER[@]} == 1)) && [[ "${_WINDOWMANAGER[0]}" == "server" ]]; then
+				LONLY_TTY=true
+				LSERVER=true
+			elif [[ " ${_WINDOWMANAGER[*]} " == *" tty "* && " ${_WINDOWMANAGER[*]} " == *" server "* ]]; then
+				LONLY_TTY=true
+				LSERVER=true
+				:
 			else
 				sh_update_Xkeymap
 				sh_X11minimal
@@ -4389,21 +4447,20 @@ sh_install() {
 				aDE+=("$x")
 				case "$x" in
 				"tty") : ;;
+				"server") sh_serverminimal ;;
 				"xorg") sh_xorgminimal ;;
 				"awesome") sh_awesomeminimal ;;
-				"bspwm")
-					sh_bspwmminimal
-					#					sh_make_bspwm_conf
-					;;
+				"bspwm") sh_bspwmminimal ;;
 				"blackbox") sh_blackboxminimal ;;
 				"dwm") sh_dwmminimal ;;
-				"enlightenment") sh_enlightenmentminimal ;;
+				"enlightenment") sh_enlightenment_minimal ;;
 				"fluxbox") sh_fluxboxminimal ;;
 				"hyprland") sh_hyprlandminimal ;;
 				"openbox") sh_openboxminimal ;;
 				"gnome") sh_gnomeminimal ;;
 				"plasma") sh_plasmaminimal ;;
 				"xfce4") sh_xfce4minimal ;;
+				"cinnamon") sh_cinnamonminimal ;;
 				"i3wm") sh_i3minimal ;;
 				"sway") sh_swayminimal ;;
 				"twm") sh_twmminimal ;;
@@ -4413,18 +4470,36 @@ sh_install() {
 				esac
 			done
 
+			sh_make_user
+			sh_update_hostname
+			sh_update_rc_local
+
+			if ! $SERVER; then
+				sh_update_sshd
+			fi
+
+			sh_update_rc_conf
+			sh_update_locale
+			sh_update_wpa_suplicant
+
 			if [[ "${AConfAudio[_AUDIOSERVER]}" == 'Pipewire' ]]; then
 				sh_activating_pipewire
 			fi
 
 			sh_activating_services
-			sh_chroot_job "Certificando que todos pacotes estejam configurados corretamente em $dir_install" "xbps-reconfigure --force --all"
-			#			sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos} ${cmsg_Em} $dir_install" "xbps-remove --clean-cache --remove-orphans --yes"
-			sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos} ${cmsg_Em} $dir_install" "rm -fv /var/cache/xbps/*.xbps"
-			sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos} ${cmsg_Em} $dir_install" "rm -fv /var/cache/xbps/*.sig*"
+
+			sh_chroot_job "$(gettext 'Ajustando e validando configuração em:') $dir_install" "
+#               xbps-reconfigure --force --all
+                xbps-reconfigure --all
+            "
+
+			sh_chroot_job "${cmsg_RemovendoPacotesAntigosObseletos}" "
+			   rm -fv /var/cache/xbps/*.xbps
+               rm -fv /var/cache/xbps/*.sig*
+            "
 
 			if $HYPRLAND; then
-				sh_chroot_job "${cmsg_Instalando} User into group _seatd ${cmsg_Em} $dir_install" "usermod -aG _seatd "$user"}" "$err_not_fatal"
+				sh_chroot_job "${cmsg_Instalando} User into group _seatd" "usermod -aG _seatd "$user"}" "$err_not_fatal"
 			fi
 
 			sh_update_lxdm_conf
@@ -4436,7 +4511,7 @@ sh_install() {
 				"Finish Date Time : $end_datetime" \
 				"Time elapsed     : ${RED}$(sh_time_elapsed)"
 		else
-			die "${cmsg_ERRO} tar #$?. ${cmsg_ErroTar} $_TARBALL_ROOTFS ${cmsg_Em} $dir_install"
+			die "${cmsg_ERRO} tar #$?. ${cmsg_ErroTar} $_TARBALL_ROOTFS"
 		fi
 		exit 0
 	} # > out & sh_monitor
@@ -4904,7 +4979,7 @@ sh_chooseperfumery() {
 		;;
 	esac
 	_PERFUMERY=($(strtoarray "$perf"))
-	LPERFUMERY=$true
+	LPERFUMERY=$one
 }
 
 sh_toBytes() {
@@ -4968,17 +5043,21 @@ sh_menu_language() {
 	done
 }
 
-sh_voidServices() {
-	if [[ -n $(command -v void-services) || -n $(command -v ./void-services) ]]; then
-		bash void-services "$LC_DEFAULT" "-g"
+sh_run_binary() {
+	local binary="${1}"
+	local lang=$"{2}"
+	local grafic=$"{3}"
+	if [[ -n $(command -v "${binary}") || -n $(command -v ./"${binary}") ]]; then
+		bash "${binary}" "$lang" "${grafic}"
 		return 0
 	fi
 
-	msg "INFO" "$(log_info_msg "$(gettext "Aguarde...") ${cmsg_Gerando} test with void-mirror ${xurl}")"
-	evaluate_retval "1" "$err_not_fatal"
-	info "=== ${cmsg_Servicosr^^} === void-services" \
-		"\n${RED}void-services $(gettext "não foi localizado no") \$PATH${RESET}" \
-		"${RED}void-services $(gettext "não foi localizado em") $PWD!${RESET}"
+	msg "INFO" "$(log_info_msg "$(gettext "Aguarde...") ${cmsg_Gerando} test with "${binary}" ${xurl}")"
+	evaluate_retval $one "$err_not_fatal"
+	info "=== ${binary} ===" \
+		"\n${RED}$(gettext "binário não foi localizado no") ${YELLOW}\$PATH${RESET}" \
+		"${RED}$(gettext "binário não foi localizado na pasta local:") ${YELLOW}$PWD${RESET}" \
+		"${YELLOW}\n$(gettext "DICA: instale o pacote void-utils")"
 	return 1
 }
 
@@ -5006,7 +5085,8 @@ sh_main_menu() {
 		$LKEYMAP && MENU_KEYMAP="${YELLOW}[${AConfLocale[_KEYMAP]}]${RST} ● " || MENU_KEYMAP="${RED}[not defined]${RST} ● "
 		$LTIMEZONE && MENU_TIMEZONE="${YELLOW}[${AConfLocale[_TIMEZONE]}${RST} ● " || MENU_TIMEZONE="${RED}[not defined]${RST} ● "
 		$LLOCALE && MENU_LOCALE="${YELLOW}[${AConfLocale[_LOCALE]} ${AConfLocale[_REGION]}]${RST} ● " || MENU_LOCALE="${RED}[not defined]${RST} ● "
-		$LAUDIO && MENU_AUDIO="${YELLOW}[${AConfAudio[_AUDIOSERVER]}]${RST} ● " || MENU_AUDIO="${RED}[not defined]${RST} ● "
+		$LAUDIO && MENU_AUDIO="${YELLOW}[${AConfAudio[_AUDIOSERVER]}]${RST} ● " ||
+			{ $LONLY_TTY && MENU_AUDIO="${YELLOW}[${AConfAudio[_AUDIOSERVER]}]${RST} ● " || MENU_AUDIO="${RED}[not defined]${RST} ● "; }
 		$LCUSTOM && MENU_CUSTOM="CUSTOM" || MENU_CUSTOM=""
 		$LWM && MENU_WM="${YELLOW}[${_WINDOWMANAGER[*]} ${MENU_CUSTOM}]${RST} ● " || MENU_WM="${RED}[not defined]${RST} ● "
 		$LEXTRA && MENU_EXTRA="${YELLOW}[OK]${RST} ● " || MENU_EXTRA="${RED}[not defined]${RST} ● "
@@ -5059,14 +5139,14 @@ sh_main_menu() {
 		"${cmsg_Teclado}") sh_chooseKeymap && [ -n "$LKEYMAP" ] && DEFITEM="Timezone" ;;
 		"Timezone") sh_chooseTimezone && [ -n "$LTIMEZONE" ] && DEFITEM="Wm" ;;
 		"Locale") sh_chooseLocale && [ -n "$LTIMEZONE" ] && DEFITEM="Wm" ;;
-		"Wm") sh_choosewm && [ -n "$LWM" ] && DEFITEM="Extra" ;;
+		"Wm") sh_choose_wm && [ -n "$LWM" ] && DEFITEM="Extra" ;;
 		"${cmsg_Usuario}") sh_confadduser "$@" && [ -n "$LEXTRA" ] && DEFITEM="Audio" ;;
 		"Audio") sh_chooseaudioserver "$@" && [ -n "$LAUDIO" ] && DEFITEM="${cmsg_Instalar}" ;;
 		"${cmsg_Instalar}") sh_install ;;
 		'↑↓') : ;;
-		"${cmsg_Tema}") bash void-dialog-theme-selector ;;
-		"${cmsg_Servicos}") sh_voidServices ;;
-		"Clonedisk") bash void-clonedisk ;;
+		"${cmsg_Tema}") sh_run_binary 'void-dialog-theme-selector' ;;
+		"${cmsg_Servicos}") sh_run_binary 'void-services' "$LC_DEFAULT" "-g" ;;
+		"Clonedisk") sh_run_binary 'void-clonedisk' ;;
 		"Fde") sh_confLvm && [ -n "$LFDE" ] && DEFITEM="${cmsg_Instalar}" ;;
 		"Lvm") sh_confLvm && [ -n "$LVM" ] && DEFITEM="${cmsg_Instalar}" ;;
 		"Vg") sh_chooseVg ;;
@@ -5108,7 +5188,7 @@ sh_init() {
 			exit $(($# ? 0 : 1))
 			;;
 		-f | --file)
-			LFILE=$true
+			LFILE=$one
 			if [[ -n "$2" && "${2:0:1}" != '-' ]]; then
 				app_conf="$2"
 				shift
@@ -5122,11 +5202,11 @@ sh_init() {
 			;;
 		-q | --quiet)
 			log_msg "$(gettext "Ativando resumo na saída")"
-			quiet=$true
+			quiet=$one
 			;;
 		-g | --grafico)
 			log_msg "$(gettext "Ligando modo gráfico")"
-			grafico=$true
+			grafico=$one
 			;;
 		-i | -I | --install)
 			sh_checkRoot
@@ -5191,10 +5271,10 @@ sh_confLvm() {
 
 	if [[ "$menu" = "Fde" ]]; then
 		ctitlemenu='FDE CONFIG'
-		LCONFIGFDE=$true
+		LCONFIGFDE=$one
 	else
 		ctitlemenu='LVM CONFIG'
-		LCONFIGFDE=$false
+		LCONFIGFDE=$zero
 	fi
 
 	if ! $LDISK; then
@@ -5591,7 +5671,6 @@ sh_setLanguage() {
 	#	cmsg_LABEL[pt_BR]=$(gettext "Usar as teclas ${RED}↑ PARA CIMA ${RESET}e ${RED}↓ PARA BAIXO ${RESET}para navegar.\nUsar ${RED}TAB ${RESET}para alternar entre os botões e ${RED}ENTER ${RESET}para selecionar.")
 	#	cmsg_LBL_check[pt_BR]=$(gettext "Usar as teclas ${RED}PARA CIMA ${RESET}e ${RED}PARA BAIXO ${RESET}para navegar.\nUsar ${RED}BARRA DE ESPAÇO ${RESET}para selecionar.\nUsar ${RED}TAB ${RESET}para alternar entre os botões e ${RED}ENTER ${RESET}para aceitar.")
 	#	cmsg_Tarball_Corrompido[pt_BR]=$(gettext "\n${RED}Aparentemente o tarball rootfs ${_TARBALL_ROOTFS} está corrompido.\n\n${BOLD}${WHITE}Testar a integridade e reiniciar a instalação ?")
-
 	#	cmsg_LABEL1=$(gettext "Usar as setas ${CYAN}↑ ${RST}e ${CYAN}↓ ${RST}para navegar.")
 	#	cmsg_LABEL2=$(gettext "Usar ${CYAN}TAB ${RST}para alternar entre os botões.")
 	#	cmsg_LABEL3=$(gettext "Usar ${CYAN}ENTER ${RST}ou ${CYAN}BARRA DE ESPAÇO ${RST}para selecionar e aceitar.")
@@ -5646,6 +5725,7 @@ sh_setLanguage() {
 	cmsg_Teclado=$(gettext "Teclado")
 	cmsg_SairSemInstalar=$(gettext "Sair sem instalar")
 	cmsg_tty=$(gettext "Somente terminal, sem interface gráfica")
+	cmsg_server=$(gettext "Servidor Void")
 	cmsg_descDisco=$(gettext "Definir disco e partições")
 	cmsg_descFileSystem=$(gettext "Definir sistema de arquivos e pontos de montagem")
 	cmsg_descBootLoader=$(gettext "Definir bootloader")
@@ -5698,7 +5778,7 @@ sh_setLanguage() {
 	cmsg_VerificandoIntegridadeTarball=$(gettext "Verificando a integridade do tarball")
 	cmsg_IniciandoDownload=$(gettext "Iniciando download de")
 	cmsg_CriandoParticoes=$(gettext "Criando partições em")
-	cmsg_CriandoDiretorios=$(gettext "Criando diretórios em")
+	cmsg_CriandoDiretorio=$(gettext "Criando diretório")
 	cmsg_AtualizandoRepositorio=$(gettext "Atualizando repositório")
 	cmsg_RemovendoPacotesAntigosObseletos=$(gettext "Removendo pacotes antigos/absoletos")
 	cmsg_InstalandoMetaPacotes=$(gettext "Instalando meta pacote X")
@@ -5778,7 +5858,7 @@ sh_setLanguage() {
 
 sh_tar_rootfs() {
 	sh_checkTarball || return 1
-	sh_info_msg "${cmsg_Descompactando} rootfs ${cmsg_Em} $dir_install"
+	sh_info_msg "${cmsg_Descompactando} rootfs"
 	tar xpf "$_TARBALL_ROOTFS" --xattrs-include='*.*' --numeric-owner -C $dir_install 2>&1 | tee -i -a "$BOOTLOG" >$LOGGER
 	ret="${PIPESTATUS[0]}"
 	if [[ "$ret" -eq 0 ]]; then
@@ -5791,7 +5871,7 @@ sh_tar_rootfs() {
 			sh_checkIntegrityTarball || return 1
 			sh_install
 		else
-			die "${cmsg_ERRO} tar '#'$ret. ${cmsg_ErroTar} $_TARBALL_ROOTFS ${cmsg_Em} $dir_install"
+			die "${cmsg_ERRO} tar '#'$ret. ${cmsg_ErroTar} $_TARBALL_ROOTFS"
 		fi
 	fi
 }
@@ -5997,12 +6077,27 @@ sh_rebuild_amntpoint_for_new_disk() {
 	((${#Amntpoint[@]})) && LMKPARTED=true || LMKPARTED=false
 }
 
+sh_check_lock() {
+	if [[ -e "$LOCKFILE" ]]; then
+		# Verifica se o processo ainda existe
+		local pid
+		pid=$(cat "$LOCKFILE")
+		if kill -0 "$pid" 2>/dev/null; then
+			sh_error_msg "O script já está em execução (PID: $pid)."
+			exit 1
+		fi
+	fi
+	echo $$ >"$LOCKFILE"
+	trap 'rm -f "$LOCKFILE"; exit' INT TERM EXIT
+}
+
 sh_setEnvironment
 sh_getLocale
 sh_setLanguage
 sh_setVarColors
 sh_setAsciiLines
 sh_setLogPrefix
+sh_check_lock
 
 [[ "${1-}" = @(-V|--version) ]] && {
 	sh_version

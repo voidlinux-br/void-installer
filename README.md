@@ -2,7 +2,12 @@
 ## Download:
 - 0 - using distro VOID
 ```bash
-echo 'repository=https://void.chililinux.com/voidlinux/current' | sudo tee -a /usr/share/xbps.d/00-repository-main.conf
+{
+  echo 'repository=https://repo-fastly.voidlinux.org/current'
+  echo 'repository=https://void.chililinux.com/voidlinux/current'
+} | sudo tee /etc/xbps.d/00-repository-main.conf
+sudo xbps-install -Syu xbps
+sudo xbps-install -Syu libssh2
 sudo xbps-install -Syf void-install
 sudo void-install
 ```
