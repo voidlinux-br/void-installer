@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Electron 27
-Icon=electron27
-Exec=electron27 %u
-Categories=Development;GTK;
-StartupNotify=true
-NoDisplay=true

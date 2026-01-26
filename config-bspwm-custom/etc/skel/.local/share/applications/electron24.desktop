@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Electron 24
-Icon=electron24
-Exec=electron24 %u
-Categories=Development;GTK;
-StartupNotify=true
-NoDisplay=true

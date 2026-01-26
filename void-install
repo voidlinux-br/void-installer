@@ -5,7 +5,7 @@
 #  void-install
 #  Created: 2022/12/24
 #  Altered: 2024/03/11
-#  Updated: qui 22 jan 2026 02:08:59 -04
+#  Updated: dom 25 jan 2026 22:30:14 -04
 #
 #  Copyright (c) 2022-2025, Vilmar Catafesta <vcatafesta@gmail.com>
 #  All rights reserved.
@@ -52,7 +52,7 @@ shopt -s extglob
 
 #system
 readonly APP="${0##*/}"
-readonly _VERSION_='3.1.22-020859'
+readonly _VERSION_='3.1.25-20260125'
 readonly DEPENDENCIES=(dialog rsync awk tar sed cat grep sort tr chroot blkid fdisk parted lsblk curl xz mkfs.vfat tee lvm cryptsetup gettext)
 readonly LOCKFILE="/tmp/void-install.lock"
 
@@ -465,10 +465,10 @@ sh_update_self() {
 sh_choose_common_packages() {
 	declare -ga aSuplemento=(
 		chili-void-grub-theme
-#	   voidbr-plymouth-theme
+		#	   voidbr-plymouth-theme
 		chili-utils
 		void-utils
-		chili-nano-config
+		voidbr-nano-config
 	)
 
 	declare -ga aExtra=(
@@ -501,9 +501,9 @@ sh_choose_common_packages() {
 		vim
 	)
 
-   if $LXORG; then
-   	return
-   fi
+	if $LXORG; then
+		return
+	fi
 
 	## begin packages
 	declare -ga aXorg=(xorg xinit xterm xorg-fonts dbus-x11 elogind dbus-elogind polkit-elogind xdg-user-dirs xrdb)
@@ -514,7 +514,7 @@ sh_choose_common_packages() {
 
 	if $LCUSTOM; then
 		## X11
-		declare -ga aIconsAndThemes=(Adapta adwaita-icon-theme chili-void-beauty-icons chili-void-wallpapers chili-void-gnome-professional-theme xfwm-axiom-theme)
+		declare -ga aIconsAndThemes=(Adapta adwaita-icon-theme voidbr-xfwm-axiom-theme)
 		declare -ga aArchiverX=(xarchiver)
 		declare -ga aBrowser=(firefox firefox-i18n-$(sh_get_language_without_utf8) brave-bin)
 		declare -ga aBluetooth=(bluez bluez-alsa bluedevil blueman bluez-cups bluez-deprecated gnome-bluetooth1 blueberry)
@@ -2116,7 +2116,7 @@ sh_mount_fs() {
 	done
 }
 
-sh_X11minimal() {
+sh_X11_minimal() {
 	local apkgs=()
 	local aMedia=()
 
@@ -2173,13 +2173,13 @@ sh_X11minimal() {
 }
 
 #dom 03 mar 2024 09:35:25 -04
-sh_blackboxminimal() {
+sh_blackbox_minimal() {
 	local DE='Blackbox'
 	local apkgs=(blackboxwm bbkeys)
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_fluxboxminimal() {
+sh_fluxbox_minimal() {
 	local DE='FluxBox'
 	local apkgs=(fluxbox fbmenugen cairo galculator-gtk2 gtk2-engines gtk-engine-murrine)
 	apkgs+=(wicd qt5ct qt5-styleplugins leafpad dconf volumeicon feh viewnior compton arc-theme ffmpegthumbnailer)
@@ -2193,19 +2193,19 @@ sh_fluxboxminimal() {
 	fi
 }
 
-sh_openboxminimal() {
+sh_openbox_minimal() {
 	local apkgs=(openbox obconf)
 	local DE='OpenBox'
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_plasmaminimal() {
+sh_plasma_minimal() {
 	local apkgs=('plasma-desktop' 'plasma-nm' 'plasma-pa' 'plasma-disks')
 	local DE='Plasma Desktop'
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_cinnamonminimal() {
+sh_cinnamon_minimal() {
 	local DE='cinnamon'
 	local apkgs=(cinnamon cinnamon-all)
 
@@ -2218,7 +2218,9 @@ sh_cinnamonminimal() {
 	apkgs+=(
 		voidbr-cinnamon-config
 		voidbr-wallpapers
-		chili-gnome-theme-tokyo
+		voidbr-tokyo-theme
+		voidbr-professional-theme
+		voidbr-beauty-icons
 	)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
@@ -2227,21 +2229,23 @@ sh_cinnamonminimal() {
 sh_enlightenment_minimal() {
 	local DE='Enlightenment'
 	local apkgs=(
-	   enlightenment
-	   efl
-	   exquisite
-	   acpi
-	   acpid
-	   connman
+		enlightenment
+		efl
+		exquisite
+		acpi
+		acpid
+		connman
 		voidbr-enlightenment-config
 		voidbr-wallpapers
-		chili-gnome-theme-tokyo
-   )
+		voidbr-tokyo-theme
+		voidbr-professional-theme
+		voidbr-beauty-icons
+	)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_xfce4minimal() {
+sh_xfce4_minimal() {
 	local DE='Xfce4'
 	local apkgs=(xfce4
 		xfce4-plugins
@@ -2273,13 +2277,15 @@ sh_xfce4minimal() {
 	apkgs+=(
 		voidbr-xfce-config
 		voidbr-wallpapers
-		chili-gnome-theme-tokyo
+		voidbr-tokyo-theme
+		voidbr-professional-theme
+		voidbr-beauty-icons
 	)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_serverminimal() {
+sh_server_minimal() {
 	local DE='Void server'
 	declare apkgs=(
 		bind-utils
@@ -2289,7 +2295,7 @@ sh_serverminimal() {
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_xorgminimal() {
+sh_xorg_minimal() {
 	local DE='Xorg Minimal'
 	declare apkgs=(
 		xorg-minimal
@@ -2303,7 +2309,7 @@ sh_xorgminimal() {
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_gnomeminimal() {
+sh_gnome_minimal() {
 	local DE='Gnome'
 	local apkgs=(
 		"arc-theme"                # Tema Arc para janelas e interface
@@ -2362,28 +2368,29 @@ sh_gnomeminimal() {
 	apkgs+=(
 		voidbr-gnome-config
 		voidbr-wallpapers
-		chili-gnome-theme-tokyo
-		voidbr-change-gnome-wallpaper
+		voidbr-tokyo-theme
+		voidbr-professional-theme
+		voidbr-beauty-icons
 	)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_i3minimal() {
+sh_i3_minimal() {
 	local DE='I3'
 	local apkgs=(i3 dmenu i3status i3lock geany volumeicon mc scrot ImageMagick gnome-themes-standard axel mps-youtube youtube-dl mpv cava mate-themes)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_swayminimal() {
+sh_sway_minimal() {
 	local DE='Sway'
 	local apkgs=(sway)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_mateminimal() {
+sh_mate_minimal() {
 	local DE='Mate'
 	local apkgs=('mate' 'mate-extra' 'mate-applets' 'atril' 'caja-image-converter' 'caja-open-terminal' 'caja-sendto'
 		'caja-share' 'caja-wallpaper' 'caja-xattr-tags' 'engrampa' 'eom' 'mate-calc' 'mate-icon-theme-faenza'
@@ -2393,38 +2400,56 @@ sh_mateminimal() {
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_twmminimal() {
+sh_twm_minimal() {
 	local DE='TWM'
 	local apkgs=('twm')
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_awesomeminimal() {
+sh_awesome_minimal() {
 	local DE='Awesome'
 	local apkgs=(awesome polybar pcmanfm font-awesome)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_bspwmminimal() {
+sh_bspwm_minimal() {
 	local DE='Bspwm'
-	local apkgs=(bspwm polybar sxhkd dunst flameshot picom feh dmenu lua wmctrl compton mpd)
-	apkgs+=(font-weather-icons font-awesome5 noto-fonts-cjk hsetroot lxappearance)
-	apkgs+=(rofi gtk-engine-murrine gtk2-engines)
-	apkgs+=(chili-void-bspwm-skel)
+	local apkgs=(bspwm
+		polybar
+		sxhkd
+		dunst
+		flameshot
+		picom
+		feh
+		dmenu
+		lua
+		wmctrl
+		compton
+		mpd
+		font-weather-icons
+		font-awesome5
+		noto-fonts-cjk
+		hsetroot
+		lxappearance
+		rofi
+		gtk-engine-murrine
+		gtk2-engines
+		chili-void-bspwm-skel
+	)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_dwmminimal() {
+sh_dwm_minimal() {
 	local DE='Dwm'
 	local apkgs=(dwm)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_hyprlandminimal() {
+sh_hyprland_minimal() {
 	local DE='Hyprland'
 	local user="${AsUser[cuser]}"
 	local apkgs=(hyprland hyprland-protocols xdg-desktop-portal-hyprland dbus polkit seatd elogind mesa-dri)
@@ -2449,14 +2474,14 @@ sh_hyprlandminimal() {
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_lxdeminimal() {
+sh_lxde_minimal() {
 	local DE='Lxde'
 	local apkgs=(lxde lxterminal lxrandr lxtask lxinput lxappearance)
 
 	sh_install_pkgs_in_chroot "Instalando ${DE}" "${apkgs[*]}"
 }
 
-sh_lxqtminimal() {
+sh_lxqt_minimal() {
 	local DE='Lxqt'
 	local apkgs=(lxqt)
 
@@ -3833,20 +3858,23 @@ sh_choose_wm() {
 
 	LWM=true
 	_WINDOWMANAGER=($(strtoarray "$wm"))
-   ALLOWED=(tty server xorg)
-   ok=true
-   for wm in "${_WINDOWMANAGER[@]}"; do
-     case "$wm" in
-       tty|server|xorg) ;;
-       *) ok=false; break ;;
-     esac
-   done
-   if $ok; then
-     AConfAudio[_AUDIOSERVER]="None"
-   else
-     AConfAudio[_AUDIOSERVER]="Pipewire"
-   fi
-   LAUDIO=true
+	ALLOWED=(tty server xorg)
+	ok=true
+	for wm in "${_WINDOWMANAGER[@]}"; do
+		case "$wm" in
+		tty | server | xorg) ;;
+		*)
+			ok=false
+			break
+			;;
+		esac
+	done
+	if $ok; then
+		AConfAudio[_AUDIOSERVER]="None"
+	else
+		AConfAudio[_AUDIOSERVER]="Pipewire"
+	fi
+	LAUDIO=true
 
 	if grep -qi xorg <<<"${_WINDOWMANAGER[@]}"; then
 		LXORG=true
@@ -4369,7 +4397,7 @@ sh_install() {
 		sh_checkTarball
 	fi
 
-   sh_choose_common_packages
+	sh_choose_common_packages
 
 	start_time=$(date +%s) # Obtém o tempo de início em segundos desde a época Unix
 	start_datetime=$(date)
@@ -4439,7 +4467,7 @@ sh_install() {
 				:
 			else
 				sh_update_Xkeymap
-				sh_X11minimal
+				sh_X11_minimal
 			fi
 
 			aDE=()
@@ -4447,26 +4475,26 @@ sh_install() {
 				aDE+=("$x")
 				case "$x" in
 				"tty") : ;;
-				"server") sh_serverminimal ;;
-				"xorg") sh_xorgminimal ;;
-				"awesome") sh_awesomeminimal ;;
-				"bspwm") sh_bspwmminimal ;;
-				"blackbox") sh_blackboxminimal ;;
-				"dwm") sh_dwmminimal ;;
+				"server") sh_server_minimal ;;
+				"xorg") sh_xorg_minimal ;;
+				"awesome") sh_awesome_minimal ;;
+				"bspwm") sh_bspwm_minimal ;;
+				"blackbox") sh_blackbox_minimal ;;
+				"dwm") sh_dwm_minimal ;;
 				"enlightenment") sh_enlightenment_minimal ;;
-				"fluxbox") sh_fluxboxminimal ;;
-				"hyprland") sh_hyprlandminimal ;;
-				"openbox") sh_openboxminimal ;;
-				"gnome") sh_gnomeminimal ;;
-				"plasma") sh_plasmaminimal ;;
-				"xfce4") sh_xfce4minimal ;;
-				"cinnamon") sh_cinnamonminimal ;;
-				"i3wm") sh_i3minimal ;;
-				"sway") sh_swayminimal ;;
-				"twm") sh_twmminimal ;;
-				"mate") sh_mateminimal ;;
-				"lxde") sh_lxdeminimal ;;
-				"lxqt") sh_lxqtminimal ;;
+				"fluxbox") sh_fluxbox_minimal ;;
+				"hyprland") sh_hyprland_minimal ;;
+				"openbox") sh_openbox_minimal ;;
+				"gnome") sh_gnome_minimal ;;
+				"plasma") sh_plasma_minimal ;;
+				"xfce4") sh_xfce4_minimal ;;
+				"cinnamon") sh_cinnamon_minimal ;;
+				"i3wm") sh_i3_minimal ;;
+				"sway") sh_sway_minimal ;;
+				"twm") sh_twm_minimal ;;
+				"mate") sh_mate_minimal ;;
+				"lxde") sh_lxde_minimal ;;
+				"lxqt") sh_lxqt_minimal ;;
 				esac
 			done
 
